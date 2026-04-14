@@ -1,0 +1,173 @@
+// ExtenSilica XSIL registry — package catalog, user accounts, versions.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users ────────────────────────────────────────────────────
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  apiToken     String?   @unique
+  bio          String?
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  ownedPackages       Extension[]          @relation("ExtensionOwner")
+  maintainerships     Maintainer[]
+  reviews             Review[]
+  passwordResetTokens PasswordResetToken[]
+  orgMemberships      OrgMember[]
+}
+
+// ── Organisations ─────────────────────────────────────────────
+
+model Organization {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique  // e.g. "risc-v-foundation"  (no @)
+  displayName String
+  description String?
+  avatarUrl   String?
+  websiteUrl  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  members  OrgMember[]
+  packages Extension[] @relation("ExtensionOrg")
+}
+
+model OrgMember {
+  id       Int      @id @default(autoincrement())
+  orgId    Int
+  userId   Int
+  role     String   @default("member") // "owner" | "admin" | "member"
+  joinedAt DateTime @default(now())
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+}
+
+// ── Packages ─────────────────────────────────────────────────
+
+model Extension {
+  id               Int       @id @default(autoincrement())
+  slug             String    @unique  // bare "pkgname" or scoped "@org/pkgname"
+  name             String
+  description      String
+  shortDescription String?
+  longDescription  String?   // README / extended description (markdown)
+  iconUrl          String?
+  author           String
+  ownerId          Int?
+  orgId            Int?      // set when published under an org scope
+  keywords         String    @default("") // CSV
+  license          String?
+  repositoryUrl    String?
+  homepageUrl      String?
+  latestVersion       String?
+  totalDownloads      Int       @default(0)
+  weeklyDownloads     Int       @default(0)
+  isDeprecated        Boolean   @default(false)
+  deprecationMessage  String?   // optional reason / migration hint shown in the banner
+  versions         Version[]
+  maintainers      Maintainer[]
+  reviews          Review[]
+  downloadEvents   DownloadEvent[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  owner User?         @relation("ExtensionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  org   Organization? @relation("ExtensionOrg",   fields: [orgId],   references: [id], onDelete: SetNull)
+}
+
+model Maintainer {
+  id        Int      @id @default(autoincrement())
+  packageId Int
+  userId    Int
+  role      String   @default("maintainer") // "owner" | "maintainer"
+  addedAt   DateTime @default(now())
+
+  package Extension @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, userId])
+}
+
+model Version {
+  id              Int       @id @default(autoincrement())
+  extensionId     Int
+  extension       Extension @relation(fields: [extensionId], references: [id], onDelete: Cascade)
+  version         String
+  changelog       String    @default("")
+  xsilUrl         String
+  checksum        String?   // sha256 of the full .xsil archive
+  checksumPayload String?   // sha256 of non-manifest files (was payloadHash)
+  targets         String?   // JSON blob from manifest targets
+  toolchain       String?
+  isa             String?
+  size            Int?      // archive bytes
+  downloadCount   Int       @default(0)
+  isYanked        Boolean   @default(false)
+  yankReason      String?
+  publishedAt     DateTime  @default(now())
+
+  downloadEvents  DownloadEvent[]
+
+  @@unique([extensionId, version])
+}
+
+// ── Download analytics ────────────────────────────────────────
+
+model DownloadEvent {
+  id        Int    @id @default(autoincrement())
+  packageId Int
+  versionId Int
+  day       String // "YYYY-MM-DD" bucket — one row per (package, version, day)
+  count     Int    @default(1)
+
+  package Extension @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  version Version   @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, versionId, day])
+}
+
+// ── Password reset ────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique  // SHA-256 of the raw token sent in the email
+  expiresAt DateTime
+  usedAt    DateTime?           // set when redeemed; prevents replay
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── Reviews ───────────────────────────────────────────────────
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  packageId Int
+  userId    Int
+  rating    Int      // 1–5, validated at the application layer
+  comment   String?  // optional free-text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  package Extension @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, userId]) // one review per user per package
+}

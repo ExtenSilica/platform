@@ -1,0 +1,306 @@
+import type { Metadata } from "next";
+import { LegalPage, Section, Ul, C, Strong } from "@/components/legal-page";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy — ExtenSilica",
+  description:
+    "How ExtenSilica collects, uses, and protects data from registry users.",
+};
+
+export default function PrivacyPage() {
+  return (
+    <LegalPage
+      title="Privacy Policy"
+      subtitle="We collect the minimum amount of data necessary to operate the registry. We do not sell your data, serve advertising, or use third-party analytics."
+      updated="March 2026"
+      current="/legal/privacy"
+    >
+      <div className="space-y-10">
+
+        <Section id="overview" title="Overview">
+          <p>
+            ExtenSilica is a public package registry for <C>.xsil</C> packages. This
+            policy explains what data we collect, why we collect it, how we store it,
+            and your rights with respect to it.
+          </p>
+          <p>
+            Our analytics model is intentionally <Strong>package-centric, not
+            user-surveillance-centric</Strong>. Download statistics track which packages
+            and versions are downloaded and on which day — not who downloaded them.
+            No user identity is attached to download events.
+          </p>
+        </Section>
+
+        <Section id="data-collected" title="1. Data We Collect">
+
+          <p><Strong>1.1  Account registration</Strong></p>
+          <p>When you create an account we collect:</p>
+          <Ul>
+            <li><Strong>Username</Strong> — public identifier for your account and packages.</li>
+            <li>
+              <Strong>Email address</Strong> — used for account management and security
+              notices. Never exposed publicly.
+            </li>
+            <li>
+              <Strong>Password</Strong> — stored as a bcrypt hash (rounds ≥ 12).
+              We never store or transmit your password in plaintext.
+            </li>
+            <li>
+              <Strong>API token</Strong> — a random opaque token generated at login and
+              used to authenticate CLI requests. Stored as a unique token; you can
+              invalidate it at any time by logging out.
+            </li>
+            <li>
+              <Strong>Optional profile fields</Strong> — bio text and avatar URL, if you
+              choose to add them. Both are public.
+            </li>
+          </Ul>
+
+          <p className="pt-2"><Strong>1.2  Package publishing</Strong></p>
+          <p>When you publish a package we record:</p>
+          <Ul>
+            <li>
+              Package metadata: name, slug, description, version, ISA, targets,
+              toolchain, license, keywords, README, repository URL, changelog.
+            </li>
+            <li>The <C>.xsil</C> archive file, stored in blob storage.</li>
+            <li>
+              SHA-256 checksums of the archive and its non-manifest payload
+              (computed client-side by the CLI and verified on the server).
+            </li>
+            <li>Publish timestamp and the authoring account ID.</li>
+          </Ul>
+
+          <p className="pt-2"><Strong>1.3  Download events</Strong></p>
+          <p>
+            When a <C>.xsil</C> file is downloaded we record a{" "}
+            <Strong>daily bucket</Strong>: package ID, version ID, date, and
+            download count. No user identity, IP address, or user-agent string is
+            stored in this bucket. Download statistics are used solely to display
+            per-package and per-version counters on the registry website.
+          </p>
+
+          <p className="pt-2"><Strong>1.4  Server access logs</Strong></p>
+          <p>
+            Our web servers produce standard HTTP access logs that include IP address,
+            requested URL, HTTP method, response code, and timestamp. These logs are
+            used for security investigation and service diagnostics and are purged
+            after <Strong>30 days</Strong>.
+          </p>
+
+          <p className="pt-2"><Strong>1.5  Reviews</Strong></p>
+          <p>
+            When you submit a package review we store your user ID, the package ID,
+            your rating (1–5), and your optional comment. Reviews are public and
+            attributed to your username.
+          </p>
+
+        </Section>
+
+        <Section id="use" title="2. How We Use Your Data">
+          <Ul>
+            <li>
+              <Strong>Account data</Strong> (username, email, password hash, API
+              token) is used to authenticate you, associate packages with your
+              account, and contact you about security issues related to your account.
+            </li>
+            <li>
+              <Strong>Package metadata and files</Strong> are indexed and made
+              publicly available through the registry website and API.
+            </li>
+            <li>
+              <Strong>Download event data</Strong> is aggregated to display download
+              counts on package pages. It is not used for user profiling or advertising.
+            </li>
+            <li>
+              <Strong>Server access logs</Strong> are used to investigate abuse,
+              diagnose service outages, and monitor for unusual traffic patterns that
+              may indicate an attack.
+            </li>
+          </Ul>
+          <p>
+            We do not use your data for advertising, sell it to third parties, or
+            share it with any analytics or marketing service.
+          </p>
+        </Section>
+
+        <Section id="public-data" title="3. What Is Publicly Visible">
+          <p>
+            The following information is visible to anyone who visits the registry,
+            with or without an account:
+          </p>
+          <Ul>
+            <li>Your username and optional bio / avatar.</li>
+            <li>
+              All packages you have published, including their full version history,
+              metadata, download counts, and README content.
+            </li>
+            <li>Reviews you have written, attributed to your username.</li>
+          </Ul>
+          <p>
+            Your <Strong>email address is never publicly exposed</Strong>. It is not
+            included in any API response or public profile page.
+          </p>
+        </Section>
+
+        <Section id="security" title="4. Security">
+          <p>
+            We take reasonable technical and organizational measures to protect your
+            data:
+          </p>
+          <Ul>
+            <li>Passwords are hashed with bcrypt (min. 12 rounds).</li>
+            <li>
+              API tokens are random, opaque strings stored in the database. Tokens
+              are transmitted over HTTPS only.
+            </li>
+            <li>
+              Package archive checksums are verified by the server on upload and by
+              the CLI on install and run. Tampered or corrupted files are rejected.
+            </li>
+            <li>
+              Access to production infrastructure is limited to authorized
+              maintainers.
+            </li>
+          </Ul>
+          <p>
+            No security measure is perfect. If you discover a security vulnerability,
+            please disclose it responsibly via the project&rsquo;s GitHub repository
+            before making it public.
+          </p>
+        </Section>
+
+        <Section id="retention" title="5. Data Retention">
+          <Ul>
+            <li>
+              <Strong>Published package artifacts and metadata</Strong> are retained
+              indefinitely. Version immutability is a core guarantee of the registry;
+              users and tools that depend on packages must be able to reproduce their
+              builds at any future time.
+            </li>
+            <li>
+              <Strong>Account data</Strong> is retained for as long as your account
+              exists. You may request account deletion at any time (see Your Rights
+              below). On deletion we remove your email, password hash, and API token.
+              Your username and published packages remain in the registry under your
+              username to preserve authorship attribution.
+            </li>
+            <li>
+              <Strong>Server access logs</Strong> are automatically purged after 30 days.
+            </li>
+            <li>
+              <Strong>Download event buckets</Strong> are retained indefinitely as
+              aggregate counters (no personal data is stored in them).
+            </li>
+          </Ul>
+        </Section>
+
+        <Section id="cookies" title="6. Cookies and Tracking">
+          <p>
+            ExtenSilica does not set advertising cookies, cross-site tracking cookies,
+            or fingerprinting scripts. No third-party analytics scripts (Google
+            Analytics, Mixpanel, etc.) are loaded on any page.
+          </p>
+          <p>
+            The website uses a single session mechanism: an API token stored in{" "}
+            <C>localStorage</C> by the browser after you log in. This token is sent
+            with authenticated API requests only. It is not a cookie and is not shared
+            with any third party.
+          </p>
+        </Section>
+
+        <Section id="third-parties" title="7. Third-Party Services">
+          <p>
+            <Strong>File storage.</Strong> <C>.xsil</C> archive files are stored in
+            an S3-compatible object store. The storage provider processes file upload
+            and download requests. We do not share personal account data with the
+            storage provider; it receives only the file bytes and associated path.
+          </p>
+          <p>
+            Beyond file storage, we do not integrate any external services that
+            receive personal data. The registry is self-hosted.
+          </p>
+        </Section>
+
+        <Section id="rights" title="8. Your Rights">
+          <p>
+            Depending on your jurisdiction you may have the right to:
+          </p>
+          <Ul>
+            <li>
+              <Strong>Access</Strong> the personal data we hold about you.
+            </li>
+            <li>
+              <Strong>Correct</Strong> inaccurate data (e.g., update your email or bio
+              in your account settings).
+            </li>
+            <li>
+              <Strong>Delete</Strong> your account and the personal data associated
+              with it (email, password hash, API token, bio, avatar). Note that
+              published package artifacts and metadata cannot be deleted due to
+              immutability guarantees and dependency considerations.
+            </li>
+            <li>
+              <Strong>Withdraw consent</Strong> at any time by ceasing to use the
+              Service and requesting account deletion.
+            </li>
+          </Ul>
+          <p>
+            To exercise any of these rights, open an issue or contact us via the
+            project&rsquo;s{" "}
+            <a
+              href="https://github.com/extensilica/xsil"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              GitHub repository
+            </a>
+            . We will respond within a reasonable time.
+          </p>
+        </Section>
+
+        <Section id="children" title="9. Children's Privacy">
+          <p>
+            The Service is not directed at children under the age of 13. We do not
+            knowingly collect personal data from children. If you believe we have
+            inadvertently collected such data, please contact us immediately.
+          </p>
+        </Section>
+
+        <Section id="changes" title="10. Changes to This Policy">
+          <p>
+            We may update this Privacy Policy from time to time. Material changes will
+            be announced via the project&rsquo;s GitHub repository and reflected in
+            the &ldquo;Last updated&rdquo; date at the top of this page. Continued
+            use of the Service after changes take effect constitutes acceptance of the
+            revised policy.
+          </p>
+        </Section>
+
+        <Section id="contact" title="11. Contact">
+          <p>
+            Privacy questions and data requests can be directed to{" "}
+            <a
+              href="mailto:legal@extensilica.com"
+              className="text-primary underline"
+            >
+              legal@extensilica.com
+            </a>
+            {" "}or submitted via the project&rsquo;s{" "}
+            <a
+              href="https://github.com/extensilica/xsil"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              GitHub repository
+            </a>
+            . We will respond within a reasonable time.
+          </p>
+        </Section>
+
+      </div>
+    </LegalPage>
+  );
+}

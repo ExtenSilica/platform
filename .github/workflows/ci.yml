@@ -1,0 +1,107 @@
+name: CI
+
+# Runs on every push and pull request to catch build and lint regressions early.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+env:
+  CARGO_TERM_COLOR: always
+  NODE_VERSION: "20"
+
+jobs:
+  # ── Rust CLI ─────────────────────────────────────────────────────────────────
+  cli-check:
+    name: CLI — check + clippy + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo registry + build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            cli/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('cli/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: cargo fmt --check
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: cargo test
+        run: cargo test --all
+
+      - name: cargo build (debug — confirm it compiles)
+        run: cargo build
+
+  # ── Backend ───────────────────────────────────────────────────────────────────
+  backend-check:
+    name: Backend — typecheck + lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: store-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: store-backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript typecheck (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      - name: ESLint (if configured)
+        run: npx eslint . --ext .ts --max-warnings 0 || true
+        # `|| true` so missing eslint config doesn't break CI; remove once configured
+
+  # ── Frontend ──────────────────────────────────────────────────────────────────
+  frontend-check:
+    name: Frontend — typecheck + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: store-frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: store-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Provide a stub API URL so Next.js doesn't fail on missing env var
+      - name: Next.js build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
