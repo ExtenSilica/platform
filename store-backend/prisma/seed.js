@@ -15,24 +15,27 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         yield prisma.version.deleteMany({});
         yield prisma.extension.deleteMany({});
-        const extensions = [
+        const packages = [
             {
                 name: 'FastAES',
                 slug: 'fastaes',
-                description: 'High-performance AES encryption for XSil processors.',
-                shortDescription: 'Accelerated AES-256 encryption/decryption.',
-                author: 'CryptoSoft',
-                category: 'Crypto',
-                tags: 'aes,crypto,encryption,fast',
-                iconUrl: '/icons/crypto.svg',
-                rating: 4.8,
-                downloads: 15000,
+                description: 'High-performance AES-256 acceleration extension for RISC-V processors.',
+                shortDescription: 'AES-256 hardware acceleration for RISC-V.',
+                author: 'xsil-community',
+                keywords: 'aes,encryption,security,riscv',
                 versions: {
                     create: [
                         {
                             version: '1.0.0',
                             changelog: 'Initial release',
                             xsilUrl: 'https://registry.extensilica.com/fastaes/-/fastaes-1.0.0.xsil',
+                            isa: 'rv64gc',
+                        },
+                        {
+                            version: '1.0.7',
+                            changelog: 'Performance improvements; reduced cycle count by 18%',
+                            xsilUrl: 'https://registry.extensilica.com/fastaes/-/fastaes-1.0.7.xsil',
+                            isa: 'rv64gc',
                         },
                     ],
                 },
@@ -40,20 +43,17 @@ function main() {
             {
                 name: 'MLBoost',
                 slug: 'mlboost',
-                description: 'Optimized machine learning inference engine for edge devices.',
-                shortDescription: 'Run ML models faster on low-power hardware.',
-                author: 'AI Labs',
-                category: 'ML',
-                tags: 'ml,ai,inference,edge',
-                iconUrl: '/icons/ml.svg',
-                rating: 4.5,
-                downloads: 23000,
+                description: 'Optimised matrix-multiply and activation extensions for RISC-V ML inference.',
+                shortDescription: 'ML inference acceleration on RISC-V.',
+                author: 'ai-labs',
+                keywords: 'ml,ai,inference,matrix,riscv',
                 versions: {
                     create: [
                         {
                             version: '2.1.0',
-                            changelog: 'Added support for Transformer models',
+                            changelog: 'Added support for transformer attention kernels',
                             xsilUrl: 'https://registry.extensilica.com/mlboost/-/mlboost-2.1.0.xsil',
+                            isa: 'rv64gcv',
                         },
                     ],
                 },
@@ -61,72 +61,62 @@ function main() {
             {
                 name: 'DSPFilter',
                 slug: 'dspfilter',
-                description: 'Advanced digital signal processing filters including FIR and IIR.',
-                shortDescription: 'Professional grade digital signal filters.',
-                author: 'SignalMasters',
-                category: 'DSP',
-                tags: 'dsp,filter,audio,signal',
-                iconUrl: '/icons/dsp.svg',
-                rating: 4.7,
-                downloads: 8900,
+                description: 'Advanced FIR and IIR digital signal processing filters for RISC-V.',
+                shortDescription: 'FIR/IIR DSP filters for RISC-V.',
+                author: 'signal-masters',
+                keywords: 'dsp,filter,audio,signal,riscv',
                 versions: {
                     create: [
                         {
                             version: '3.0.1',
-                            changelog: 'Fixed memory leak in FIR implementation',
+                            changelog: 'Fixed memory alignment bug in FIR implementation',
                             xsilUrl: 'https://registry.extensilica.com/dspfilter/-/dspfilter-3.0.1.xsil',
+                            isa: 'rv32imc',
                         },
                     ],
                 },
             },
             {
-                name: 'Robotics Motion',
-                slug: 'robotics-motion',
-                description: 'Kinematics and path planning library for 6-DOF robotic arms.',
-                shortDescription: 'Precise motion control for robotic arms.',
-                author: 'RoboTech',
-                category: 'Robotics',
-                tags: 'robotics,motion,kinematics,control',
-                iconUrl: '/icons/robotics.svg',
-                rating: 4.2,
-                downloads: 5600,
+                name: 'RVX Demo',
+                slug: 'rvx-demo',
+                description: 'Minimal demonstration package: a RISC-V program that runs under Spike.',
+                shortDescription: 'Hello-world .xsil package for RISC-V.',
+                author: 'extensilica',
+                keywords: 'demo,tutorial,spike,riscv',
                 versions: {
                     create: [
                         {
-                            version: '0.5.0',
-                            changelog: 'Beta release with inverse kinematics',
-                            xsilUrl: 'https://registry.extensilica.com/robotics-motion/-/robotics-motion-0.5.0.xsil',
+                            version: '1.0.0',
+                            changelog: 'Initial demo package',
+                            xsilUrl: 'https://registry.extensilica.com/rvx-demo/-/rvx-demo-1.0.0.xsil',
+                            isa: 'rv64gc',
+                            targets: JSON.stringify({ spike: {} }),
                         },
                     ],
                 },
             },
             {
-                name: 'CryptoLight',
-                slug: 'cryptolight',
-                description: 'Lightweight cryptography library optimized for IoT sensors.',
-                shortDescription: 'Secure your IoT devices with minimal overhead.',
-                author: 'SecureThings',
-                category: 'Crypto',
-                tags: 'crypto,iot,lightweight,security',
-                iconUrl: '/icons/crypto.svg',
-                rating: 4.0,
-                downloads: 1200,
+                name: 'Vec128',
+                slug: 'vec128',
+                description: 'RISC-V Vector (RVV 1.0) extension package with 128-bit VLEN examples and tests.',
+                shortDescription: 'RVV 1.0 vector extension examples.',
+                author: 'rvv-contributors',
+                keywords: 'vector,rvv,simd,riscv',
                 versions: {
                     create: [
                         {
-                            version: '1.1.2',
-                            changelog: 'Performance improvements for ARM Cortex-M',
-                            xsilUrl: 'https://registry.extensilica.com/cryptolight/-/cryptolight-1.1.2.xsil',
+                            version: '0.9.0',
+                            changelog: 'Beta release; covers vadd, vmul, and reduction operations',
+                            xsilUrl: 'https://registry.extensilica.com/vec128/-/vec128-0.9.0.xsil',
+                            isa: 'rv64gcv',
                         },
                     ],
                 },
             },
         ];
-        for (const ext of extensions) {
-            const extension = yield prisma.extension.create({
-                data: ext,
-            });
-            console.log({ extension });
+        for (const pkg of packages) {
+            const created = yield prisma.extension.create({ data: pkg });
+            console.log(`Created: ${created.slug}`);
         }
     });
 }

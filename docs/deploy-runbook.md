@@ -205,6 +205,14 @@ npx prisma migrate deploy
 npm run build
 ```
 
+**Prisma `P1013` — “invalid port number” in `DATABASE_URL`:** The URL shape is `postgresql://USER:PASSWORD@HOST:PORT/DATABASE`. If `PASSWORD` (or `USER`) contains unescaped `@`, `:`, `/`, `#`, `?`, or `%`, the parser treats part of the password as host/port and fails with this error. Encode those characters for the URL (see [Prisma connection URLs](https://www.prisma.io/docs/orm/reference/connection-urls)). On the server you can print an encoded password with:
+
+```bash
+python3 -c "import urllib.parse; print(urllib.parse.quote('YOUR_RAW_PASSWORD', safe=''))"
+```
+
+Paste the output as the password segment in `DATABASE_URL`, or set a DB password that uses only letters and digits to avoid encoding.
+
 Start API with PM2:
 
 ```bash
