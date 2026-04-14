@@ -8,3 +8,5 @@ dist/
 src/**/*.js
 prisma/dev.db
 prisma/*.db
+# Compiled if someone runs `tsc` without src-only include; source of truth is seed.ts
+prisma/seed.js
