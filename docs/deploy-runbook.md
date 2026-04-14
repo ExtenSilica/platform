@@ -250,16 +250,27 @@ cd /opt/extensilica/store-frontend
 printf '%s\n' 'NEXT_PUBLIC_API_URL=https://api.extensilica.com/api' > .env.production
 npm ci
 npm run build
-pm2 start npm --name extensilica-web -- start
+test -f .next/BUILD_ID && echo "Next build OK"
+pm2 start npm --name extensilica-web --cwd /opt/extensilica/store-frontend -- start
 pm2 save
 ```
+
+The `.next/` folder is **not** in Git; **`next start` only works after a successful `npm run build`** on this server. If `BUILD_ID` is missing, fix compile errors and rerun `npm run build` before starting PM2.
+
+Use **`--cwd`** so the app always runs from the frontend tree even if PM2 was started from another directory. If `pm2 start` is skipped or the process exits, Caddy returns **502** and `curl` to port **3000** fails.
+
+If PM2 shows **errored** and logs say *Could not find a production build in the '.next' directory* / *production-start-no-build-id*: run `npm run build` again (must finish with exit 0), then `pm2 restart extensilica-web` (or `pm2 delete extensilica-web` and `pm2 start` as above).
 
 **Check:**
 
 ```bash
+pm2 status
+pm2 logs extensilica-web --lines 40
 curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/
 curl -sS -o /dev/null -w '%{http_code}\n' https://extensilica.com/
 ```
+
+If **3000** still refuses: confirm `online` in `pm2 status` and read logs (missing `.next` from a failed build, wrong cwd, or crash on boot). Then `pm2 restart extensilica-web`.
 
 PM2 on boot:
 
@@ -338,7 +349,11 @@ On the **server**:
 ```bash
 cd /opt/extensilica
 git pull origin GIT_BRANCH
+```
 
+If pull aborts on `store-backend/prisma/seed.js` (“local changes would be overwritten”), that file was a stale `tsc` output on the server. Discard it and pull again: `git restore store-backend/prisma/seed.js` then `git pull`. (The repo no longer tracks `seed.js`; seeding uses `prisma/seed.ts` via `npm run run-seed`.)
+
+```bash
 cd store-backend
 npm ci
 npx prisma generate
