@@ -1,0 +1,52 @@
+# Rust build artifacts
+cli/target/
+
+# Node.js
+node_modules/
+store-backend/node_modules/
+store-frontend/node_modules/
+store-backend/dist/
+store-frontend/.next/
+
+# Environment files
+.env
+.env.local
+.env*.local
+store-backend/.env
+store-frontend/.env.local
+
+# Database (SQLite dev DB)
+store-backend/*.db
+store-backend/*.db-journal
+
+# Uploaded .xsil blobs (local dev storage)
+store-backend/uploads/
+
+# Generated Prisma client
+store-backend/node_modules/.prisma/
+
+# Next.js
+store-frontend/.next/
+store-frontend/out/
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db
+
+# gem5 simulator checkout (~5 GB+) — do not commit unless you use git-lfs / subtree
+gem5/
+
+# Root + CLI scratch packages and test dirs (not part of the product tree)
+/fastaes-*.xsil
+cli/fastaes-*.xsil
+cli/test.tgz
+cli/temp_pkg/
+cli/check_signed/
+cli/tampered_manifest_pkg/
+cli/tampered_pkg/
+pkg_temp/
+test-pkg/
+
+# Old Verdaccio-based registry data + htpasswd (not used by store-backend deploy)
+registry/
