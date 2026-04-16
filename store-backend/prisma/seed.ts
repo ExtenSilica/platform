@@ -6,6 +6,29 @@ async function main() {
   await prisma.version.deleteMany({});
   await prisma.extension.deleteMany({});
 
+  // Demo catalog rows need a real owner so authenticated publish works (see
+  // packagesController.publishVersion). Default: user "extensilica" from §8.
+  const ownerUsername =
+    (process.env.SEED_OWNER_USERNAME ?? 'extensilica').trim().toLowerCase() || 'extensilica';
+  const owner = await prisma.user.findUnique({ where: { username: ownerUsername } });
+  const allowNoOwner = ['1', 'true', 'yes'].includes(
+    (process.env.ALLOW_SEED_WITHOUT_OWNER ?? '').trim().toLowerCase()
+  );
+
+  if (!owner && !allowNoOwner) {
+    throw new Error(
+      `Seed owner user "${ownerUsername}" not found. Create that account first (deploy runbook §8), ` +
+        `or re-run with SEED_OWNER_USERNAME matching an existing username. ` +
+        `For local-only catalogs with no user, set ALLOW_SEED_WITHOUT_OWNER=1 (packages will have no owner).`
+    );
+  }
+
+  if (!owner && allowNoOwner) {
+    console.warn(
+      `[seed] No user "${ownerUsername}" — continuing with ownerId unset (ALLOW_SEED_WITHOUT_OWNER=1).`
+    );
+  }
+
   const packages = [
     {
       name: 'FastAES',
@@ -74,17 +97,9 @@ async function main() {
       shortDescription: 'Hello-world .xsil package for RISC-V.',
       author: 'extensilica',
       keywords: 'demo,tutorial,spike,riscv',
-      versions: {
-        create: [
-          {
-            version: '1.0.0',
-            changelog: 'Initial demo package',
-            xsilUrl: 'https://registry.extensilica.com/rvx-demo/-/rvx-demo-1.0.0.xsil',
-            isa: 'rv64gc',
-            targets: JSON.stringify({ spike: {} }),
-          },
-        ],
-      },
+      // No Version rows: deploy §9 publishes examples/rvx-demo@1.0.0 from the laptop.
+      // A pre-seeded 1.0.0 row would block publish with HTTP 409.
+      versions: { create: [] },
     },
     {
       name: 'Vec128',
@@ -107,7 +122,12 @@ async function main() {
   ];
 
   for (const pkg of packages) {
-    const created = await prisma.extension.create({ data: pkg });
+    const created = await prisma.extension.create({
+      data: {
+        ...pkg,
+        ...(owner ? { ownerId: owner.id } : {}),
+      },
+    });
     console.log(`Created: ${created.slug}`);
   }
 }

@@ -220,12 +220,7 @@ pm2 start /opt/extensilica/store-backend/dist/server.js --name extensilica-api
 pm2 save
 ```
 
-(Optional) seed demo packages:
-
-```bash
-cd /opt/extensilica/store-backend
-npm run run-seed
-```
+Do **not** seed demo packages here if you plan to follow **§9** (`publish-rvx-demo.sh`): seeding must run **after** the first admin user exists (**§8**), otherwise packages have no `ownerId` and `rvx-demo@1.0.0` cannot be published. See **§8 — Seed demo catalog** below.
 
 **Check from the server:**
 
@@ -292,6 +287,17 @@ curl -sS -X POST 'https://api.extensilica.com/api/auth/register' \
 ```
 
 Expect JSON with user fields (or an error if username/email already taken).
+
+### Seed demo catalog (optional, run **after** register)
+
+This inserts catalog rows for demo packages. It **assigns `ownerId`** to the user named `extensilica` by default (same username as §8), so later CLI publishes are authorized. It also leaves **`rvx-demo` without a pre-seeded `1.0.0` version**, because **§9** publishes `examples/rvx-demo@1.0.0` from your laptop; a seeded `1.0.0` row would cause **HTTP 409**.
+
+```bash
+cd /opt/extensilica/store-backend
+SEED_OWNER_USERNAME=extensilica npm run run-seed
+```
+
+If your first admin username is different, set `SEED_OWNER_USERNAME` to match. For a throwaway local database with **no** users, you may use `ALLOW_SEED_WITHOUT_OWNER=1` (not recommended for production).
 
 ---
 
