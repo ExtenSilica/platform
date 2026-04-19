@@ -4,6 +4,11 @@ import path from 'path';
 import fs from 'fs';
 import rateLimit from 'express-rate-limit';
 import { register, login, logout, me, updateMe, changePassword, forgotPassword, resetPassword, uploadAvatar } from '../controllers/authController';
+import {
+  githubOAuthStart,
+  githubOAuthCallback,
+  oauthBrowserExchange,
+} from '../controllers/oauthGithubController';
 import { getMyOrgs } from '../controllers/orgsController';
 import { requireAuth } from '../middleware/auth';
 
@@ -34,6 +39,22 @@ const forgotPasswordLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many password reset requests. Please try again in 1 hour.' },
+});
+
+const githubOAuthStartLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many OAuth attempts. Please try again in 15 minutes.' },
+});
+
+const oauthBrowserExchangeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many OAuth exchange attempts. Please try again in 15 minutes.' },
 });
 
 // Multer: store in uploads/tmp while we validate, then move to uploads/avatars/.
@@ -103,6 +124,21 @@ router.post('/register', registerLimiter, register);
  *         description: Invalid credentials.
  */
 router.post('/login', loginLimiter, login);
+
+/** GitHub OAuth: redirect to GitHub authorize URL (sets signed state cookie). */
+router.get('/github/start', githubOAuthStartLimiter, (req, res) => {
+  void githubOAuthStart(req, res);
+});
+
+/** GitHub OAuth: provider redirects here; validates state, creates session, redirects to SITE_URL/login?oauth_code=… */
+router.get('/github/callback', (req, res) => {
+  void githubOAuthCallback(req, res);
+});
+
+/** Exchange one-time oauth_code from redirect for { token, user } (same shape as POST /auth/login). */
+router.post('/oauth/exchange', oauthBrowserExchangeLimiter, (req, res) => {
+  void oauthBrowserExchange(req, res);
+});
 
 /**
  * @swagger

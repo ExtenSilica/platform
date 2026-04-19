@@ -100,6 +100,8 @@ app.get('/health', (_req: Request, res: Response) => {
 // ── Auth endpoints ─────────────────────────────────────────────
 // POST /auth/register  — create account
 // POST /auth/login     — authenticate, receive token
+// GET  /auth/github/start | /auth/github/callback — GitHub OAuth (optional)
+// POST /auth/oauth/exchange — browser handoff after GitHub redirect
 // POST /auth/logout    — invalidate token  (requires auth)
 // GET  /auth/me        — current user      (requires auth)
 app.use('/auth', authRoutes);

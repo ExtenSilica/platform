@@ -4,6 +4,8 @@
  * OAUTH_STRICT_CONFIG=true and a provider is only partially configured.
  */
 
+import { isGithubOAuthStateConfigured } from "../lib/githubOAuthState";
+
 function trimEnv(key: string): string | undefined {
   const v = process.env[key];
   if (v === undefined || v === null) return undefined;
@@ -96,21 +98,32 @@ function buildOAuthConfig(): OAuthAppConfig {
 /** Resolved once at module load (import `dotenv/config` before this module in `server.ts`). */
 export const oauthConfig: OAuthAppConfig = buildOAuthConfig();
 
+/** GitHub OAuth App vars set and state-signing secret configured (required for /auth/github/start). */
+export function isGithubOAuthReady(): boolean {
+  return oauthConfig.github.enabled && isGithubOAuthStateConfigured();
+}
+
 export function isOAuthProviderEnabled(provider: OAuthProviderId): boolean {
-  const p = provider === "github" ? oauthConfig.github : oauthConfig.google;
-  return p.enabled;
+  if (provider === "github") return isGithubOAuthReady();
+  return oauthConfig.google.enabled;
 }
 
 export function getEnabledOAuthProviders(): OAuthProviderId[] {
   const out: OAuthProviderId[] = [];
-  if (oauthConfig.github.enabled) out.push("github");
+  if (isGithubOAuthReady()) out.push("github");
   if (oauthConfig.google.enabled) out.push("google");
   return out;
 }
 
 /** Startup log line (non-sensitive). */
 export function logOAuthStartupSummary(): void {
-  const g = oauthConfig.github.enabled ? "on" : "off";
+  const gh =
+    !oauthConfig.github.enabled ? "off" : isGithubOAuthStateConfigured() ? "on" : "misconfigured";
   const o = oauthConfig.google.enabled ? "on" : "off";
-  console.log(`[oauth] github=${g} google=${o} apiBase=${oauthConfig.apiBaseUrl}`);
+  console.log(`[oauth] github=${gh} google=${o} apiBase=${oauthConfig.apiBaseUrl}`);
+  if (oauthConfig.github.enabled && !isGithubOAuthStateConfigured()) {
+    console.warn(
+      "[oauth] GitHub credentials are set but OAUTH_STATE_SECRET is missing or too short; /auth/github/start will return 503 until fixed.",
+    );
+  }
 }

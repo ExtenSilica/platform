@@ -16,6 +16,12 @@ Each provider is **enabled only when all three** variables for that provider are
 | `GITHUB_CLIENT_SECRET` | OAuth App client secret |
 | `GITHUB_CALLBACK_URL` | Absolute redirect URI registered in GitHub (must match exactly) |
 
+### GitHub OAuth state cookie
+
+| Variable | Purpose |
+|----------|---------|
+| `OAUTH_STATE_SECRET` | Secret used to **HMAC-sign** the short-lived `state` cookie for `GET /auth/github/start`. Must be **at least 16 characters** after trim. If GitHub credentials are set but this is missing or too short, GitHub OAuth is treated as **misconfigured**: startup logs a warning and `GET /auth/github/start` returns **503**. |
+
 ### Google
 
 | Variable | Purpose |
@@ -30,7 +36,7 @@ Each provider is **enabled only when all three** variables for that provider are
 |----------|---------|
 | `BASE_URL` | Public origin of **this API** (no trailing slash), e.g. `https://api.example.com`. Used for `xsilUrl`, upload URLs, password-reset links, and documented as the canonical API base for building related absolute URLs. |
 | `PORT` | HTTP listen port (default `3001`). Fallback when `BASE_URL` is unset: `http://localhost:${PORT}`. |
-| `SITE_URL` | Public origin of the **web frontend** (e.g. Next.js), used in emails and for browser redirects after login. Not used inside `src/config/oauth.ts` today but required for a complete OAuth UX once routes exist. |
+| `SITE_URL` | Public origin of the **web frontend** (e.g. Next.js), used in emails and for **post–GitHub OAuth** redirects (`/login?oauth_code=…` or `?oauth_error=…`). |
 
 Resolution helper in code: **`getApiBaseUrl()`** in `store-backend/src/config/oauth.ts` (same semantics as existing `BASE_URL` usage in `server.ts` and controllers).
 
@@ -91,7 +97,8 @@ If the API is behind a reverse proxy, `BASE_URL` and callback URLs should match 
 1. On startup, the server logs a non-sensitive summary, e.g.  
    `[oauth] github=off google=off apiBase=http://localhost:3001`
 2. **`oauthConfig`** in `store-backend/src/config/oauth.ts` exposes `github` / `google` as either `enabled: false` or `enabled: true` with credentials (for future route handlers).
-3. **`isOAuthProviderEnabled()`** / **`getEnabledOAuthProviders()`** can gate UI or `/auth/*/start` routes when implemented.
+3. **`isOAuthProviderEnabled()`** / **`getEnabledOAuthProviders()`** gate “GitHub enabled” only when both GitHub app env vars **and** `OAUTH_STATE_SECRET` are valid (`isGithubOAuthReady()`).
+4. End-to-end GitHub flow: [`github-oauth-flow.md`](./github-oauth-flow.md).
 
 ---
 
@@ -106,3 +113,4 @@ See **`store-backend/.env.example`** for a ready-to-copy block including comment
 | Date | Notes |
 |------|--------|
 | 2026-04-19 | Initial OAuth env and `oauth.ts` documentation |
+| 2026-04-19 | `OAUTH_STATE_SECRET`, `SITE_URL` OAuth redirects, `github-oauth-flow.md` link |

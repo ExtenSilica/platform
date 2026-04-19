@@ -16,11 +16,11 @@ const BCRYPT_ROUNDS = 12;
 // Characters allowed in usernames: lowercase letters, digits, hyphens, underscores.
 const USERNAME_RE = /^[a-z0-9_-]{2,32}$/;
 
-function generateToken(): string {
+export function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
-function sanitizeUser(user: {
+export function sanitizeUser(user: {
   id: number;
   username: string;
   email: string;
