@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Terminal, MailCheck } from "lucide-react";
+import { MailCheck } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -30,13 +30,11 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] items-center justify-center px-4 py-16">
+    <div className="flex flex-1 items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         {/* Brand */}
         <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full border bg-muted">
-            <Terminal className="h-5 w-5 text-muted-foreground" />
-          </div>
+          <img src="/logo.svg" alt="ExtenSilica" className="mx-auto mb-3 h-12 w-12" />
           <h1 className="text-2xl font-bold">Forgot your password?</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Enter your email and we&apos;ll send you a reset link.

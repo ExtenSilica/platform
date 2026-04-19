@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Terminal, Check } from "lucide-react";
+import { Check } from "lucide-react";
 
 const USERNAME_RE = /^[a-z][a-z0-9_-]{1,63}$/;
 
@@ -62,12 +62,10 @@ export default function RegisterPage() {
   if (isLoading) return null;
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] items-center justify-center px-4 py-16">
+    <div className="flex flex-1 items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full border bg-muted">
-            <Terminal className="h-5 w-5 text-muted-foreground" />
-          </div>
+          <img src="/logo.svg" alt="ExtenSilica" className="mx-auto mb-3 h-12 w-12" />
           <h1 className="text-2xl font-bold">Create your account</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Free and open. No credit card required.

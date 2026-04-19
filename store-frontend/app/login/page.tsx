@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
 import type { Metadata } from "next";
 
 export default function LoginPage() {
@@ -43,13 +42,11 @@ export default function LoginPage() {
   if (isLoading) return null;
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] items-center justify-center px-4 py-16">
+    <div className="flex flex-1 items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         {/* Logo / brand */}
         <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full border bg-muted">
-            <Terminal className="h-5 w-5 text-muted-foreground" />
-          </div>
+          <img src="/logo.svg" alt="ExtenSilica" className="mx-auto mb-3 h-12 w-12" />
           <h1 className="text-2xl font-bold">Sign in to ExtenSilica</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             The public registry for{" "}

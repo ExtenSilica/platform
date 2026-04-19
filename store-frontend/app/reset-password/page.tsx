@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Terminal, CheckCircle2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -52,13 +52,11 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] items-center justify-center px-4 py-16">
+    <div className="flex flex-1 items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         {/* Brand */}
         <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full border bg-muted">
-            <Terminal className="h-5 w-5 text-muted-foreground" />
-          </div>
+          <img src="/logo.svg" alt="ExtenSilica" className="mx-auto mb-3 h-12 w-12" />
           <h1 className="text-2xl font-bold">Set a new password</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Choose a password you&apos;ll remember.
@@ -139,7 +137,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[calc(100vh-56px)] items-center justify-center px-4 py-16 text-sm text-muted-foreground">
+        <div className="flex flex-1 items-center justify-center px-4 py-16 text-sm text-muted-foreground">
           Loading…
         </div>
       }
