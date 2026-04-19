@@ -6,6 +6,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, LayoutDashboard, LogOut, User, Plus, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const isHomePage = pathname === "/";
   const isSearchPage = pathname === "/search";
   const currentQuery = isSearchPage ? (searchParams.get("q") ?? "") : "";
 
@@ -42,42 +44,45 @@ export function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b-2 border-brand bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center gap-4 px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <img src="/logo.svg" alt="" className="h-7 w-7" />
-          <span className="text-lg font-bold">ExtenSilica</span>
+          <span className="text-lg font-bold">Exten<span className="text-brand-foreground">Silica</span></span>
         </Link>
 
-        <div className="relative min-w-0 flex-1 max-w-lg">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search packages…"
-            className="h-9 w-full pl-9 text-sm"
-            onChange={(e) => handleSearch(e.target.value)}
-            defaultValue={currentQuery}
-          />
-        </div>
+        {!isHomePage && (
+          <div className="relative min-w-0 flex-1 max-w-lg">
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search extensions…"
+              className="h-9 w-full pl-9 text-sm"
+              onChange={(e) => handleSearch(e.target.value)}
+              defaultValue={currentQuery}
+            />
+          </div>
+        )}
 
         <div className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
-          <Link href="/search" className="hover:text-foreground transition-colors">
-            Browse
+          <Link href="/search" className="transition-colors hover:text-riscv-accent">
+            Registry
           </Link>
-          <Link href="/faq" className="hover:text-foreground transition-colors">
+          <Link href="/faq" className="transition-colors hover:text-riscv-accent">
             FAQ
           </Link>
         </div>
 
-        {/* Auth area */}
+        {/* Theme + Auth area */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
+          <ThemeToggle />
           {isLoading ? (
             <div className="h-8 w-16 animate-pulse rounded-md bg-muted" />
           ) : user ? (
             <>
               <Link
                 href="/publish/new"
-                className="hidden sm:inline-flex h-8 items-center gap-1.5 rounded-md border bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="hidden sm:inline-flex h-8 items-center gap-1.5 rounded-md border border-transparent bg-primary px-3 text-xs font-medium text-primary-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-riscv-accent/45 hover:bg-primary/90 hover:shadow-[0_8px_20px_-6px_hsl(var(--riscv-accent)/0.35)]"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Publish
@@ -88,7 +93,7 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((o) => !o)}
-                  className="flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm hover:bg-muted transition-colors"
+                  className="flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-riscv-accent/35 hover:bg-muted hover:shadow-md"
                 >
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-bold uppercase text-primary-foreground">
                     {user.username.charAt(0)}
@@ -147,13 +152,13 @@ export function Navbar() {
             <>
               <Link
                 href="/login"
-                className="h-8 inline-flex items-center rounded-md px-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="h-8 inline-flex items-center rounded-md px-3 text-sm text-muted-foreground transition-colors hover:text-riscv-accent"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="h-8 inline-flex items-center rounded-md border bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="h-8 inline-flex items-center rounded-md border border-transparent bg-primary px-3 text-sm font-medium text-primary-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-riscv-accent/45 hover:bg-primary/90 hover:shadow-[0_8px_20px_-6px_hsl(var(--riscv-accent)/0.35)]"
               >
                 Register
               </Link>

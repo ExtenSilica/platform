@@ -20,21 +20,21 @@ export function LegalPage({ title, subtitle, updated, current, children }: Legal
     <div className="min-h-screen">
       {/* Page header */}
       <div className="border-b bg-muted/10">
-        <div className="container max-w-5xl px-4 py-8">
+          <div className="container max-w-6xl px-4 py-8">
           <p className="mb-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Legal
           </p>
           <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          {subtitle && (
-            <p className="mt-2 max-w-2xl text-muted-foreground">{subtitle}</p>
-          )}
+          <p className="mt-2 min-h-[3rem] max-w-2xl text-muted-foreground">
+            {subtitle}
+          </p>
           <p className="mt-3 text-xs text-muted-foreground">
             Last updated: {updated}
           </p>
         </div>
 
         {/* Section nav */}
-        <div className="container max-w-5xl px-4">
+        <div className="container max-w-6xl px-4">
           <nav className="flex gap-0 overflow-x-auto border-t">
             {NAV.map(({ href, label }) => (
               <Link
@@ -43,7 +43,7 @@ export function LegalPage({ title, subtitle, updated, current, children }: Legal
                 className={`shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
                   current === href
                     ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground"
+                    : "border-transparent text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-riscv-accent/40 hover:text-foreground hover:shadow-sm"
                 }`}
               >
                 {label}
@@ -54,7 +54,7 @@ export function LegalPage({ title, subtitle, updated, current, children }: Legal
       </div>
 
       {/* Body */}
-      <div className="container max-w-3xl px-4 py-12">{children}</div>
+      <div className="container max-w-5xl px-4 py-12">{children}</div>
     </div>
   );
 }
