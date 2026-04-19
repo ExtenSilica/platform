@@ -52,26 +52,6 @@ export function SearchResults() {
 
   return (
     <div className="container max-w-6xl px-4 py-10">
-      {/* Inline search form */}
-      <form onSubmit={handleSearch} className="mb-8 flex max-w-2xl gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            ref={inputRef}
-            type="search"
-            placeholder="Search packages…"
-            defaultValue={query}
-            className="h-10 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </div>
-        <button
-          type="submit"
-          className="inline-flex h-10 items-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent transition-colors"
-        >
-          Search
-        </button>
-      </form>
-
       {/* Heading */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-bold">

@@ -7,16 +7,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AlertTriangle, Download } from "lucide-react";
+import { AlertTriangle, Download, Cpu } from "lucide-react";
+
+const ISA_KEYWORDS: Record<string, string> = {
+  rvv: "RVV",
+  vector: "RVV",
+  rv32: "RV32",
+  rv64: "RV64",
+  rv64gc: "RV64GC",
+  rv32i: "RV32I",
+};
+
+function deriveIsaLabel(pkg: RegistryPackage): string {
+  const latest = pkg.versions?.[0];
+  if (latest?.isa) return latest.isa;
+
+  const kws = (pkg.keywords ?? []).map((k) => k.toLowerCase());
+  for (const kw of kws) {
+    if (ISA_KEYWORDS[kw]) return ISA_KEYWORDS[kw];
+  }
+  return "RISC-V extension";
+}
 
 export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
   const summary = pkg.shortDescription || pkg.description || "No description.";
   const version = pkg.latestVersion || pkg.version || null;
   const keywords = pkg.keywords?.slice(0, 3) ?? [];
+  const isaLabel = deriveIsaLabel(pkg);
+  const hasSpecificIsa = isaLabel !== "RISC-V extension";
 
   return (
     <Link href={`/package/${pkg.slug}`} className="group block h-full">
-      <Card className={`flex h-full flex-col transition-colors group-hover:border-primary/50 ${pkg.isDeprecated ? "opacity-75" : ""}`}>
+      <Card className={`flex h-full flex-col border-border/80 shadow-sm transition-all duration-200 ease-out will-change-transform group-hover:-translate-y-0.5 group-hover:border-riscv-accent/45 group-hover:shadow-[0_12px_32px_-8px_hsl(var(--riscv-accent)/0.14)] ${pkg.isDeprecated ? "opacity-75" : ""}`}>
         {pkg.isDeprecated && (
           <div className="flex items-center gap-1.5 rounded-t-lg border-b border-amber-200 bg-amber-50 px-3 py-1.5 dark:border-amber-800 dark:bg-amber-950/40">
             <AlertTriangle className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -25,12 +47,23 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
             </span>
           </div>
         )}
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
-            <CardTitle className="line-clamp-1 text-base">{pkg.name}</CardTitle>
+            <CardTitle className="line-clamp-1 text-base font-bold">{pkg.name}</CardTitle>
             {version && (
-              <span className="shrink-0 rounded-full border bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+              <span className="shrink-0 rounded-full border border-riscv/15 bg-riscv/[0.06] px-2 py-0.5 font-mono text-[10px] font-medium text-riscv">
                 {version}
+              </span>
+            )}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className="rounded-md border border-border/50 bg-muted/45 px-2 py-0.5 font-mono text-[10px] text-muted-foreground/80">
+              RISC-V extension
+            </span>
+            {hasSpecificIsa && (
+              <span className="inline-flex w-fit items-center gap-1 rounded-full border border-riscv/20 bg-riscv/[0.06] px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-riscv">
+                <Cpu className="h-2.5 w-2.5" strokeWidth={2.25} />
+                {isaLabel}
               </span>
             )}
           </div>
@@ -41,11 +74,11 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
             {summary}
           </p>
           {keywords.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {keywords.map((kw) => (
                 <span
                   key={kw}
-                  className="rounded-full border bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground"
+                  className="rounded-md border bg-muted/50 px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
                 >
                   {kw}
                 </span>
@@ -54,12 +87,12 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
           )}
         </CardContent>
 
-        <CardFooter className="flex items-center justify-between border-t pt-3">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <CardFooter className="flex items-center justify-between border-t border-border/60 pt-3">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Download className="h-3 w-3" />
             {pkg.totalDownloads.toLocaleString()}
-          </div>
-          <span className="text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+          </span>
+          <span className="text-xs font-medium text-riscv-accent opacity-0 transition-opacity group-hover:opacity-100">
             View →
           </span>
         </CardFooter>
