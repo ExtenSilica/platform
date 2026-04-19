@@ -149,7 +149,7 @@ Mount consistently with existing auth routes: **`/auth`** and **`/api/auth`** (m
   - **Continue with Google**
 - Keep **email / password** fields and submit buttons **visible** (no OAuth-only gate).
 - Styling: match existing design system (buttons, spacing); optional divider “or continue with email”.
-- Flow: user clicks OAuth → full navigation to backend `start` URL → provider → callback → backend redirects to **`/login?oauth=success&code=…`** (example) or dedicated **`/auth/callback`** page that reads one-time code, exchanges for `{ token, user }`, calls **`AuthContext.login(token, user)`** — exact URL scheme in implementation plan.
+- Flow: user clicks OAuth → full navigation to backend `start` URL → provider → callback → backend redirects to **`/auth/callback?oauth_code=…`**; the client exchanges the code, calls **`GET /auth/me`**, then **`AuthContext.login(token, user)`** (see [`frontend-auth-callback.md`](./frontend-auth-callback.md)).
 - **Do not** remove or hide forgot-password / register links.
 
 ---

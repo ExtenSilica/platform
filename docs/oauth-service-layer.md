@@ -75,7 +75,7 @@ Supporting pieces unchanged in role: **`oauthPendingExchange`** (one-time codes)
 | User exists? Email taken? | — | `oauthUserService` |
 | `User.username` uniqueness algorithm | **`usernameBase`** built per provider | **`allocateUniqueUsername`** |
 | `apiToken` issuance | — | `generateToken` via **`oauthUserService`** |
-| Redirect to `/login?…` | — | **`oauthService`** |
+| Redirect to `/auth/callback` / `/auth/error` | — | **`oauthService`** (`SITE_URL`) |
 
 ---
 

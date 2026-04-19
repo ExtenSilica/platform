@@ -12,10 +12,9 @@ Related backend docs: [`github-oauth-flow.md`](./github-oauth-flow.md), [`google
 
 - Users can **sign in with email and password** (unchanged) or use **Continue with GitHub** / **Continue with Google**.
 - SSO buttons use a **full browser navigation** to the registry **`GET /auth/{github|google}/start`** so the API can set the short-lived **signed `state` cookie** on the API origin (required for CSRF-safe OAuth).
-- After IdP success, the registry redirects the browser to **`{SITE_URL}/login?oauth_code=…`** or **`?oauth_error=…`**. The login page:
-  - **Exchanges** `oauth_code` via **`POST /auth/oauth/exchange`** (same registry origin as other auth calls).
-  - On success, stores the token like a normal login and sends the user to the dashboard.
-  - On `oauth_error`, shows a readable message (see `store-frontend/lib/oauth-callback-messages.ts`).
+- After IdP success, the registry redirects to **`{SITE_URL}/auth/callback?oauth_code=…`**; on failure, to **`{SITE_URL}/auth/error?oauth_error=…`** (see [`frontend-auth-callback.md`](./frontend-auth-callback.md)).
+  - **`/auth/callback`** exchanges `oauth_code`, calls **`GET /auth/me`**, then **`login()`** (same **`localStorage`** / context as password login) and redirects to the dashboard or saved **`?next=`** path.
+  - **`/auth/error`** maps `oauth_error` using `store-frontend/lib/oauth-callback-messages.ts`.
 
 ### Register (`/register`)
 
@@ -42,7 +41,8 @@ If this URL is wrong, SSO links point at the wrong host or OAuth exchange fails.
 | OAuth code exchange | **`apiOAuthExchange()`** in `store-frontend/lib/api.ts` |
 | SSO buttons + divider | **`OauthEntryBlock`** in `store-frontend/components/oauth-entry-buttons.tsx` |
 | `oauth_error` copy | **`oauthCallbackErrorMessage()`** in `store-frontend/lib/oauth-callback-messages.ts` |
-| Login handoff logic | **`store-frontend/app/login/page.tsx`** (`useEffect` on query params) |
+| OAuth callback / error routes | **`store-frontend/app/auth/callback/page.tsx`**, **`store-frontend/app/auth/error/page.tsx`** |
+| Post-login path (`?next=`) | **`store-frontend/lib/post-login-redirect.ts`** |
 
 ---
 

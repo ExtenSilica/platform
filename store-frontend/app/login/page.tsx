@@ -4,13 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { apiLogin, apiOAuthExchange, ApiError } from "@/lib/api";
+import { apiLogin, ApiError } from "@/lib/api";
+import {
+  setPostLoginRedirect,
+  consumePostLoginRedirect,
+} from "@/lib/post-login-redirect";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { OauthEntryBlock } from "@/components/oauth-entry-buttons";
-import { oauthCallbackErrorMessage } from "@/lib/oauth-callback-messages";
 
 export default function LoginPage() {
   const { user, login, isLoading } = useAuth();
@@ -20,46 +23,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [oauthFinishing, setOauthFinishing] = useState(false);
 
   useEffect(() => {
     if (!isLoading && user) router.replace("/dashboard");
   }, [user, isLoading, router]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || isLoading || user) return;
-
+    if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    const oauthError = params.get("oauth_error");
-    if (oauthError) {
-      setError(oauthCallbackErrorMessage(oauthError));
+    const next = params.get("next");
+    if (next) {
+      setPostLoginRedirect(next);
       window.history.replaceState({}, "", "/login");
-      return;
     }
-
-    const oauthCode = params.get("oauth_code")?.trim();
-    if (!oauthCode) return;
-
-    const ac = new AbortController();
-    setOauthFinishing(true);
-    setError("");
-    (async () => {
-      try {
-        const { token, user: me } = await apiOAuthExchange(oauthCode, { signal: ac.signal });
-        window.history.replaceState({}, "", "/login");
-        login(token, me);
-        router.replace("/dashboard");
-      } catch (e) {
-        if (e instanceof DOMException && e.name === "AbortError") return;
-        setError("OAuth sign-in could not be completed. The link may have expired; try again.");
-        window.history.replaceState({}, "", "/login");
-      } finally {
-        setOauthFinishing(false);
-      }
-    })();
-
-    return () => ac.abort();
-  }, [isLoading, user, login, router]);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,7 +45,7 @@ export default function LoginPage() {
     try {
       const { token, user: me } = await apiLogin(email.trim(), password);
       login(token, me);
-      router.push("/dashboard");
+      router.push(consumePostLoginRedirect());
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Login failed.");
     } finally {
@@ -91,12 +68,6 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-xl border bg-background p-8 shadow-sm">
-          {oauthFinishing && (
-            <Alert className="mb-5 border-border bg-muted/40">
-              <AlertDescription>Completing sign-in…</AlertDescription>
-            </Alert>
-          )}
-
           {error && (
             <Alert variant="destructive" className="mb-5">
               <AlertDescription>{error}</AlertDescription>
@@ -113,7 +84,6 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={oauthFinishing}
               />
             </Field>
 
@@ -127,7 +97,6 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={oauthFinishing}
                 />
                 <div className="text-right">
                   <Link
@@ -140,7 +109,7 @@ export default function LoginPage() {
               </div>
             </Field>
 
-            <Button type="submit" className="w-full" disabled={submitting || oauthFinishing}>
+            <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "Signing in…" : "Sign in"}
             </Button>
           </form>

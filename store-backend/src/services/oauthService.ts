@@ -16,13 +16,13 @@ export function getOAuthSiteUrl(): string {
 }
 
 export function buildOAuthLoginErrorRedirectUrl(oauthErrorCode: string): string {
-  const u = new URL("/login", getOAuthSiteUrl());
+  const u = new URL("/auth/error", getOAuthSiteUrl());
   u.searchParams.set("oauth_error", oauthErrorCode);
   return u.toString();
 }
 
 export function buildOAuthLoginSuccessRedirectUrl(oauthHandoffCode: string): string {
-  const u = new URL("/login", getOAuthSiteUrl());
+  const u = new URL("/auth/callback", getOAuthSiteUrl());
   u.searchParams.set("oauth_code", oauthHandoffCode);
   return u.toString();
 }

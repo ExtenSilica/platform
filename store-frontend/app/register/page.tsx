@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { apiRegister, ApiError } from "@/lib/api";
+import {
+  setPostLoginRedirect,
+  consumePostLoginRedirect,
+} from "@/lib/post-login-redirect";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
@@ -27,6 +31,16 @@ export default function RegisterPage() {
   useEffect(() => {
     if (!isLoading && user) router.replace("/dashboard");
   }, [user, isLoading, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    if (next) {
+      setPostLoginRedirect(next);
+      window.history.replaceState({}, "", "/register");
+    }
+  }, []);
 
   const usernameValid = USERNAME_RE.test(username);
   const passwordStrong = password.length >= 8;
@@ -52,7 +66,7 @@ export default function RegisterPage() {
         password
       );
       login(token, me);
-      router.push("/dashboard");
+      router.push(consumePostLoginRedirect());
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Registration failed.");
     } finally {

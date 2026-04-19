@@ -4,7 +4,7 @@ This document describes the **Google** browser OAuth 2.0 / OpenID Connect flow f
 
 **Account linking UI** (merging Google with an existing password account) is **not** implemented; behavior matches [`github-oauth-flow.md`](./github-oauth-flow.md) (no silent merge by email).
 
-Related: [`oauth-config.md`](./oauth-config.md), [`oauth-data-model.md`](./oauth-data-model.md), [`oauth-v1.md`](./oauth-v1.md), [`oauth-service-layer.md`](./oauth-service-layer.md), [`github-oauth-flow.md`](./github-oauth-flow.md) (shared `POST /auth/oauth/exchange`).
+Related: [`oauth-config.md`](./oauth-config.md), [`oauth-data-model.md`](./oauth-data-model.md), [`oauth-v1.md`](./oauth-v1.md), [`oauth-service-layer.md`](./oauth-service-layer.md), [`frontend-auth-callback.md`](./frontend-auth-callback.md), [`github-oauth-flow.md`](./github-oauth-flow.md) (shared `POST /auth/oauth/exchange`).
 
 ---
 
@@ -47,8 +47,8 @@ The user completes Google sign-in; Google redirects to **`GOOGLE_CALLBACK_URL`**
 4. **`OAuthAccount`**: `provider=google`, `providerAccountId=sub`.
 5. Same **user rules** as GitHub: existing Google link → sign in and rotate `apiToken`; new Google id with email already on another local user → **`email_exists`**; else **new `User`** + `OAuthAccount`.
 6. Issues the same **`apiToken`** as password login, stores a **one-time `oauth_code`**, **302** to  
-   `{SITE_URL}/login?oauth_code=…`  
-   (see **`POST /auth/oauth/exchange`** in [`github-oauth-flow.md`](./github-oauth-flow.md)).
+   `{SITE_URL}/auth/callback?oauth_code=…`  
+   (see **`POST /auth/oauth/exchange`** in [`github-oauth-flow.md`](./github-oauth-flow.md) and [`frontend-auth-callback.md`](./frontend-auth-callback.md)).
 
 ---
 
@@ -66,7 +66,7 @@ The user completes Google sign-in; Google redirects to **`GOOGLE_CALLBACK_URL`**
 
 ## `oauth_error` codes (Google-specific)
 
-Redirects go to `{SITE_URL}/login?oauth_error=<code>`.
+Redirects go to `{SITE_URL}/auth/error?oauth_error=<code>`.
 
 | Code | Meaning |
 |------|---------|

@@ -225,6 +225,20 @@ export async function apiRegister(
   return payload as LoginResult;
 }
 
+/** Current user from `GET /auth/me` (Bearer token). */
+export async function apiFetchMe(
+  token: string,
+  init?: { signal?: AbortSignal }
+): Promise<AuthUser | null> {
+  const res = await fetch(`${API_BASE}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+    signal: init?.signal,
+  });
+  if (!res.ok) return null;
+  return res.json() as Promise<AuthUser>;
+}
+
 /** Exchange one-time `oauth_code` query param after browser OAuth redirect. */
 export async function apiOAuthExchange(
   code: string,

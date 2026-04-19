@@ -49,8 +49,8 @@ Query parameters from GitHub:
 5. **Account rules** (see next section): find or create `User` + `OAuthAccount`, rotate **`apiToken`** like a normal login (`generateToken` + `user.update`).
 6. Creates a **one-time handoff code** (~5 minute TTL, in-memory) mapping to `{ token, user }` (same JSON shape as `POST /auth/login`’s `user` field).
 7. Redirects (**302**) to  
-   `{SITE_URL}/login?oauth_code=<one-time-code>`  
-   so the **API token is never placed in a long-lived URL** as a query param. The SPA reads `oauth_code` once and exchanges it.
+   `{SITE_URL}/auth/callback?oauth_code=<one-time-code>`  
+   so the **API token is never placed in a long-lived URL** as a query param. The SPA reads `oauth_code` once on **`/auth/callback`** and exchanges it (see [`frontend-auth-callback.md`](./frontend-auth-callback.md)).
 
 **Note:** The token stored in the pending exchange is the same **`apiToken`** field used for Bearer authentication elsewhere.
 
@@ -64,7 +64,7 @@ Completes the browser handoff after the callback redirect.
 - **Success:** `{ "token": "<apiToken>", "user": { ... } }` — same as `POST /auth/login`.
 - **Errors:** `400` if code missing, invalid, or expired.
 
-Rate-limited per IP (see `store-backend/src/routes/auth.ts`). **Google OAuth** uses the same exchange after [`google-oauth-flow.md`](./google-oauth-flow.md) redirect.
+Rate-limited per IP (see `store-backend/src/routes/auth.ts`); handler in **`store-backend/src/services/oauthService.ts`**. The Next.js app completes the handoff on **`/auth/callback`** (see [`frontend-auth-callback.md`](./frontend-auth-callback.md)). **Google OAuth** uses the same exchange after [`google-oauth-flow.md`](./google-oauth-flow.md) redirect.
 
 ---
 
@@ -86,7 +86,7 @@ Rate-limited per IP (see `store-backend/src/routes/auth.ts`). **Google OAuth** u
 
 On failure, the API redirects to:
 
-`{SITE_URL}/login?oauth_error=<code>`
+`{SITE_URL}/auth/error?oauth_error=<code>`
 
 | Code | Meaning |
 |------|---------|
@@ -99,7 +99,7 @@ On failure, the API redirects to:
 | `email_exists` | Email already registered to another local user; no silent linking. |
 | `server_error` | Unexpected persistence or internal error. |
 
-The login page should display a short message based on `oauth_error` and clear the query string after reading it.
+The **`/auth/error`** page displays a message from `oauth_error` (see [`frontend-auth-callback.md`](./frontend-auth-callback.md)).
 
 ---
 

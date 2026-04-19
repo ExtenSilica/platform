@@ -36,7 +36,7 @@ Each provider is **enabled only when all three** variables for that provider are
 |----------|---------|
 | `BASE_URL` | Public origin of **this API** (no trailing slash), e.g. `https://api.example.com`. Used for `xsilUrl`, upload URLs, password-reset links, and documented as the canonical API base for building related absolute URLs. |
 | `PORT` | HTTP listen port (default `3001`). Fallback when `BASE_URL` is unset: `http://localhost:${PORT}`. |
-| `SITE_URL` | Public origin of the **web frontend** (e.g. Next.js), used in emails and for **post–GitHub OAuth** redirects (`/login?oauth_code=…` or `?oauth_error=…`). |
+| `SITE_URL` | Public origin of the **web frontend** (e.g. Next.js), used in emails and for **post-OAuth** redirects (`/auth/callback?oauth_code=…` or `/auth/error?oauth_error=…`). |
 
 Resolution helper in code: **`getApiBaseUrl()`** in `store-backend/src/config/oauth.ts` (same semantics as existing `BASE_URL` usage in `server.ts` and controllers).
 
@@ -100,7 +100,7 @@ If the API is behind a reverse proxy, `BASE_URL` and callback URLs should match 
 3. **`isOAuthProviderEnabled()`** / **`getEnabledOAuthProviders()`** treat a provider as enabled only when its client env vars **and** `OAUTH_STATE_SECRET` are valid (`isGithubOAuthReady()` / `isGoogleOAuthReady()`).
 4. End-to-end flows: [`github-oauth-flow.md`](./github-oauth-flow.md), [`google-oauth-flow.md`](./google-oauth-flow.md).
 5. Service layout: [`oauth-service-layer.md`](./oauth-service-layer.md).
-6. Next.js store UI: [`frontend-oauth-ui.md`](./frontend-oauth-ui.md).
+6. Next.js store UI: [`frontend-oauth-ui.md`](./frontend-oauth-ui.md), [`frontend-auth-callback.md`](./frontend-auth-callback.md).
 
 ---
 
@@ -119,3 +119,4 @@ See **`store-backend/.env.example`** for a ready-to-copy block including comment
 | 2026-04-19 | Google OAuth routes; shared state secret doc; `google-oauth-flow.md` link |
 | 2026-04-19 | `oauthStateService` path; `oauth-service-layer.md` link |
 | 2026-04-19 | `frontend-oauth-ui.md` link |
+| 2026-04-19 | `SITE_URL` paths `/auth/callback`, `/auth/error`; `frontend-auth-callback.md` |
