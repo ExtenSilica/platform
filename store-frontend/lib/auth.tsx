@@ -8,9 +8,9 @@ import {
   useCallback,
 } from "react";
 
-const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
-).replace(/\/api\/?$/, "");
+import { getRegistryOrigin } from "@/lib/api";
+
+const API_BASE = getRegistryOrigin();
 
 const TOKEN_KEY = "xsil_token";
 

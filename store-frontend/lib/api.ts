@@ -10,9 +10,15 @@ import type {
 } from "@/lib/types";
 import type { AuthUser } from "@/lib/auth";
 
-const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
-).replace(/\/api\/?$/, "");
+/** Registry HTTP origin without a trailing `/api` segment (same base as `/auth/login`, `/auth/github/start`, …). */
+export function getRegistryOrigin(): string {
+  return (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api").replace(
+    /\/api\/?$/,
+    ""
+  );
+}
+
+const API_BASE = getRegistryOrigin();
 
 export class ApiError extends Error {
   constructor(
@@ -216,6 +222,28 @@ export async function apiRegister(
   const payload = await res.json() as { token?: string; user?: AuthUser; error?: string };
   if (!res.ok)
     throw new ApiError(payload.error ?? "Registration failed", res.status);
+  return payload as LoginResult;
+}
+
+/** Exchange one-time `oauth_code` query param after browser OAuth redirect. */
+export async function apiOAuthExchange(
+  code: string,
+  init?: { signal?: AbortSignal }
+): Promise<LoginResult> {
+  const res = await fetch(`${API_BASE}/auth/oauth/exchange`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+    signal: init?.signal,
+  });
+  const payload = (await res.json().catch(() => ({}))) as {
+    token?: string;
+    user?: AuthUser;
+    error?: string;
+  };
+  if (!res.ok) {
+    throw new ApiError(payload.error ?? "OAuth exchange failed", res.status);
+  }
   return payload as LoginResult;
 }
 

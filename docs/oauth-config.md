@@ -100,6 +100,7 @@ If the API is behind a reverse proxy, `BASE_URL` and callback URLs should match 
 3. **`isOAuthProviderEnabled()`** / **`getEnabledOAuthProviders()`** treat a provider as enabled only when its client env vars **and** `OAUTH_STATE_SECRET` are valid (`isGithubOAuthReady()` / `isGoogleOAuthReady()`).
 4. End-to-end flows: [`github-oauth-flow.md`](./github-oauth-flow.md), [`google-oauth-flow.md`](./google-oauth-flow.md).
 5. Service layout: [`oauth-service-layer.md`](./oauth-service-layer.md).
+6. Next.js store UI: [`frontend-oauth-ui.md`](./frontend-oauth-ui.md).
 
 ---
 
@@ -117,3 +118,4 @@ See **`store-backend/.env.example`** for a ready-to-copy block including comment
 | 2026-04-19 | `OAUTH_STATE_SECRET`, `SITE_URL` OAuth redirects, `github-oauth-flow.md` link |
 | 2026-04-19 | Google OAuth routes; shared state secret doc; `google-oauth-flow.md` link |
 | 2026-04-19 | `oauthStateService` path; `oauth-service-layer.md` link |
+| 2026-04-19 | `frontend-oauth-ui.md` link |

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { OauthEntryBlock } from "@/components/oauth-entry-buttons";
 import { Check } from "lucide-react";
 
 const USERNAME_RE = /^[a-z][a-z0-9_-]{1,63}$/;
@@ -147,7 +148,9 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+          <OauthEntryBlock className="mt-6" />
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             By registering, you agree to the{" "}
             <Link href="/legal/terms" className="underline hover:text-foreground">
               Terms of Service
