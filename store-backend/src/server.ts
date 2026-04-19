@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import swaggerUi from 'swagger-ui-express';
@@ -15,8 +15,7 @@ import { initStorage, storage } from './storage';
 import { specs } from './swagger';
 import { prisma } from './db';
 import { recordDownload, refreshWeeklyDownloads } from './analytics';
-
-dotenv.config();
+import { logOAuthStartupSummary } from './config/oauth';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -168,6 +167,7 @@ initStorage()
   .then(() => {
     app.listen(port, () => {
       console.log(`XSIL registry listening on port ${port}`);
+      logOAuthStartupSummary();
       // Start the weekly-downloads refresh loop after the server is up.
       scheduleWeeklyRefresh();
     });
