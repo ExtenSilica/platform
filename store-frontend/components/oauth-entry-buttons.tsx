@@ -33,60 +33,65 @@ function GoogleMark({ className }: { className?: string }) {
   );
 }
 
-function SsoDivider({ label }: { label: string }) {
+const oauthLinkClass =
+  "inline-flex h-10 w-full items-center justify-center gap-2.5 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background";
+
+/** Horizontal rule with centered label (e.g. between SSO and email form). */
+export function AuthMethodDivider({
+  children,
+  className,
+}: {
+  children: string;
+  className?: string;
+}) {
   return (
-    <div className="relative py-2" role="separator" aria-label={label}>
+    <div
+      className={cn("relative py-3", className)}
+      role="separator"
+      aria-label={children}
+    >
       <div className="absolute inset-0 flex items-center" aria-hidden>
         <span className="w-full border-t border-border" />
       </div>
       <div className="relative flex justify-center text-xs font-medium">
-        <span className="bg-background px-3 text-muted-foreground">{label}</span>
+        <span className="bg-background px-3 text-muted-foreground">{children}</span>
       </div>
     </div>
   );
 }
 
-const oauthLinkClass =
-  "inline-flex h-10 w-full items-center justify-center gap-2.5 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background";
-
-export type OauthEntryBlockProps = {
-  dividerLabel?: string;
+export type OauthProviderLinksProps = {
   className?: string;
 };
 
-export function OauthEntryBlock({
-  dividerLabel = "Or continue with",
-  className,
-}: OauthEntryBlockProps) {
+/** GitHub + Google registry OAuth start links (no divider). */
+export function OauthProviderLinks({ className }: OauthProviderLinksProps) {
   const origin = getRegistryOrigin();
 
   return (
-    <div className={cn("space-y-4", className)}>
-      <SsoDivider label={dividerLabel} />
-      <div className="flex flex-col gap-3">
-        <a
-          href={`${origin}/auth/github/start`}
-          className={cn(
-            oauthLinkClass,
-            "bg-zinc-900 text-zinc-50 shadow-sm hover:bg-zinc-800",
-            "dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-50"
-          )}
-        >
-          <Github className="h-[18px] w-[18px] shrink-0" strokeWidth={2} aria-hidden />
-          Continue with GitHub
-        </a>
-        <a
-          href={`${origin}/auth/google/start`}
-          className={cn(
-            oauthLinkClass,
-            "border border-input bg-background text-foreground shadow-sm",
-            "hover:bg-muted/50 dark:hover:bg-muted/30"
-          )}
-        >
-          <GoogleMark />
-          Continue with Google
-        </a>
-      </div>
+    <div className={cn("flex flex-col gap-3", className)}>
+      <a
+        href={`${origin}/auth/github/start`}
+        className={cn(
+          oauthLinkClass,
+          "bg-zinc-900 text-zinc-50 shadow-sm hover:bg-zinc-800",
+          "dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-50"
+        )}
+      >
+        <Github className="h-[18px] w-[18px] shrink-0" strokeWidth={2} aria-hidden />
+        GitHub
+      </a>
+      <a
+        href={`${origin}/auth/google/start`}
+        className={cn(
+          oauthLinkClass,
+          "border border-input bg-background text-foreground shadow-sm",
+          "hover:bg-muted/50 dark:hover:bg-muted/30"
+        )}
+      >
+        <GoogleMark />
+        Google
+      </a>
     </div>
   );
 }

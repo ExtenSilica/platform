@@ -13,7 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { OauthEntryBlock } from "@/components/oauth-entry-buttons";
+import {
+  AuthMethodDivider,
+  OauthProviderLinks,
+} from "@/components/oauth-entry-buttons";
 import { Check } from "lucide-react";
 
 const USERNAME_RE = /^[a-z][a-z0-9_-]{1,63}$/;
@@ -50,7 +53,9 @@ export default function RegisterPage() {
     setError("");
 
     if (!usernameValid) {
-      setError("Username must start with a letter and contain only lowercase letters, digits, hyphens, and underscores (2–64 chars).");
+      setError(
+        "Username must start with a letter and contain only lowercase letters, digits, hyphens, and underscores (2–64 chars)."
+      );
       return;
     }
     if (!passwordStrong) {
@@ -81,29 +86,36 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <img src="/logo.svg" alt="ExtenSilica" className="mx-auto mb-3 h-12 w-12" />
-          <h1 className="text-2xl font-bold">Create your account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Free and open. No credit card required.
+          <h1 className="text-2xl font-semibold tracking-tight">Register</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            GitHub or Google provisions an account in one step. Use email only if you want a
+            password for <code className="font-mono text-xs">xsil login</code> or local tooling.
           </p>
         </div>
 
-        <div className="rounded-xl border bg-background p-8 shadow-sm">
+        <div className="rounded-lg border bg-background p-8 shadow-sm">
           {error && (
             <Alert variant="destructive" className="mb-5">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
+          <OauthProviderLinks />
+
+          <AuthMethodDivider className="my-1">or register with email</AuthMethodDivider>
+
+          <p className="mb-4 text-xs text-muted-foreground">
+            Email path: you choose username and password. Same registry API token model as OAuth.
+          </p>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <Field
               label="Username"
               htmlFor="username"
               required
-              hint="Lowercase letters, digits, hyphens, underscores. Used in your profile URL."
+              hint="Lowercase, digits, hyphens, underscores. Shown in URLs."
               error={
-                username && !usernameValid
-                  ? "Invalid username format."
-                  : undefined
+                username && !usernameValid ? "Invalid username format." : undefined
               }
             >
               <div className="relative">
@@ -162,24 +174,22 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <OauthEntryBlock className="mt-6" />
-
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            By registering, you agree to the{" "}
-            <Link href="/legal/terms" className="underline hover:text-foreground">
-              Terms of Service
+            By registering you accept the{" "}
+            <Link href="/legal/terms" className="underline underline-offset-2 hover:text-foreground">
+              Terms
             </Link>{" "}
             and{" "}
-            <Link href="/legal/privacy" className="underline hover:text-foreground">
-              Privacy Policy
+            <Link href="/legal/privacy" className="underline underline-offset-2 hover:text-foreground">
+              Privacy
             </Link>
             .
           </p>
         </div>
 
         <p className="mt-5 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
+          Already registered?{" "}
+          <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
             Sign in
           </Link>
         </p>

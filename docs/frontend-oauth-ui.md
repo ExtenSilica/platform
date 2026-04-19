@@ -10,7 +10,7 @@ Related backend docs: [`github-oauth-flow.md`](./github-oauth-flow.md), [`google
 
 ### Login (`/login`)
 
-- Users can **sign in with email and password** (unchanged) or use **Continue with GitHub** / **Continue with Google**.
+- **GitHub** and **Google** links first (full navigation to registry **`GET /auth/{github|google}/start`**), then a divider (**or continue with email**), then the email/password form. Social sign-in is optional; email/password and the CLI (`xsil login`) remain supported.
 - SSO buttons use a **full browser navigation** to the registry **`GET /auth/{github|google}/start`** so the API can set the short-lived **signed `state` cookie** on the API origin (required for CSRF-safe OAuth).
 - After IdP success, the registry redirects to **`{SITE_URL}/auth/callback?oauth_code=…`**; on failure, to **`{SITE_URL}/auth/error?oauth_error=…`** (see [`frontend-auth-callback.md`](./frontend-auth-callback.md)).
   - **`/auth/callback`** exchanges `oauth_code`, calls **`GET /auth/me`**, then **`login()`** (same **`localStorage`** / context as password login) and redirects to the dashboard or saved **`?next=`** path.
@@ -18,8 +18,7 @@ Related backend docs: [`github-oauth-flow.md`](./github-oauth-flow.md), [`google
 
 ### Register (`/register`)
 
-- Same **Continue with GitHub / Google** entry points appear **below** the registration form.
-- OAuth is **optional**; the username/email/password flow remains primary.
+- Same **GitHub / Google** links first, then **or register with email** and the username/email/password form. Copy explains OAuth as the fast path and email registration when a password is needed for **`xsil login`**.
 
 ---
 
@@ -39,7 +38,7 @@ If this URL is wrong, SSO links point at the wrong host or OAuth exchange fails.
 |-------|----------|
 | Registry origin helper | **`getRegistryOrigin()`** in `store-frontend/lib/api.ts` |
 | OAuth code exchange | **`apiOAuthExchange()`** in `store-frontend/lib/api.ts` |
-| SSO buttons + divider | **`OauthEntryBlock`** in `store-frontend/components/oauth-entry-buttons.tsx` |
+| SSO links + divider | **`OauthProviderLinks`**, **`AuthMethodDivider`** in `store-frontend/components/oauth-entry-buttons.tsx` |
 | `oauth_error` copy | **`oauthCallbackErrorMessage()`** in `store-frontend/lib/oauth-callback-messages.ts` |
 | OAuth callback / error routes | **`store-frontend/app/auth/callback/page.tsx`**, **`store-frontend/app/auth/error/page.tsx`** |
 | Post-login path (`?next=`) | **`store-frontend/lib/post-login-redirect.ts`** |

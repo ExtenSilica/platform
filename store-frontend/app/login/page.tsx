@@ -13,7 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { OauthEntryBlock } from "@/components/oauth-entry-buttons";
+import {
+  AuthMethodDivider,
+  OauthProviderLinks,
+} from "@/components/oauth-entry-buttons";
 
 export default function LoginPage() {
   const { user, login, isLoading } = useAuth();
@@ -60,19 +63,23 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <img src="/logo.svg" alt="ExtenSilica" className="mx-auto mb-3 h-12 w-12" />
-          <h1 className="text-2xl font-bold">Sign in to ExtenSilica</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            The public registry for{" "}
-            <code className="font-mono text-xs">.xsil</code> packages
+          <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Registry for <code className="font-mono text-xs">.xsil</code> packages. GitHub and
+            Google are optional; email and password stay supported.
           </p>
         </div>
 
-        <div className="rounded-xl border bg-background p-8 shadow-sm">
+        <div className="rounded-lg border bg-background p-8 shadow-sm">
           {error && (
             <Alert variant="destructive" className="mb-5">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+
+          <OauthProviderLinks />
+
+          <AuthMethodDivider className="my-1">or continue with email</AuthMethodDivider>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Field label="Email" htmlFor="email" required>
@@ -114,22 +121,19 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <OauthEntryBlock className="mt-6" />
-
-          <div className="mt-6 border-t pt-5">
-            <p className="text-center text-sm text-muted-foreground">
-              CLI users can also authenticate with:
-            </p>
-            <div className="mt-2 rounded-md border bg-muted/50 px-3 py-2 font-mono text-xs text-muted-foreground">
+          <p className="mt-6 border-t pt-4 text-center text-xs leading-relaxed text-muted-foreground">
+            CLI: use{" "}
+            <code className="rounded border bg-muted/50 px-1.5 py-0.5 font-mono text-[11px] text-foreground">
               xsil login
-            </div>
-          </div>
+            </code>{" "}
+            with the same Bearer token—no browser OAuth required.
+          </p>
         </div>
 
         <p className="mt-5 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-medium text-primary hover:underline">
-            Create one free
+          No account?{" "}
+          <Link href="/register" className="font-medium text-foreground underline-offset-4 hover:underline">
+            Register
           </Link>
         </p>
       </div>
