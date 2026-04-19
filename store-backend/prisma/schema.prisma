@@ -27,6 +27,30 @@ model User {
   reviews             Review[]
   passwordResetTokens PasswordResetToken[]
   orgMemberships      OrgMember[]
+  oauthAccounts       OAuthAccount[]
+}
+
+/// External identity from GitHub or Google OAuth (see docs/oauth-data-model.md).
+model OAuthAccount {
+  id                  Int             @id @default(autoincrement())
+  userId              Int
+  provider            OAuthProvider
+  providerAccountId   String
+  email               String?
+  username            String?
+  avatarUrl           String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+enum OAuthProvider {
+  github
+  google
 }
 
 // ── Organisations ─────────────────────────────────────────────
