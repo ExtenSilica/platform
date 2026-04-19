@@ -4,8 +4,7 @@
  * OAUTH_STRICT_CONFIG=true and a provider is only partially configured.
  */
 
-import { isGithubOAuthStateConfigured } from "../lib/githubOAuthState";
-import { isGoogleOAuthStateConfigured } from "../lib/googleOAuthState";
+import { isOAuthStateSecretConfigured } from "../services/oauthStateService";
 
 function trimEnv(key: string): string | undefined {
   const v = process.env[key];
@@ -101,12 +100,12 @@ export const oauthConfig: OAuthAppConfig = buildOAuthConfig();
 
 /** GitHub OAuth App vars set and state-signing secret configured (required for /auth/github/start). */
 export function isGithubOAuthReady(): boolean {
-  return oauthConfig.github.enabled && isGithubOAuthStateConfigured();
+  return oauthConfig.github.enabled && isOAuthStateSecretConfigured();
 }
 
 /** Google OAuth client vars set and state-signing secret configured (required for /auth/google/start). */
 export function isGoogleOAuthReady(): boolean {
-  return oauthConfig.google.enabled && isGoogleOAuthStateConfigured();
+  return oauthConfig.google.enabled && isOAuthStateSecretConfigured();
 }
 
 export function isOAuthProviderEnabled(provider: OAuthProviderId): boolean {
@@ -124,17 +123,16 @@ export function getEnabledOAuthProviders(): OAuthProviderId[] {
 
 /** Startup log line (non-sensitive). */
 export function logOAuthStartupSummary(): void {
-  const gh =
-    !oauthConfig.github.enabled ? "off" : isGithubOAuthStateConfigured() ? "on" : "misconfigured";
-  const gl =
-    !oauthConfig.google.enabled ? "off" : isGoogleOAuthStateConfigured() ? "on" : "misconfigured";
+  const secretOk = isOAuthStateSecretConfigured();
+  const gh = !oauthConfig.github.enabled ? "off" : secretOk ? "on" : "misconfigured";
+  const gl = !oauthConfig.google.enabled ? "off" : secretOk ? "on" : "misconfigured";
   console.log(`[oauth] github=${gh} google=${gl} apiBase=${oauthConfig.apiBaseUrl}`);
-  if (oauthConfig.github.enabled && !isGithubOAuthStateConfigured()) {
+  if (oauthConfig.github.enabled && !secretOk) {
     console.warn(
       "[oauth] GitHub credentials are set but OAUTH_STATE_SECRET is missing or too short; /auth/github/start will return 503 until fixed.",
     );
   }
-  if (oauthConfig.google.enabled && !isGoogleOAuthStateConfigured()) {
+  if (oauthConfig.google.enabled && !secretOk) {
     console.warn(
       "[oauth] Google credentials are set but OAUTH_STATE_SECRET is missing or too short; /auth/google/start will return 503 until fixed.",
     );

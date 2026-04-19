@@ -4,7 +4,7 @@ This document describes the **Google** browser OAuth 2.0 / OpenID Connect flow f
 
 **Account linking UI** (merging Google with an existing password account) is **not** implemented; behavior matches [`github-oauth-flow.md`](./github-oauth-flow.md) (no silent merge by email).
 
-Related: [`oauth-config.md`](./oauth-config.md), [`oauth-data-model.md`](./oauth-data-model.md), [`oauth-v1.md`](./oauth-v1.md), [`github-oauth-flow.md`](./github-oauth-flow.md) (shared `POST /auth/oauth/exchange`).
+Related: [`oauth-config.md`](./oauth-config.md), [`oauth-data-model.md`](./oauth-data-model.md), [`oauth-v1.md`](./oauth-v1.md), [`oauth-service-layer.md`](./oauth-service-layer.md), [`github-oauth-flow.md`](./github-oauth-flow.md) (shared `POST /auth/oauth/exchange`).
 
 ---
 
@@ -25,7 +25,7 @@ Paths are mirrored under **`/auth/...`** and **`/api/auth/...`**.
 
 1. **503** if Google client env is incomplete or `OAUTH_STATE_SECRET` is invalid.
 2. Generates random **`state`** (hex).
-3. Sets **HttpOnly** `SameSite=Lax` cookie **`xsil_oauth_google_state`**: HMAC-signed payload binding the browser to `state` (same pattern as GitHub, separate cookie name).
+3. Sets **HttpOnly** `SameSite=Lax` cookie **`xsil_oauth_google_state`**: HMAC-signed payload binding the browser to `state` (same pattern as GitHub, separate cookie name), via **`oauthStateService`**.
 4. **302** to  
    `https://accounts.google.com/o/oauth2/v2/auth`  
    with `client_id`, `redirect_uri`, `response_type=code`, `scope=openid email profile`, and `state`.

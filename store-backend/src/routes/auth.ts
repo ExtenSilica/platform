@@ -4,11 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import rateLimit from 'express-rate-limit';
 import { register, login, logout, me, updateMe, changePassword, forgotPassword, resetPassword, uploadAvatar } from '../controllers/authController';
-import {
-  githubOAuthStart,
-  githubOAuthCallback,
-  oauthBrowserExchange,
-} from '../controllers/oauthGithubController';
+import { githubOAuthStart, githubOAuthCallback } from '../controllers/oauthGithubController';
+import { oauthBrowserExchange } from '../services/oauthService';
 import { googleOAuthStart, googleOAuthCallback } from '../controllers/oauthGoogleController';
 import { getMyOrgs } from '../controllers/orgsController';
 import { requireAuth } from '../middleware/auth';

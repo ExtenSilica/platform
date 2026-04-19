@@ -20,7 +20,7 @@ Each provider is **enabled only when all three** variables for that provider are
 
 | Variable | Purpose |
 |----------|---------|
-| `OAUTH_STATE_SECRET` | Secret used to **HMAC-sign** short-lived `state` cookies: **`xsil_oauth_github_state`** (`GET /auth/github/start`) and **`xsil_oauth_google_state`** (`GET /auth/google/start`). Must be **at least 16 characters** after trim. If credentials for a provider are set but this is missing or too short, that provider is **misconfigured**: startup logs a warning and the corresponding **`/auth/*/start`** returns **503**. |
+| `OAUTH_STATE_SECRET` | Secret used to **HMAC-sign** short-lived `state` cookies: **`xsil_oauth_github_state`** (`GET /auth/github/start`) and **`xsil_oauth_google_state`** (`GET /auth/google/start`). Implemented in **`store-backend/src/services/oauthStateService.ts`**. Must be **at least 16 characters** after trim. If credentials for a provider are set but this is missing or too short, that provider is **misconfigured**: startup logs a warning and the corresponding **`/auth/*/start`** returns **503**. |
 
 ### Google
 
@@ -99,6 +99,7 @@ If the API is behind a reverse proxy, `BASE_URL` and callback URLs should match 
 2. **`oauthConfig`** in `store-backend/src/config/oauth.ts` exposes `github` / `google` as either `enabled: false` or `enabled: true` with credentials (for future route handlers).
 3. **`isOAuthProviderEnabled()`** / **`getEnabledOAuthProviders()`** treat a provider as enabled only when its client env vars **and** `OAUTH_STATE_SECRET` are valid (`isGithubOAuthReady()` / `isGoogleOAuthReady()`).
 4. End-to-end flows: [`github-oauth-flow.md`](./github-oauth-flow.md), [`google-oauth-flow.md`](./google-oauth-flow.md).
+5. Service layout: [`oauth-service-layer.md`](./oauth-service-layer.md).
 
 ---
 
@@ -115,3 +116,4 @@ See **`store-backend/.env.example`** for a ready-to-copy block including comment
 | 2026-04-19 | Initial OAuth env and `oauth.ts` documentation |
 | 2026-04-19 | `OAUTH_STATE_SECRET`, `SITE_URL` OAuth redirects, `github-oauth-flow.md` link |
 | 2026-04-19 | Google OAuth routes; shared state secret doc; `google-oauth-flow.md` link |
+| 2026-04-19 | `oauthStateService` path; `oauth-service-layer.md` link |

@@ -1,6 +1,13 @@
 import crypto from "crypto";
 
-const COOKIE_NAME = "xsil_oauth_google_state";
+/** Which OAuth IdP this `state` cookie belongs to (separate cookie names, same signing secret). */
+export type OAuthStateCookieProvider = "github" | "google";
+
+const COOKIE_NAMES: Record<OAuthStateCookieProvider, string> = {
+  github: "xsil_oauth_github_state",
+  google: "xsil_oauth_google_state",
+};
+
 const COOKIE_MAX_AGE_SEC = 600;
 
 function getSecret(): string | undefined {
@@ -8,23 +15,36 @@ function getSecret(): string | undefined {
   return s && s.length >= 16 ? s : undefined;
 }
 
-/** Same env as GitHub (`OAUTH_STATE_SECRET`); separate cookie name for Google `state`. */
-export function isGoogleOAuthStateConfigured(): boolean {
+/** `OAUTH_STATE_SECRET` present and long enough for HMAC signing. */
+export function isOAuthStateSecretConfigured(): boolean {
   return Boolean(getSecret());
 }
 
-export function setGoogleOAuthStateCookie(res: { setHeader: (n: string, v: string | string[]) => void }, stateNonce: string): void {
+export function createOAuthStateNonce(): string {
+  return crypto.randomBytes(24).toString("hex");
+}
+
+export function setOAuthStateCookie(
+  res: { setHeader: (n: string, v: string | string[]) => void },
+  provider: OAuthStateCookieProvider,
+  stateNonce: string,
+): void {
   const secret = getSecret();
   if (!secret) throw new Error("OAUTH_STATE_SECRET is not set");
+  const name = COOKIE_NAMES[provider];
   const exp = Date.now() + COOKIE_MAX_AGE_SEC * 1000;
   const payload = Buffer.from(JSON.stringify({ n: stateNonce, exp }), "utf8").toString("base64url");
   const sig = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
-  const cookie = `${COOKIE_NAME}=${encodeURIComponent(`${sig}.${payload}`)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${COOKIE_MAX_AGE_SEC}`;
+  const cookie = `${name}=${encodeURIComponent(`${sig}.${payload}`)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${COOKIE_MAX_AGE_SEC}`;
   res.setHeader("Set-Cookie", cookie);
 }
 
-export function clearGoogleOAuthStateCookie(res: { setHeader: (n: string, v: string | string[]) => void }): void {
-  res.setHeader("Set-Cookie", `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+export function clearOAuthStateCookie(
+  res: { setHeader: (n: string, v: string | string[]) => void },
+  provider: OAuthStateCookieProvider,
+): void {
+  const name = COOKIE_NAMES[provider];
+  res.setHeader("Set-Cookie", `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
 }
 
 function parseCookies(header: string | undefined): Record<string, string> {
@@ -40,13 +60,19 @@ function parseCookies(header: string | undefined): Record<string, string> {
   return out;
 }
 
-export function verifyGoogleOAuthState(req: { headers: { cookie?: string }; query: Record<string, unknown> }): boolean {
+/**
+ * Verifies signed cookie for `provider` matches `state` query param (timing-safe on inner nonce).
+ */
+export function verifyOAuthStateCookie(
+  req: { headers: { cookie?: string }; query: Record<string, unknown> },
+  provider: OAuthStateCookieProvider,
+): boolean {
   const secret = getSecret();
   if (!secret) return false;
   const stateQ = typeof req.query.state === "string" ? req.query.state.trim() : "";
   if (!stateQ || stateQ.length > 200) return false;
 
-  const raw = parseCookies(req.headers.cookie)[COOKIE_NAME];
+  const raw = parseCookies(req.headers.cookie)[COOKIE_NAMES[provider]];
   if (!raw) return false;
   const dot = raw.indexOf(".");
   if (dot < 1) return false;
@@ -71,4 +97,6 @@ export function verifyGoogleOAuthState(req: { headers: { cookie?: string }; quer
   return true;
 }
 
-export { COOKIE_NAME as GOOGLE_OAUTH_STATE_COOKIE_NAME };
+export function oauthStateCookieName(provider: OAuthStateCookieProvider): string {
+  return COOKIE_NAMES[provider];
+}

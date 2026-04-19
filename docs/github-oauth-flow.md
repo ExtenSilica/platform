@@ -2,7 +2,7 @@
 
 This document describes the **GitHub** browser OAuth flow implemented by the XSIL registry API: routes, state handling, user creation rules, redirects, and error codes.
 
-Related: [`oauth-config.md`](./oauth-config.md) (environment variables), [`oauth-data-model.md`](./oauth-data-model.md) (`OAuthAccount` persistence), [`oauth-v1.md`](./oauth-v1.md) (broader OAuth architecture).
+Related: [`oauth-config.md`](./oauth-config.md) (environment variables), [`oauth-data-model.md`](./oauth-data-model.md) (`OAuthAccount` persistence), [`oauth-v1.md`](./oauth-v1.md) (broader OAuth architecture), [`oauth-service-layer.md`](./oauth-service-layer.md) (backend module boundaries).
 
 ---
 
@@ -23,7 +23,7 @@ Mirrored paths: **`/auth/...`** and **`/api/auth/...`** (same handlers).
 
 1. Returns **503** if GitHub is not fully configured or `OAUTH_STATE_SECRET` is missing/short.
 2. Generates a cryptographically random **`state`** nonce (hex).
-3. Stores it in an **HttpOnly**, **`SameSite=Lax`** cookie (`xsil_oauth_github_state`) as an **HMAC-signed** payload bound to that nonce and an expiry (~10 minutes). This matches the pattern of keeping sensitive short-lived data **server-side** without a shared session store: verification is cryptographic + cookie binding.
+3. Stores it in an **HttpOnly**, **`SameSite=Lax`** cookie (`xsil_oauth_github_state`) as an **HMAC-signed** payload bound to that nonce and an expiry (~10 minutes), via **`oauthStateService`**. This matches the pattern of keeping sensitive short-lived data **server-side** without a shared session store: verification is cryptographic + cookie binding.
 4. Redirects (**302**) to  
    `https://github.com/login/oauth/authorize`  
    with `client_id`, `redirect_uri` (= `GITHUB_CALLBACK_URL`), `scope=read:user user:email`, `state`, and `allow_signup=true`.
