@@ -180,7 +180,25 @@ router.post('/logout', requireAuth, logout);
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: User profile (no password hash, no token).
+ *         description: User profile (no password hash, no token), plus OAuth link summary.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [user, oauthProviders]
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                 oauthProviders:
+ *                   type: object
+ *                   required: [hasGithub, hasGoogle]
+ *                   properties:
+ *                     hasGithub:
+ *                       type: boolean
+ *                       description: Whether a GitHub OAuth account is linked.
+ *                     hasGoogle:
+ *                       type: boolean
+ *                       description: Whether a Google OAuth account is linked.
  *       401:
  *         description: Not authenticated.
  */

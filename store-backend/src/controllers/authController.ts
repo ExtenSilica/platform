@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { prisma } from '../db';
 import { sendPasswordResetEmail } from '../mailer';
+import { getOAuthProviderSummaryForUser } from '../services/oauthProviderSummary';
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -158,9 +159,11 @@ export async function logout(req: Request, res: Response): Promise<void> {
  * GET /auth/me
  * Requires: Authorization: Bearer <token>
  * Returns the authenticated user's public profile. Never returns passwordHash or apiToken.
+ * Includes `oauthProviders` (hasGithub / hasGoogle) for account settings; additive for clients.
  */
 export async function me(req: Request, res: Response): Promise<void> {
-  res.json({ user: req.user });
+  const oauthProviders = await getOAuthProviderSummaryForUser(req.user!.id);
+  res.json({ user: req.user, oauthProviders });
 }
 
 /**
