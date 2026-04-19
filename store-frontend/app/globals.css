@@ -10,8 +10,9 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary = RISC-V accent (deep red): shared with interactive emphasis */
+    --primary: 12 72% 44%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
@@ -22,32 +23,54 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 12 72% 44%;
     --radius: 0.5rem;
+    --brand: 44 56% 80%;
+    --brand-foreground: 40 32% 18%;
+    --riscv: 215 61% 26%;
+    --riscv-light: 215 58% 39%;
+    --riscv-muted: 215 47% 94%;
+    --riscv-accent: 12 72% 44%;
+    /* Hero backdrop — execution zone (light: cool neutrals) */
+    --hero-flow-line: 215 18% 52%;
+    --hero-terminal-radial-inner: 215 22% 98%;
+    --hero-terminal-radial-mid: 215 18% 94%;
+    --hero-terminal-radial-edge: 215 25% 86%;
+    --hero-title-radial: 215 30% 40%;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: 222.2 84% 4.9%;
-      --foreground: 210 40% 98%;
-      --card: 222.2 84% 4.9%;
-      --card-foreground: 210 40% 98%;
-      --popover: 222.2 84% 4.9%;
-      --popover-foreground: 210 40% 98%;
-      --primary: 210 40% 98%;
-      --primary-foreground: 222.2 47.4% 11.2%;
-      --secondary: 217.2 32.6% 17.5%;
-      --secondary-foreground: 210 40% 98%;
-      --muted: 217.2 32.6% 17.5%;
-      --muted-foreground: 215 20.2% 65.1%;
-      --accent: 217.2 32.6% 17.5%;
-      --accent-foreground: 210 40% 98%;
-      --destructive: 0 62.8% 30.6%;
-      --destructive-foreground: 210 40% 98%;
-      --border: 217.2 32.6% 17.5%;
-      --input: 217.2 32.6% 17.5%;
-      --ring: 212.7 26.8% 83.9%;
-    }
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 16 75% 58%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 16 75% 58%;
+    --brand: 44 56% 80%;
+    --brand-foreground: 44 50% 78%;
+    --riscv: 215 60% 65%;
+    --riscv-light: 215 65% 72%;
+    --riscv-muted: 215 30% 15%;
+    --riscv-accent: 16 75% 58%;
+    /* Hero — deep blue-gray execution field (not pure black) */
+    --hero-flow-line: 215 32% 42%;
+    --hero-terminal-radial-inner: 218 24% 22%;
+    --hero-terminal-radial-mid: 220 26% 14%;
+    --hero-terminal-radial-edge: 222 30% 7%;
+    --hero-title-radial: 215 40% 55%;
   }
 }
 
@@ -59,4 +82,25 @@
     @apply bg-background text-foreground;
     font-family: var(--font-inter), Arial, Helvetica, sans-serif;
   }
+}
+
+@keyframes flow-sweep {
+  0%   { background-position: 400% 0; }
+  100% { background-position: -400% 0; }
+}
+
+@keyframes flow-sweep-v {
+  0%   { background-position: 0 400%; }
+  100% { background-position: 0 -400%; }
+}
+
+/* Softer secondary pulse on pipeline line (same timing, offset via animation-delay) */
+@keyframes flow-sweep-soft {
+  0%   { background-position: 350% 0; }
+  100% { background-position: -350% 0; }
+}
+
+@keyframes flow-sweep-soft-v {
+  0%   { background-position: 0 350%; }
+  100% { background-position: 0 -350%; }
 }

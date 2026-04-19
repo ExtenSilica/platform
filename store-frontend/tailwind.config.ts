@@ -1,13 +1,16 @@
 import type { Config } from "tailwindcss"
 
 const config: Config = {
-  darkMode: "media",
+  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    container: {
+      center: true,
+    },
     extend: {
       colors: {
         background: "hsl(var(--background))",
@@ -43,6 +46,16 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          foreground: "hsl(var(--brand-foreground))",
+        },
+        riscv: {
+          DEFAULT: "hsl(var(--riscv))",
+          light: "hsl(var(--riscv-light))",
+          muted: "hsl(var(--riscv-muted))",
+          accent: "hsl(var(--riscv-accent))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
