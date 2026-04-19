@@ -101,7 +101,8 @@ app.get('/health', (_req: Request, res: Response) => {
 // POST /auth/register  — create account
 // POST /auth/login     — authenticate, receive token
 // GET  /auth/github/start | /auth/github/callback — GitHub OAuth (optional)
-// POST /auth/oauth/exchange — browser handoff after GitHub redirect
+// GET  /auth/google/start  | /auth/google/callback  — Google OAuth (optional)
+// POST /auth/oauth/exchange — browser handoff after OAuth redirect (GitHub / Google)
 // POST /auth/logout    — invalidate token  (requires auth)
 // GET  /auth/me        — current user      (requires auth)
 app.use('/auth', authRoutes);

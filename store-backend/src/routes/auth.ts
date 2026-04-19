@@ -9,6 +9,7 @@ import {
   githubOAuthCallback,
   oauthBrowserExchange,
 } from '../controllers/oauthGithubController';
+import { googleOAuthStart, googleOAuthCallback } from '../controllers/oauthGoogleController';
 import { getMyOrgs } from '../controllers/orgsController';
 import { requireAuth } from '../middleware/auth';
 
@@ -42,6 +43,14 @@ const forgotPasswordLimiter = rateLimit({
 });
 
 const githubOAuthStartLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many OAuth attempts. Please try again in 15 minutes.' },
+});
+
+const googleOAuthStartLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: 'draft-7',
@@ -133,6 +142,16 @@ router.get('/github/start', githubOAuthStartLimiter, (req, res) => {
 /** GitHub OAuth: provider redirects here; validates state, creates session, redirects to SITE_URL/login?oauth_code=… */
 router.get('/github/callback', (req, res) => {
   void githubOAuthCallback(req, res);
+});
+
+/** Google OAuth: redirect to Google authorization URL (sets signed state cookie). */
+router.get('/google/start', googleOAuthStartLimiter, (req, res) => {
+  void googleOAuthStart(req, res);
+});
+
+/** Google OAuth: provider redirects here; same handoff as GitHub (`oauth_code` + POST /auth/oauth/exchange). */
+router.get('/google/callback', (req, res) => {
+  void googleOAuthCallback(req, res);
 });
 
 /** Exchange one-time oauth_code from redirect for { token, user } (same shape as POST /auth/login). */

@@ -64,7 +64,7 @@ Completes the browser handoff after the callback redirect.
 - **Success:** `{ "token": "<apiToken>", "user": { ... } }` — same as `POST /auth/login`.
 - **Errors:** `400` if code missing, invalid, or expired.
 
-Rate-limited per IP (see `store-backend/src/routes/auth.ts`).
+Rate-limited per IP (see `store-backend/src/routes/auth.ts`). **Google OAuth** uses the same exchange after [`google-oauth-flow.md`](./google-oauth-flow.md) redirect.
 
 ---
 

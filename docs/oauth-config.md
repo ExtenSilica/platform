@@ -16,11 +16,11 @@ Each provider is **enabled only when all three** variables for that provider are
 | `GITHUB_CLIENT_SECRET` | OAuth App client secret |
 | `GITHUB_CALLBACK_URL` | Absolute redirect URI registered in GitHub (must match exactly) |
 
-### GitHub OAuth state cookie
+### OAuth `state` cookie (GitHub and Google)
 
 | Variable | Purpose |
 |----------|---------|
-| `OAUTH_STATE_SECRET` | Secret used to **HMAC-sign** the short-lived `state` cookie for `GET /auth/github/start`. Must be **at least 16 characters** after trim. If GitHub credentials are set but this is missing or too short, GitHub OAuth is treated as **misconfigured**: startup logs a warning and `GET /auth/github/start` returns **503**. |
+| `OAUTH_STATE_SECRET` | Secret used to **HMAC-sign** short-lived `state` cookies: **`xsil_oauth_github_state`** (`GET /auth/github/start`) and **`xsil_oauth_google_state`** (`GET /auth/google/start`). Must be **at least 16 characters** after trim. If credentials for a provider are set but this is missing or too short, that provider is **misconfigured**: startup logs a warning and the corresponding **`/auth/*/start`** returns **503**. |
 
 ### Google
 
@@ -97,8 +97,8 @@ If the API is behind a reverse proxy, `BASE_URL` and callback URLs should match 
 1. On startup, the server logs a non-sensitive summary, e.g.  
    `[oauth] github=off google=off apiBase=http://localhost:3001`
 2. **`oauthConfig`** in `store-backend/src/config/oauth.ts` exposes `github` / `google` as either `enabled: false` or `enabled: true` with credentials (for future route handlers).
-3. **`isOAuthProviderEnabled()`** / **`getEnabledOAuthProviders()`** gate “GitHub enabled” only when both GitHub app env vars **and** `OAUTH_STATE_SECRET` are valid (`isGithubOAuthReady()`).
-4. End-to-end GitHub flow: [`github-oauth-flow.md`](./github-oauth-flow.md).
+3. **`isOAuthProviderEnabled()`** / **`getEnabledOAuthProviders()`** treat a provider as enabled only when its client env vars **and** `OAUTH_STATE_SECRET` are valid (`isGithubOAuthReady()` / `isGoogleOAuthReady()`).
+4. End-to-end flows: [`github-oauth-flow.md`](./github-oauth-flow.md), [`google-oauth-flow.md`](./google-oauth-flow.md).
 
 ---
 
@@ -114,3 +114,4 @@ See **`store-backend/.env.example`** for a ready-to-copy block including comment
 |------|--------|
 | 2026-04-19 | Initial OAuth env and `oauth.ts` documentation |
 | 2026-04-19 | `OAUTH_STATE_SECRET`, `SITE_URL` OAuth redirects, `github-oauth-flow.md` link |
+| 2026-04-19 | Google OAuth routes; shared state secret doc; `google-oauth-flow.md` link |

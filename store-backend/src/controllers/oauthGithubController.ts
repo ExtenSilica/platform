@@ -334,7 +334,7 @@ export async function githubOAuthCallback(req: Request, res: Response): Promise<
 
 /**
  * POST /auth/oauth/exchange
- * Body: { code } — one-time code from ?oauth_code= after GitHub redirect.
+ * Body: { code } — one-time code from ?oauth_code= after GitHub or Google OAuth redirect.
  */
 export async function oauthBrowserExchange(req: Request, res: Response): Promise<void> {
   const code = typeof req.body?.code === "string" ? req.body.code.trim() : "";

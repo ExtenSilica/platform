@@ -5,6 +5,7 @@
  */
 
 import { isGithubOAuthStateConfigured } from "../lib/githubOAuthState";
+import { isGoogleOAuthStateConfigured } from "../lib/googleOAuthState";
 
 function trimEnv(key: string): string | undefined {
   const v = process.env[key];
@@ -103,15 +104,21 @@ export function isGithubOAuthReady(): boolean {
   return oauthConfig.github.enabled && isGithubOAuthStateConfigured();
 }
 
+/** Google OAuth client vars set and state-signing secret configured (required for /auth/google/start). */
+export function isGoogleOAuthReady(): boolean {
+  return oauthConfig.google.enabled && isGoogleOAuthStateConfigured();
+}
+
 export function isOAuthProviderEnabled(provider: OAuthProviderId): boolean {
   if (provider === "github") return isGithubOAuthReady();
-  return oauthConfig.google.enabled;
+  if (provider === "google") return isGoogleOAuthReady();
+  return false;
 }
 
 export function getEnabledOAuthProviders(): OAuthProviderId[] {
   const out: OAuthProviderId[] = [];
   if (isGithubOAuthReady()) out.push("github");
-  if (oauthConfig.google.enabled) out.push("google");
+  if (isGoogleOAuthReady()) out.push("google");
   return out;
 }
 
@@ -119,11 +126,17 @@ export function getEnabledOAuthProviders(): OAuthProviderId[] {
 export function logOAuthStartupSummary(): void {
   const gh =
     !oauthConfig.github.enabled ? "off" : isGithubOAuthStateConfigured() ? "on" : "misconfigured";
-  const o = oauthConfig.google.enabled ? "on" : "off";
-  console.log(`[oauth] github=${gh} google=${o} apiBase=${oauthConfig.apiBaseUrl}`);
+  const gl =
+    !oauthConfig.google.enabled ? "off" : isGoogleOAuthStateConfigured() ? "on" : "misconfigured";
+  console.log(`[oauth] github=${gh} google=${gl} apiBase=${oauthConfig.apiBaseUrl}`);
   if (oauthConfig.github.enabled && !isGithubOAuthStateConfigured()) {
     console.warn(
       "[oauth] GitHub credentials are set but OAUTH_STATE_SECRET is missing or too short; /auth/github/start will return 503 until fixed.",
+    );
+  }
+  if (oauthConfig.google.enabled && !isGoogleOAuthStateConfigured()) {
+    console.warn(
+      "[oauth] Google credentials are set but OAUTH_STATE_SECRET is missing or too short; /auth/google/start will return 503 until fixed.",
     );
   }
 }
