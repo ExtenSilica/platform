@@ -5,5 +5,7 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["test/**/*.test.ts"],
+    setupFiles: ["test/setup-oauth-env.ts"],
+    pool: "forks",
   },
 });
