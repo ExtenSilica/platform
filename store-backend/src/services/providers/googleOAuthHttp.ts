@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { OAuthProvider } from "@prisma/client";
-import type { OAuthCanonicalIdentity } from "../oauthUserService";
+import type { OAuthCanonicalIdentity } from "../oauthTypes";
 
 const USERNAME_RE = /^[a-z0-9_-]{2,32}$/;
 

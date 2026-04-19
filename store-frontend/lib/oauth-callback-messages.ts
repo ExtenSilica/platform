@@ -15,6 +15,8 @@ export function oauthCallbackErrorMessage(code: string): string {
     github_no_email: "GitHub did not provide a verified email. Grant email access or use another method.",
     google_no_email: "Google did not provide a verified email. Use another method.",
     server_error: "Something went wrong during sign-in. Please try again later.",
+    oauth_invalid_profile:
+      "Sign-in data from the provider was invalid or incomplete. Try again or use email and password.",
   };
   return map[code] ?? "Sign-in could not be completed. Try again or use email and password.";
 }

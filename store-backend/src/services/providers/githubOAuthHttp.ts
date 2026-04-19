@@ -1,5 +1,5 @@
 import { OAuthProvider } from "@prisma/client";
-import type { OAuthCanonicalIdentity } from "../oauthUserService";
+import type { OAuthCanonicalIdentity } from "../oauthTypes";
 
 /**
  * GitHub-only: authorization URL for browser redirect.

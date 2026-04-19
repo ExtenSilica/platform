@@ -2,7 +2,7 @@
 
 This document describes how the **Next.js store** completes OAuth after the **registry API** redirects the browser back from GitHub or Google: dedicated routes, **`localStorage`** token handling (same as email/password login), **`GET /auth/me`**, and optional **return navigation**.
 
-Related: [`frontend-oauth-ui.md`](./frontend-oauth-ui.md), [`github-oauth-flow.md`](./github-oauth-flow.md), [`google-oauth-flow.md`](./google-oauth-flow.md), [`oauth-service-layer.md`](./oauth-service-layer.md).
+Related: [`frontend-oauth-ui.md`](./frontend-oauth-ui.md), [`github-oauth-flow.md`](./github-oauth-flow.md), [`google-oauth-flow.md`](./google-oauth-flow.md), [`oauth-service-layer.md`](./oauth-service-layer.md), [`oauth-security.md`](./oauth-security.md).
 
 ---
 

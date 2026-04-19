@@ -3,28 +3,14 @@ import bcrypt from "bcryptjs";
 import { OAuthProvider, Prisma, type User } from "@prisma/client";
 import { prisma } from "../db";
 import { generateToken } from "../controllers/authController";
+import { validateAndNormalizeOAuthIdentity } from "./oauthIdentityValidation";
+import type { OAuthCanonicalIdentity, OAuthSignInResult } from "./oauthTypes";
+
+export type { OAuthCanonicalIdentity, OAuthSignInResult } from "./oauthTypes";
 
 const BCRYPT_ROUNDS = 12;
 
 const USERNAME_RE = /^[a-z0-9_-]{2,32}$/;
-
-/**
- * Provider-neutral identity after HTTP/profile steps.
- * `accountLabel` is stored on `OAuthAccount.username` (GitHub login, Google display name).
- * `usernameBase` seeds local `User.username` before collision suffixes.
- */
-export type OAuthCanonicalIdentity = {
-  provider: OAuthProvider;
-  providerAccountId: string;
-  email: string;
-  accountLabel: string | null;
-  avatarUrl: string | null;
-  usernameBase: string;
-};
-
-export type OAuthSignInResult =
-  | { ok: true; user: User }
-  | { ok: false; error: "email_exists" | "server_error" };
 
 /**
  * Allocate a unique `User.username` from a normalized base; `fallbackPrefix` seeds random names (e.g. `gh`, `g`).
@@ -51,12 +37,50 @@ export async function randomOAuthOnlyPasswordHash(): Promise<string> {
   return bcrypt.hash(raw, BCRYPT_ROUNDS);
 }
 
+async function rotateTokenAndSyncOAuthAccount(params: {
+  user: User;
+  provider: OAuthProvider;
+  providerAccountId: string;
+  email: string;
+  accountLabel: string | null;
+  avatarUrl: string | null;
+}): Promise<User> {
+  const { user, provider, providerAccountId, email, accountLabel, avatarUrl } = params;
+  const apiToken = generateToken();
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      apiToken,
+      avatarUrl: user.avatarUrl ?? avatarUrl ?? undefined,
+    },
+  });
+  await prisma.oAuthAccount.update({
+    where: {
+      provider_providerAccountId: {
+        provider,
+        providerAccountId,
+      },
+    },
+    data: {
+      email,
+      username: accountLabel ?? undefined,
+      avatarUrl: avatarUrl ?? undefined,
+    },
+  });
+  return updated;
+}
+
 /**
  * Find or create `User` + `OAuthAccount`, rotate `apiToken` (same semantics as password login).
  * Does not perform HTTP or redirects.
  */
 export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity): Promise<OAuthSignInResult> {
-  const { provider, providerAccountId, email, accountLabel, avatarUrl } = identity;
+  const validated = validateAndNormalizeOAuthIdentity(identity);
+  if (!validated.ok) {
+    return { ok: false, error: "invalid_identity" };
+  }
+
+  const { provider, providerAccountId, email, accountLabel, avatarUrl } = validated.identity;
 
   try {
     const existingLink = await prisma.oAuthAccount.findUnique({
@@ -69,29 +93,57 @@ export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity
       include: { user: true },
     });
 
-    let user = existingLink?.user ?? null;
+    if (existingLink?.user) {
+      const user = await rotateTokenAndSyncOAuthAccount({
+        user: existingLink.user,
+        provider,
+        providerAccountId,
+        email,
+        accountLabel,
+        avatarUrl,
+      });
+      return { ok: true, user };
+    }
 
-    if (!user) {
-      const emailOwner = await prisma.user.findUnique({ where: { email } });
-      if (emailOwner) {
-        return { ok: false, error: "email_exists" };
+    const emailOwner = await prisma.user.findUnique({ where: { email } });
+    if (emailOwner) {
+      return { ok: false, error: "email_exists" };
+    }
+
+    const fallbackPrefix = provider === OAuthProvider.github ? "gh" : "g";
+    const username = await allocateUniqueUsername(validated.identity.usernameBase, fallbackPrefix);
+    const passwordHash = await randomOAuthOnlyPasswordHash();
+    const apiToken = generateToken();
+
+    const txnResult = await prisma.$transaction(async (tx) => {
+      const raced = await tx.oAuthAccount.findUnique({
+        where: {
+          provider_providerAccountId: {
+            provider,
+            providerAccountId,
+          },
+        },
+        include: { user: true },
+      });
+      if (raced?.user) {
+        return { kind: "raced_existing" as const, user: raced.user };
       }
 
-      const fallbackPrefix = provider === OAuthProvider.github ? "gh" : "g";
-      const username = await allocateUniqueUsername(identity.usernameBase, fallbackPrefix);
-      const passwordHash = await randomOAuthOnlyPasswordHash();
-      const apiToken = generateToken();
+      const emailAgain = await tx.user.findUnique({ where: { email } });
+      if (emailAgain) {
+        return { kind: "email_exists" as const };
+      }
 
-      const created = await prisma.$transaction(async (tx) => {
-        const u = await tx.user.create({
-          data: {
-            username,
-            email,
-            passwordHash,
-            apiToken,
-            avatarUrl,
-          },
-        });
+      const u = await tx.user.create({
+        data: {
+          username,
+          email,
+          passwordHash,
+          apiToken,
+          avatarUrl,
+        },
+      });
+      try {
         await tx.oAuthAccount.create({
           data: {
             userId: u.id,
@@ -102,34 +154,41 @@ export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity
             avatarUrl,
           },
         });
-        return u;
-      });
-      user = created;
-    } else {
-      const apiToken = generateToken();
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          apiToken,
-          avatarUrl: user.avatarUrl ?? avatarUrl ?? undefined,
-        },
-      });
-      await prisma.oAuthAccount.update({
-        where: {
-          provider_providerAccountId: {
-            provider,
-            providerAccountId,
-          },
-        },
-        data: {
-          email,
-          username: accountLabel ?? undefined,
-          avatarUrl: avatarUrl ?? undefined,
-        },
-      });
+      } catch (inner) {
+        if (inner instanceof Prisma.PrismaClientKnownRequestError && inner.code === "P2002") {
+          const again = await tx.oAuthAccount.findUnique({
+            where: {
+              provider_providerAccountId: { provider, providerAccountId },
+            },
+            include: { user: true },
+          });
+          if (again?.user) {
+            return { kind: "raced_existing" as const, user: again.user };
+          }
+          return { kind: "email_exists" as const };
+        }
+        throw inner;
+      }
+      return { kind: "new" as const, user: u };
+    });
+
+    if (txnResult.kind === "email_exists") {
+      return { ok: false, error: "email_exists" };
     }
 
-    return { ok: true, user };
+    if (txnResult.kind === "raced_existing") {
+      const user = await rotateTokenAndSyncOAuthAccount({
+        user: txnResult.user,
+        provider,
+        providerAccountId,
+        email,
+        accountLabel,
+        avatarUrl,
+      });
+      return { ok: true, user };
+    }
+
+    return { ok: true, user: txnResult.user };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       const target = (e.meta?.target as string[] | undefined) ?? [];

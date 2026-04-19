@@ -1,6 +1,6 @@
 # OAuth service layer (backend)
 
-This document describes the **refactored** OAuth architecture in `store-backend`: how responsibilities are split between **`oauthStateService`**, **`oauthUserService`**, **`oauthService`**, thin HTTP **controllers**, and **provider-specific HTTP** modules. It complements [`oauth-config.md`](./oauth-config.md), [`github-oauth-flow.md`](./github-oauth-flow.md), and [`google-oauth-flow.md`](./google-oauth-flow.md).
+This document describes the **refactored** OAuth architecture in `store-backend`: how responsibilities are split between **`oauthStateService`**, **`oauthUserService`**, **`oauthService`**, thin HTTP **controllers**, and **provider-specific HTTP** modules. It complements [`oauth-config.md`](./oauth-config.md), [`github-oauth-flow.md`](./github-oauth-flow.md), [`google-oauth-flow.md`](./google-oauth-flow.md), and [`oauth-security.md`](./oauth-security.md).
 
 ---
 

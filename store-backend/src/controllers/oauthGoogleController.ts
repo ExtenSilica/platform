@@ -105,7 +105,13 @@ export async function googleOAuthCallback(req: Request, res: Response): Promise<
 
   const signIn = await signInOrRegisterOAuthUser(resolved.identity);
   if (!signIn.ok) {
-    redirectOAuthLoginError(res, signIn.error === "email_exists" ? "email_exists" : "server_error");
+    const oauthErr =
+      signIn.error === "email_exists"
+        ? "email_exists"
+        : signIn.error === "invalid_identity"
+          ? "oauth_invalid_profile"
+          : "server_error";
+    redirectOAuthLoginError(res, oauthErr);
     return;
   }
 

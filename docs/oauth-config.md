@@ -101,6 +101,7 @@ If the API is behind a reverse proxy, `BASE_URL` and callback URLs should match 
 4. End-to-end flows: [`github-oauth-flow.md`](./github-oauth-flow.md), [`google-oauth-flow.md`](./google-oauth-flow.md).
 5. Service layout: [`oauth-service-layer.md`](./oauth-service-layer.md).
 6. Next.js store UI: [`frontend-oauth-ui.md`](./frontend-oauth-ui.md), [`frontend-auth-callback.md`](./frontend-auth-callback.md).
+7. Provisioning security: [`oauth-security.md`](./oauth-security.md).
 
 ---
 
@@ -120,3 +121,4 @@ See **`store-backend/.env.example`** for a ready-to-copy block including comment
 | 2026-04-19 | `oauthStateService` path; `oauth-service-layer.md` link |
 | 2026-04-19 | `frontend-oauth-ui.md` link |
 | 2026-04-19 | `SITE_URL` paths `/auth/callback`, `/auth/error`; `frontend-auth-callback.md` |
+| 2026-04-19 | `oauth-security.md` link |

@@ -2,7 +2,7 @@
 
 This document describes the **GitHub** browser OAuth flow implemented by the XSIL registry API: routes, state handling, user creation rules, redirects, and error codes.
 
-Related: [`oauth-config.md`](./oauth-config.md) (environment variables), [`oauth-data-model.md`](./oauth-data-model.md) (`OAuthAccount` persistence), [`oauth-v1.md`](./oauth-v1.md) (broader OAuth architecture), [`oauth-service-layer.md`](./oauth-service-layer.md) (backend module boundaries).
+Related: [`oauth-config.md`](./oauth-config.md) (environment variables), [`oauth-data-model.md`](./oauth-data-model.md) (`OAuthAccount` persistence), [`oauth-v1.md`](./oauth-v1.md) (broader OAuth architecture), [`oauth-service-layer.md`](./oauth-service-layer.md) (backend module boundaries), [`frontend-auth-callback.md`](./frontend-auth-callback.md) (Next.js completion routes).
 
 ---
 
@@ -97,6 +97,7 @@ On failure, the API redirects to:
 | `github_profile` | `GET /user` failed or returned unusable data. |
 | `github_no_email` | No verified email could be resolved (profile + `/user/emails`). |
 | `email_exists` | Email already registered to another local user; no silent linking. |
+| `oauth_invalid_profile` | IdP identity failed server-side validation (malformed email, id, etc.). |
 | `server_error` | Unexpected persistence or internal error. |
 
 The **`/auth/error`** page displays a message from `oauth_error` (see [`frontend-auth-callback.md`](./frontend-auth-callback.md)).
@@ -105,6 +106,7 @@ The **`/auth/error`** page displays a message from `oauth_error` (see [`frontend
 
 ## Security notes
 
+- Full policy and threat model: [`oauth-security.md`](./oauth-security.md).
 - **State:** bound to the browser via signed cookie + query param; CSRF risk on callback is mitigated because the token exchange requires the secret cookie issued on `/github/start`.
 - **No silent email linking** avoids takeover when IdP email is reassigned or wrong.
 - **One-time `oauth_code`:** prevents leaking a long-lived session token via `Referer` or server logs on the frontend URL (the code is useless after exchange and expires quickly).
@@ -116,3 +118,4 @@ The **`/auth/error`** page displays a message from `oauth_error` (see [`frontend
 | Date | Notes |
 |------|--------|
 | 2026-04-19 | Document GitHub OAuth routes and behavior |
+| 2026-04-19 | `oauth_invalid_profile`, link `oauth-security.md` |

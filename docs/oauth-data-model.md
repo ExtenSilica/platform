@@ -1,6 +1,6 @@
 # OAuth data model — `OAuthAccount`
 
-This document describes the persistence layer added for **GitHub** and **Google** OAuth (phase 1). It complements the architecture notes in [`oauth-v1.md`](./oauth-v1.md).
+This document describes the persistence layer added for **GitHub** and **Google** OAuth (phase 1). It complements the architecture notes in [`oauth-v1.md`](./oauth-v1.md). Provisioning and linking **security policy**: [`oauth-security.md`](./oauth-security.md).
 
 ---
 

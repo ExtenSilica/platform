@@ -77,7 +77,10 @@ Redirects go to `{SITE_URL}/auth/error?oauth_error=<code>`.
 | `google_profile` | Userinfo request failed or missing `sub`. |
 | `google_no_email` | Missing email, or **`email_verified` is not true**. |
 | `email_exists` | Email already belongs to another user; no silent linking. |
+| `oauth_invalid_profile` | IdP identity failed server-side validation (malformed email, id, etc.). |
 | `server_error` | Unexpected error while persisting or rare unique constraint. |
+
+Linking policy and threats: [`oauth-security.md`](./oauth-security.md).
 
 ---
 
@@ -86,3 +89,4 @@ Redirects go to `{SITE_URL}/auth/error?oauth_error=<code>`.
 | Date | Notes |
 |------|--------|
 | 2026-04-19 | Initial Google OAuth backend documentation |
+| 2026-04-19 | `oauth_invalid_profile`, `oauth-security.md` link |
