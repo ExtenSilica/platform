@@ -34,17 +34,38 @@ import {
   UserCircle,
   Camera,
   Building2,
-  Trash2,
+  BarChart3,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 function fmtNum(n: number) {
   return n.toLocaleString();
 }
 
+const DASHBOARD_TABS = ["stats", "packages", "account", "orgs"] as const;
+type DashboardTab = (typeof DASHBOARD_TABS)[number];
+
+function isDashboardTab(v: string | null): v is DashboardTab {
+  return v !== null && (DASHBOARD_TABS as readonly string[]).includes(v);
+}
+
 export default function DashboardPage() {
   const { user, token, isLoading, updateUser, login } = useAuth();
   const router = useRouter();
+  const [tab, setTab] = useState<DashboardTab>("stats");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const q = new URLSearchParams(window.location.search).get("tab");
+    if (isDashboardTab(q)) setTab(q);
+  }, []);
+
+  function goTab(next: DashboardTab) {
+    setTab(next);
+    const path = `/dashboard?tab=${next}`;
+    router.replace(path, { scroll: false });
+  }
 
   const [packages, setPackages] = useState<RegistryPackage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -308,51 +329,85 @@ export default function DashboardPage() {
     0
   );
 
+  const tabNav: { id: DashboardTab; label: string; icon: typeof BarChart3 }[] = [
+    { id: "stats", label: "Stats", icon: BarChart3 },
+    { id: "packages", label: "Packages", icon: Package },
+    { id: "account", label: "Account", icon: UserCircle },
+    { id: "orgs", label: "Organizations", icon: Building2 },
+  ];
+
   return (
     <div className="container max-w-5xl px-4 py-10">
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">
-            Welcome back, {user.username}
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Dashboard
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your published .xsil packages
+          <p className="mt-1 font-mono text-xs text-muted-foreground">
+            @{user.username}
           </p>
         </div>
         <Link href="/publish/new">
-          <Button className="gap-2">
+          <Button className="gap-2" size="sm">
             <Plus className="h-4 w-4" />
-            Publish a Package
+            Publish
           </Button>
         </Link>
       </div>
 
-      {/* Stats */}
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border bg-background p-5">
+      {/* Tabs — single row avoids layout jump when labels wrap */}
+      <nav
+        className="-mx-1 mb-0 flex flex-nowrap gap-1 overflow-x-auto overflow-y-hidden border-b border-border px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="Dashboard sections"
+      >
+        {tabNav.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => goTab(id)}
+            className={cn(
+              "inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors -mb-px",
+              tab === id
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <section className="pt-6" aria-label="Dashboard content">
+      {tab === "stats" && (
+      <div className="mb-2 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="rounded-lg border bg-background p-5">
           <Package className="mb-2 h-5 w-5 text-muted-foreground" />
           <p className="text-3xl font-bold">{packages.length}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             package{packages.length !== 1 ? "s" : ""} published
           </p>
         </div>
-        <div className="rounded-xl border bg-background p-5">
+        <div className="rounded-lg border bg-background p-5">
           <Download className="mb-2 h-5 w-5 text-muted-foreground" />
           <p className="text-3xl font-bold">{fmtNum(totalDownloads)}</p>
           <p className="text-xs text-muted-foreground mt-0.5">total downloads</p>
         </div>
-        <div className="hidden rounded-xl border bg-background p-5 sm:block">
+        <div className="hidden rounded-lg border bg-background p-5 sm:block">
           <ChevronRight className="mb-2 h-5 w-5 text-muted-foreground" />
           <p className="text-3xl font-bold">{totalVersions}</p>
           <p className="text-xs text-muted-foreground mt-0.5">versions published</p>
         </div>
       </div>
+      )}
 
-      {/* Package list */}
-      <div className="mb-10">
+      {tab === "packages" && (
+      <div className="mb-2">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Your packages</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Your packages
+          </h2>
         </div>
 
         {error && (
@@ -472,11 +527,15 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-      {/* Account / Profile */}
-      <div className="border-t pt-10">
+      )}
+
+      {tab === "account" && (
+      <div>
         <div className="mb-5 flex items-center gap-2">
           <UserCircle className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Account</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Profile &amp; security
+          </h2>
         </div>
 
         {/* Avatar */}
@@ -605,7 +664,9 @@ export default function DashboardPage() {
 
         {/* Change password */}
         <div className="mt-10 border-t pt-8">
-          <h3 className="mb-4 text-base font-semibold">Change password</h3>
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Change password
+          </h3>
           <form onSubmit={handlePasswordChange} className="max-w-lg space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="current-password">Current password</Label>
@@ -662,12 +723,15 @@ export default function DashboardPage() {
           </form>
         </div>
       </div>
+      )}
 
-      {/* Organizations */}
-      <div className="mt-10 rounded-xl border bg-background p-6 space-y-6">
+      {tab === "orgs" && (
+      <div className="space-y-6">
         <div className="flex items-center gap-2">
           <Building2 className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Organizations</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Organizations
+          </h2>
         </div>
 
         {/* My orgs list */}
@@ -788,7 +852,9 @@ export default function DashboardPage() {
 
         {/* Create new org form */}
         <div>
-          <h3 className="text-base font-semibold mb-4">Create an organization</h3>
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Create an organization
+          </h3>
           <form onSubmit={handleCreateOrg} className="space-y-4 max-w-md">
             <div className="space-y-1.5">
               <Label htmlFor="orgName">Organization name (slug)</Label>
@@ -840,6 +906,8 @@ export default function DashboardPage() {
           </form>
         </div>
       </div>
+      )}
+      </section>
     </div>
   );
 }

@@ -20,6 +20,43 @@ export function getRegistryOrigin(): string {
 
 const API_BASE = getRegistryOrigin();
 
+/** `GET /auth/me` returns `{ user, oauthProviders? }`. Accept legacy flat `user` shape too. */
+export function normalizeAuthMePayload(body: unknown): AuthUser | null {
+  if (!body || typeof body !== "object") return null;
+  const o = body as Record<string, unknown>;
+  const inner = o.user;
+  if (inner && typeof inner === "object") {
+    const u = inner as Record<string, unknown>;
+    if (
+      typeof u.id === "number" &&
+      typeof u.username === "string" &&
+      typeof u.email === "string"
+    ) {
+      return {
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        bio: (u.bio as string | null | undefined) ?? null,
+        avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
+        createdAt:
+          typeof u.createdAt === "string"
+            ? u.createdAt
+            : u.createdAt instanceof Date
+              ? u.createdAt.toISOString()
+              : "",
+      };
+    }
+  }
+  if (
+    typeof o.id === "number" &&
+    typeof o.username === "string" &&
+    typeof o.email === "string"
+  ) {
+    return body as AuthUser;
+  }
+  return null;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -236,7 +273,8 @@ export async function apiFetchMe(
     signal: init?.signal,
   });
   if (!res.ok) return null;
-  return res.json() as Promise<AuthUser>;
+  const body = await res.json();
+  return normalizeAuthMePayload(body);
 }
 
 /** Exchange one-time `oauth_code` query param after browser OAuth redirect. */

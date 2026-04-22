@@ -78,7 +78,7 @@ export function Navbar() {
           <ThemeToggle />
           {isLoading ? (
             <div className="h-8 w-16 animate-pulse rounded-md bg-muted" />
-          ) : user ? (
+          ) : user && user.username ? (
             <>
               <Link
                 href="/publish/new"
@@ -96,7 +96,7 @@ export function Navbar() {
                   className="flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-riscv-accent/35 hover:bg-muted hover:shadow-md"
                 >
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-bold uppercase text-primary-foreground">
-                    {user.username.charAt(0)}
+                    {(user.username ?? "?").charAt(0)}
                   </div>
                   <span className="hidden sm:block">{user.username}</span>
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />

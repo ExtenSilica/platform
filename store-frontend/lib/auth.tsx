@@ -8,7 +8,7 @@ import {
   useCallback,
 } from "react";
 
-import { getRegistryOrigin } from "@/lib/api";
+import { getRegistryOrigin, normalizeAuthMePayload } from "@/lib/api";
 
 const API_BASE = getRegistryOrigin();
 
@@ -47,7 +47,8 @@ async function fetchMe(token: string): Promise<AuthUser | null> {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
-    return res.json() as Promise<AuthUser>;
+    const body = await res.json();
+    return normalizeAuthMePayload(body);
   } catch {
     return null;
   }
