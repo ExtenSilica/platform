@@ -44,8 +44,10 @@ On the **server** (as `root`):
 ```bash
 apt-get update
 apt-get upgrade -y
-apt-get install -y curl git ufw postgresql postgresql-contrib
+apt-get install -y curl git ufw postgresql postgresql-contrib tar
 ```
+
+The **`tar`** package must be present on this machine: the registry API validates `.xsil` uploads by shelling out to **`tar -xzf`** (see **§6**). On minimal VPS images it is sometimes omitted; on Docker later, use a base image that includes `tar` or install it explicitly (distroless images often have no `tar`, and publishes would fail).
 
 Firewall (SSH first, then HTTP/S):
 
@@ -150,6 +152,8 @@ git checkout GIT_BRANCH
 ---
 
 ## 6 — Backend: `.env`, install, migrate, build, PM2
+
+**`.xsil` publish validation:** `POST /packages/:name/versions` unpacks each upload with the **system `tar`** binary (`tar -xzf`). The Node process needs **`tar` on `PATH`** — satisfied on this runbook by **`tar` in §1** (`apt-get install … tar`). If you containerise the API, ensure the image includes GNU or BSD `tar`; distroless/minimal images may require adding the `tar` package or choosing a slightly larger base.
 
 Create `store-backend/.env` (adjust every value):
 
