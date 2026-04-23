@@ -5,7 +5,7 @@ This document describes how ExtenSilica distributes RISC-V extension packages an
 ## Distribution model
 
 - **Developers synthesize bitstreams themselves.** The FPGA bitstream (e.g. `.bit`) is produced by the developer’s own toolchain (e.g. Yosys, Vivado, nextpnr) from their RTL and constraints.
-- **Developers declare hardware targets inside each `.xsil`.** Bitstream paths, optional flash commands, and target **ids** are **publisher-defined** in that package’s manifest. **There is no ExtenSilica-wide board list**—the CLI and registry never substitute or validate ids against a global catalog (see [execution-model.md](./execution-model.md), [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md)).
+- **Developers declare hardware targets inside each `.xsil`.** Bitstream paths, optional flash commands, and target **ids** are **publisher-defined** in that package’s manifest. **There is no ExtenSilica-wide board list**—the CLI and registry never substitute or validate ids against a global catalog (see [execution-model.md](./execution-model.md), [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md)).
 - **ExtenSilica does not perform FPGA synthesis.** The platform never runs synthesis tools or generates bitstreams. It only stores and serves artifacts that developers have already built.
 - **ExtenSilica distributes artifacts only.** The platform’s role is to host, verify, and deliver signed packages (bitstreams, toolchains, software). It does not build or modify their contents.
 

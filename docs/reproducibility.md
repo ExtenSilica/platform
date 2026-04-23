@@ -70,6 +70,6 @@ The paper remains the **narrative**; the `.xsil` package is the **machine‑chec
 ## Related
 
 - [execution-model.md](./execution-model.md) — How `xsil run` chooses simulator vs FPGA.
-- [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md) — Manifest and package layout (normative).
+- [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) — Manifest and package layout (normative).
 - [security-model.md](./security-model.md) — Integrity and optional signatures.
 - [README.md](./README.md) — Documentation index.

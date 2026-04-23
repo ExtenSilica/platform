@@ -305,7 +305,7 @@ export default function TermsPage() {
             </a>
             {" "}or submitted via the project&rsquo;s{" "}
             <a
-              href="https://github.com/extensilica/xsil"
+              href="https://github.com/ExtenSilica/xsil"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline"

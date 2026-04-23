@@ -15,7 +15,7 @@
 # =============================================================================
 set -eu
 
-REPO="extensilica/xsil"
+REPO="ExtenSilica/xsil"
 BINARY="xsil"
 RELEASES_URL="https://github.com/$REPO/releases"
 API_URL="https://api.github.com/repos/$REPO/releases/latest"

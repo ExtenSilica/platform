@@ -10,7 +10,7 @@ import {
   XsilValidationError,
 } from "../src/lib/xsilPublishValidate";
 
-/** Copy of `examples/rvx-demo` kept for backend tests (public repo: extensilica/xsil). */
+/** Copy of `examples/rvx-demo` kept for backend tests (public repo: ExtenSilica/xsil). */
 const rvxDemoDir = path.join(__dirname, "fixtures/rvx-demo");
 
 function packDirToBuffer(dir: string): Buffer {

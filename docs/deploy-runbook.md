@@ -307,7 +307,7 @@ If your first admin username is different, set `SEED_OWNER_USERNAME` to match. F
 
 ## 9 — CLI: point at production and publish `rvx-demo`
 
-The **`xsil`** CLI lives in the **public** repository **[github.com/extensilica/xsil](https://github.com/extensilica/xsil)** (not in this private tree). Install a release binary or build from that clone.
+The **`xsil`** CLI lives in the **public** repository **[github.com/ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)** (not in this private tree). Install a release binary or build from that clone.
 
 On your **laptop**, point the CLI at production (no need to edit Rust sources if you use config only):
 
@@ -451,7 +451,7 @@ pm2 restart extensilica-api
 
 ## CLI release binary (`DEFAULT_REGISTRY`)
 
-Public **`xsil`** releases are built from **[github.com/extensilica/xsil](https://github.com/extensilica/xsil)** (workflow `.github/workflows/cli-release.yml`). Before tagging, set the default registry in that repo’s `cli/src/constants.rs`:
+Public **`xsil`** releases are built from **[github.com/ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)** (workflow `.github/workflows/cli-release.yml`). Before tagging, set the default registry in that repo’s `cli/src/constants.rs`:
 
 ```rust
 pub const DEFAULT_REGISTRY: &str = "https://api.extensilica.com";

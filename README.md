@@ -2,9 +2,9 @@
 
 **Private repository** — hosted **registry API**, **Next.js** site, deploy runbooks, and product integrations.
 
-The **`.xsil` format**, reference **`xsil` CLI**, and **normative spec** live in the **public** repository **[github.com/extensilica/xsil](https://github.com/extensilica/xsil)**. Installers on extensilica.com download release binaries from that repo.
+The **`.xsil` format**, reference **`xsil` CLI**, and **normative spec** live in the **public** repository **[github.com/ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)**. Installers on extensilica.com download release binaries from that repo.
 
-Think of the product as [npmjs.com](https://npmjs.com)–style **discovery and hosting** for RISC-V packages, while the open **format + CLI** ship from **`extensilica/xsil`**.
+Think of the product as [npmjs.com](https://npmjs.com)–style **discovery and hosting** for RISC-V packages, while the open **format + CLI** ship from **`ExtenSilica/xsil`**.
 
 ---
 
@@ -14,7 +14,7 @@ You do **not** need to guess what to copy. After `git clone`:
 
 1. **Secrets only:** copy `store-backend/.env.example` → `store-backend/.env` and fill real values (PostgreSQL, SMTP, optional S3/R2). **Never commit `.env`** — it stays local to each server.
 2. **Follow the runbook:** open **[docs/deploy-runbook.md](docs/deploy-runbook.md)** and run the commands in order (Ubuntu VPS path: Node, Postgres, Caddy, PM2, backend + frontend).
-3. **Optional first package:** use **[scripts/publish-rvx-demo.sh](scripts/publish-rvx-demo.sh)** once the API is live and you are logged in with the **`xsil`** CLI (install from **[extensilica/xsil releases](https://github.com/extensilica/xsil/releases)** or build the public clone).
+3. **Optional first package:** use **[scripts/publish-rvx-demo.sh](scripts/publish-rvx-demo.sh)** once the API is live and you are logged in with the **`xsil`** CLI (install from **[ExtenSilica/xsil releases](https://github.com/ExtenSilica/xsil/releases)** or build the public clone).
 
 **Included in git for deploy / ops**
 
@@ -28,7 +28,7 @@ You do **not** need to guess what to copy. After `git clone`:
 | `scripts/` | e.g. first demo publish (`publish-rvx-demo.sh` uses `test/fixtures/rvx-demo`) |
 | `brand/` | Logo assets |
 | `.github/workflows/` | CI for backend + frontend only |
-| **Public** [extensilica/xsil](https://github.com/extensilica/xsil) | `xsil` CLI, `spec/xsil.md`, `examples/rvx-demo`, CLI release tags `cli/v*.*.*` |
+| **Public** [ExtenSilica/xsil](https://github.com/ExtenSilica/xsil) | `xsil` CLI, `spec/xsil.md`, `examples/rvx-demo`, CLI release tags `cli/v*.*.*` |
 
 **Excluded from git on purpose** (not required to deploy; recreated on the server)
 
@@ -77,7 +77,7 @@ A `manifest.json` describes:
 
 The `payloadHash` is a SHA-256 over all non-manifest files in the archive. The CLI recomputes it on every install and run — if the bytes don't match, execution is refused.
 
-The normative definition is **[spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md)** (in the public `xsil` repository).
+The normative definition is **[spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md)** (in the public `xsil` repository).
 
 ---
 
@@ -97,12 +97,12 @@ Publishers can register an account, claim a package name, and upload new version
 
 ## The CLI
 
-Install **`xsil`** from the **[public repository](https://github.com/extensilica/xsil)** (release binaries, `install.sh`, or build from source).
+Install **`xsil`** from the **[public repository](https://github.com/ExtenSilica/xsil)** (release binaries, `install.sh`, or build from source).
 
 ### Install
 
 ```bash
-# e.g. from a clone of github.com/extensilica/xsil
+# e.g. from a clone of github.com/ExtenSilica/xsil
 cargo install --path cli
 ```
 
@@ -149,7 +149,7 @@ xsil run rvv-demo
 xsil login
 
 # 2. Lay out your package (manifest.json + sim/, tests/, etc.)
-#    See https://github.com/extensilica/xsil/blob/main/spec/xsil.md for the required layout
+#    See https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md for the required layout
 
 # 3. Publish
 xsil publish ./my-extension/
@@ -197,7 +197,7 @@ Packages use [Semantic Versioning](https://semver.org): `MAJOR.MINOR.PATCH`.
 
 | Location | Role |
 |----------|------|
-| **[extensilica/xsil](https://github.com/extensilica/xsil)** (public) | Normative **`spec/xsil.md`**, **`xsil`** CLI, **`examples/rvx-demo`**, CLI releases |
+| **[ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)** (public) | Normative **`spec/xsil.md`**, **`xsil`** CLI, **`examples/rvx-demo`**, CLI releases |
 | `store-backend/` (this repo) | Registry API — Express + Prisma, package metadata and upload |
 | `store-frontend/` (this repo) | Registry website — Next.js, package pages and search |
 | `docs/` (this repo) | Deploy, architecture, OAuth, **REPOS_AND_PUBLIC_XSIL.md** |
@@ -206,7 +206,7 @@ Packages use [Semantic Versioning](https://semver.org): `MAJOR.MINOR.PATCH`.
 
 ## Documentation
 
-- [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md) — package format (public repo)
+- [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) — package format (public repo)
 - [docs/REPOS_AND_PUBLIC_XSIL.md](docs/REPOS_AND_PUBLIC_XSIL.md) — private vs public split
 - [docs/publishing.md](docs/publishing.md) — full publishing workflow
 - [docs/reproducibility.md](docs/reproducibility.md) — why reproducibility matters

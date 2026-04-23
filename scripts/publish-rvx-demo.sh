@@ -2,7 +2,7 @@
 # =============================================================================
 # publish-rvx-demo.sh
 #
-# Publishes the bundled rvx-demo fixture (mirrors extensilica/xsil examples/rvx-demo) to production.
+# Publishes the bundled rvx-demo fixture (mirrors ExtenSilica/xsil examples/rvx-demo) to production.
 # Run this ONCE after all §12 production prerequisites are live.
 #
 # Prerequisites (must all be done first):

@@ -1,6 +1,6 @@
 # XSil execution model
 
-This document defines **how `xsil` runs a package** after fetch and integrity validation. Normative package layout and manifest fields are in [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md).
+This document defines **how `xsil` runs a package** after fetch and integrity validation. Normative package layout and manifest fields are in [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md).
 
 ## Command
 
@@ -82,5 +82,5 @@ When the user runs `xsil run <package>` **without** forcing FPGA:
 
 ## Related
 
-- [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md) — `entry`, `targets`, `sim/`, `toolchain/`, optional `bitstream/`
+- [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) — `entry`, `targets`, `sim/`, `toolchain/`, optional `bitstream/`
 - [extensilica-architecture.md](./extensilica-architecture.md) — system context

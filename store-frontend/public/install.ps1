@@ -15,7 +15,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$Repo        = "extensilica/xsil"
+$Repo        = "ExtenSilica/xsil"
 $Binary      = "xsil"
 $ReleasesUrl = "https://github.com/$Repo/releases"
 $ApiUrl      = "https://api.github.com/repos/$Repo/releases/latest"

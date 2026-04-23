@@ -249,7 +249,7 @@ export default function PrivacyPage() {
             To exercise any of these rights, open an issue or contact us via the
             project&rsquo;s{" "}
             <a
-              href="https://github.com/extensilica/xsil"
+              href="https://github.com/ExtenSilica/xsil"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline"
@@ -289,7 +289,7 @@ export default function PrivacyPage() {
             </a>
             {" "}or submitted via the project&rsquo;s{" "}
             <a
-              href="https://github.com/extensilica/xsil"
+              href="https://github.com/ExtenSilica/xsil"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline"

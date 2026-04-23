@@ -72,7 +72,7 @@ const GROUPS: FaqGroup[] = [
             <p className="mt-3">
               Pre-built binaries for Linux and macOS are available on the{" "}
               <a
-                href="https://github.com/extensilica/xsil/releases"
+                href="https://github.com/ExtenSilica/xsil/releases"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary underline"
@@ -440,7 +440,7 @@ const GROUPS: FaqGroup[] = [
               </a>
               {" "}or open an issue on the project&rsquo;s{" "}
               <a
-                href="https://github.com/extensilica/xsil"
+                href="https://github.com/ExtenSilica/xsil"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary underline"
@@ -539,7 +539,7 @@ const GROUPS: FaqGroup[] = [
               </a>
               {" "}or open an issue on{" "}
               <a
-                href="https://github.com/extensilica/xsil"
+                href="https://github.com/ExtenSilica/xsil"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary underline"
@@ -655,7 +655,7 @@ export default function FaqPage() {
           </a>
           , open an issue on{" "}
           <a
-            href="https://github.com/extensilica/xsil"
+            href="https://github.com/ExtenSilica/xsil"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary underline"
@@ -664,7 +664,7 @@ export default function FaqPage() {
           </a>
           , or review the{" "}
           <a
-            href="https://github.com/extensilica/xsil/blob/main/spec/xsil.md"
+            href="https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary underline"

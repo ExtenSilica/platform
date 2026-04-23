@@ -17,7 +17,7 @@ Design and implement your RISC-V extension, toolchain, simulation assets, or doc
 
 You can scaffold an unscoped package with **`xsil init <slug>`** (creates `./<slug>/` with `manifest.json`, `sim/run.sh`, `tests/run.sh`, `docs/`, `toolchain/README.md`, `.xsilignore`, and a fresh payload checksum). Use `--parent DIR` to place the folder elsewhere, `--author NAME` for `manifest.author`, and `--force` to replace an existing directory.
 
-Otherwise create a directory conforming to the [XSil spec](https://github.com/extensilica/xsil/blob/main/spec/xsil.md#3-archive-layout):
+Otherwise create a directory conforming to the [XSil spec](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md#3-archive-layout):
 
 ```
 my-package/
@@ -48,7 +48,7 @@ Required fields:
 }
 ```
 
-See the [XSil spec](https://github.com/extensilica/xsil/blob/main/spec/xsil.md) for all supported fields and rules.
+See the [XSil spec](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) for all supported fields and rules.
 
 ### 4. Pack into `.xsil`
 
@@ -107,5 +107,5 @@ The new version is immediately visible on the package page and installable via `
 | 5 | Authenticate with `xsil login`. |
 | 6 | Publish with `xsil publish <path>`. |
 
-For package format details, see [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md).
+For package format details, see [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md).
 For the full CLI reference, see [docs/cli-v3.md](./cli-v3.md).
