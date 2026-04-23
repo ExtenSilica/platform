@@ -594,8 +594,6 @@ mod tests {
     }
 
     fn archive_members(archive_bytes: &[u8]) -> Vec<String> {
-        use flate2::read::GzDecoder;
-        use tar::Archive;
         let gz = GzDecoder::new(archive_bytes);
         let mut ar = Archive::new(gz);
         ar.entries().unwrap()
@@ -654,5 +652,44 @@ mod tests {
         let rules = IgnoreRules::load(Path::new("/nonexistent-dir-for-test"));
         // Empty rules (file not found) — only builtins apply.
         assert!(!rules.is_ignored("src/hello.c", false));
+    }
+
+    /// Golden payload hash for `examples/rvx-demo` — keep in sync with store-backend `xsilPublishValidate`.
+    #[test]
+    fn rvx_demo_payload_hash_golden() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/rvx-demo");
+        let root = root.canonicalize().expect("rvx-demo path");
+        let mgr = ExtensionManager::new(std::env::temp_dir());
+        let h = mgr.compute_payload_hash(&root).expect("hash");
+        assert_eq!(
+            h,
+            "d84630cf41ca43dd9e06f151f6b2ed59ed54159c244b7f22dc953d59cccc5856"
+        );
+    }
+
+    /// Documents the exact relative path order used for `compute_payload_hash` (PathBuf sort).
+    #[test]
+    fn rvx_demo_payload_hash_order_snapshot() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/rvx-demo");
+        let root = root.canonicalize().expect("rvx-demo path");
+        let mgr = ExtensionManager::new(std::env::temp_dir());
+        let ignore = IgnoreRules::load(&root);
+        let mut files: Vec<PathBuf> = Vec::new();
+        mgr
+            .collect_files_filtered(&root, &root, &ignore, &mut files)
+            .unwrap();
+        files.sort();
+        let hashed_order: Vec<String> = files
+            .iter()
+            .filter(|p| {
+                !(p.file_name().unwrap_or_default() == "manifest.json"
+                    && p.parent().map(|x| x.canonicalize().ok()) == Some(root.canonicalize().ok()))
+            })
+            .map(|p| p.strip_prefix(&root).unwrap().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(
+            hashed_order.join("\n"),
+            "README.md\ndocs/overview.md\nsim/run.sh\nsim/spike.yaml\nsrc/hello.c\ntests/expected.txt\ntests/run.sh\ntoolchain/README.md"
+        );
     }
 }
