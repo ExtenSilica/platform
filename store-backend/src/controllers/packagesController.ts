@@ -5,6 +5,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
 import { prisma } from '../db';
+import {
+  validatePublishedXsilBuffer,
+  XsilValidationError,
+} from '../lib/xsilPublishValidate';
 import { storage } from '../storage';
 
 export type ExtensionWithVersions = Extension & { versions: Version[] };
@@ -93,6 +97,16 @@ function sortBySemverDesc<T extends { version: string }>(versions: T[]): T[] {
  * Return the highest non-yanked semver from a list of version records.
  * Falls back to the highest yanked version if all are yanked.
  */
+function firstFormString(body: Record<string, unknown>, key: string): string | undefined {
+  const v = body[key];
+  if (v == null) return undefined;
+  if (Array.isArray(v)) {
+    const x = v[0];
+    return typeof x === 'string' ? x : undefined;
+  }
+  return typeof v === 'string' ? v : undefined;
+}
+
 function computeLatestVersion(versions: Array<{ version: string; isYanked: boolean }>): string | null {
   const valid = (v: string) => semver.valid(v) !== null;
   const rcompare = (a: string, b: string) => semver.rcompare(a, b);
@@ -452,9 +466,27 @@ export const publishVersion = async (req: Request, res: Response) => {
       return;
     }
 
-    // Compute archive SHA-256 from the temp file before handing it to storage.
+    // Read bytes once: archive checksum + structural / integrity validation (same bar as CLI).
     const fileBuffer = fs.readFileSync(file.path);
     const checksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+
+    const rawBody = req.body as Record<string, unknown>;
+    let validated;
+    try {
+      validated = validatePublishedXsilBuffer(fileBuffer, {
+        slug: name,
+        formVersion: version,
+        optionalClientArchiveHash: firstFormString(rawBody, 'checksumArchive'),
+        optionalClientPayloadHash: firstFormString(rawBody, 'checksumPayload'),
+      });
+    } catch (err) {
+      fs.unlinkSync(file.path);
+      if (err instanceof XsilValidationError) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      throw err;
+    }
 
     // Key under which the file lives in the storage backend.
     const key = file.filename; // "<uuid>.xsil"
@@ -475,6 +507,7 @@ export const publishVersion = async (req: Request, res: Response) => {
           changelog: changelog ?? '',
           xsilUrl,
           checksum,
+          checksumPayload: validated.checksumPayloadStored,
           isa: isa?.trim() || null,
           targets: targets?.trim() || null,
           toolchain: toolchain?.trim() || null,
