@@ -1,6 +1,6 @@
 # XSIL publishing workflow
 
-This document defines the **minimal publishing path** for a conforming `.xsil` package: **`xsil build`** (produce a signed, hashed archive) and **`xsil publish`** (distribute it to a registry). Normative layout and manifest fields are in **[spec/xsil.md](../spec/xsil.md)**; this page ties them to the two commands.
+This document defines the **minimal publishing path** for a conforming `.xsil` package: **`xsil build`** (produce a signed, hashed archive) and **`xsil publish`** (distribute it to a registry). Normative layout and manifest fields are in **[spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md)**; this page ties them to the two commands.
 
 > **Implementation note:** The reference `xsil` CLI is evolving toward these commands. If your build does not expose `build` / `publish` yet, you can still assemble a directory that matches the spec, run validation locally, and produce a `.xsil` tarball using project tooling—**the package requirements below are what `xsil build` is intended to enforce.**
 
@@ -67,7 +67,7 @@ Environment variables (examples): registry base URL, API token if the registry r
 
 ## Package structure
 
-A **package root** is a directory that will become the root of the tarball. It **must** match **[spec/xsil.md §3 Archive layout](../spec/xsil.md#3-archive-layout)**.
+A **package root** is a directory that will become the root of the tarball. It **must** match **[spec/xsil.md §3 Archive layout](https://github.com/extensilica/xsil/blob/main/spec/xsil.md#3-archive-layout)**.
 
 | Path | Required | Role |
 |------|----------|------|
@@ -86,7 +86,7 @@ Omit empty directories only if your tooling and the spec allow it; many publishe
 
 At minimum:
 
-1. **`manifest.json`** — All **required** manifest fields in **[spec/xsil.md §4](../spec/xsil.md#4-manifest-manifestjson)** (`name`, `version`, `isa`, `entry`, `targets`, `toolchain`, `description`).
+1. **`manifest.json`** — All **required** manifest fields in **[spec/xsil.md §4](https://github.com/extensilica/xsil/blob/main/spec/xsil.md#4-manifest-manifestjson)** (`name`, `version`, `isa`, `entry`, `targets`, `toolchain`, `description`).
 2. **Content for every path** referenced from the manifest — e.g. the `entry` script, files under `toolchain.root`, paths inside `targets.spike` / `targets.qemu` / `targets.fpga`.
 3. **Tests** — At least one runnable test entry (manifest `testEntry` or conventional `tests/run.sh`) if you expect `xsil test` to be used.
 
@@ -108,7 +108,7 @@ Optional: **`testEntry`** — path for **`xsil test`** (if not using the default
 
 ## How to include simulator or FPGA
 
-Declare capabilities in **`targets`** (see **[spec/xsil.md §5](../spec/xsil.md#5-targets-targets)**):
+Declare capabilities in **`targets`** (see **[spec/xsil.md §5](https://github.com/extensilica/xsil/blob/main/spec/xsil.md#5-targets-targets)**):
 
 | Key | Meaning |
 |-----|---------|
@@ -124,7 +124,7 @@ Declare capabilities in **`targets`** (see **[spec/xsil.md §5](../spec/xsil.md#
 
 ## Related
 
-- **[spec/xsil.md](../spec/xsil.md)** — Normative format (layout, manifest, targets, toolchain).
+- **[spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md)** — Normative format (layout, manifest, targets, toolchain).
 - **[execution-model.md](./execution-model.md)** — How `xsil run` picks simulator vs FPGA.
 - **[reproducibility.md](./reproducibility.md)** — Why packaged, hashed, runnable artifacts matter.
 - **[developer-publishing.md](./developer-publishing.md)** — Broader narrative (RTL, synthesis, signing); may overlap—**spec + this doc** take precedence for layout and commands.

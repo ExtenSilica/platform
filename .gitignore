@@ -1,5 +1,5 @@
-# Rust build artifacts
-cli/target/
+# Local CLI tree (Rust `xsil` sources and releases live in the public github.com/extensilica/xsil repo)
+/cli/
 
 # Node.js
 node_modules/
@@ -37,14 +37,8 @@ Thumbs.db
 # gem5 simulator checkout (~5 GB+) — do not commit unless you use git-lfs / subtree
 gem5/
 
-# Root + CLI scratch packages and test dirs (not part of the product tree)
+# Root scratch packages (not part of the product tree)
 /fastaes-*.xsil
-cli/fastaes-*.xsil
-cli/test.tgz
-cli/temp_pkg/
-cli/check_signed/
-cli/tampered_manifest_pkg/
-cli/tampered_pkg/
 pkg_temp/
 test-pkg/
 

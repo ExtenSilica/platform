@@ -294,7 +294,7 @@ Expect JSON with user fields (or an error if username/email already taken).
 
 ### Seed demo catalog (optional, run **after** register)
 
-This inserts catalog rows for demo packages. It **assigns `ownerId`** to the user named `extensilica` by default (same username as §8), so later CLI publishes are authorized. It also leaves **`rvx-demo` without a pre-seeded `1.0.0` version**, because **§9** publishes `examples/rvx-demo@1.0.0` from your laptop; a seeded `1.0.0` row would cause **HTTP 409**.
+This inserts catalog rows for demo packages. It **assigns `ownerId`** to the user named `extensilica` by default (same username as §8), so later CLI publishes are authorized. It also leaves **`rvx-demo` without a pre-seeded `1.0.0` version**, because **§9** publishes `rvx-demo@1.0.0` from your laptop (using `scripts/publish-rvx-demo.sh`, which packs `store-backend/test/fixtures/rvx-demo/` — a copy of the public reference package); a seeded `1.0.0` row would cause **HTTP 409**.
 
 ```bash
 cd /opt/extensilica/store-backend
@@ -307,7 +307,9 @@ If your first admin username is different, set `SEED_OWNER_USERNAME` to match. F
 
 ## 9 — CLI: point at production and publish `rvx-demo`
 
-On your **laptop** (after changing `DEFAULT_REGISTRY` in `cli/src/constants.rs` and building, or via config):
+The **`xsil`** CLI lives in the **public** repository **[github.com/extensilica/xsil](https://github.com/extensilica/xsil)** (not in this private tree). Install a release binary or build from that clone.
+
+On your **laptop**, point the CLI at production (no need to edit Rust sources if you use config only):
 
 ```bash
 mkdir -p ~/.extensilica
@@ -319,19 +321,19 @@ cat > ~/.extensilica/config.json << 'EOF'
 EOF
 ```
 
-Login (interactive):
+Login (interactive), from your **xsil** clone or with `xsil` on `PATH`:
 
 ```bash
-cd /path/to/ExtenSilica/cli
+cd /path/to/xsil/cli
 cargo run -- login
 ```
 
 Or obtain a token via API and paste into `config.json`.
 
-Publish demo package:
+Publish demo package (script lives in **this** private repo and uses the bundled fixture):
 
 ```bash
-cd /path/to/ExtenSilica
+cd /path/to/ExtenSilica-private
 bash scripts/publish-rvx-demo.sh
 ```
 
@@ -443,19 +445,19 @@ pm2 restart extensilica-api
 | 3 | Migrations + API running | §6 |
 | 4 | Next build + web running | §7 |
 | 5 | First user + optional seed + CLI publish | §8–§9 |
-| 6–7 | CI already in repo; Sentry/logs optional | `launch-checklist-v3.md` |
+| 6–7 | CI in this repo (backend + frontend); public `xsil` has its own CI; Sentry/logs optional | `launch-checklist-v3.md` |
 
 ---
 
 ## CLI release binary (`DEFAULT_REGISTRY`)
 
-Before shipping public CLI builds, edit `cli/src/constants.rs`:
+Public **`xsil`** releases are built from **[github.com/extensilica/xsil](https://github.com/extensilica/xsil)** (workflow `.github/workflows/cli-release.yml`). Before tagging, set the default registry in that repo’s `cli/src/constants.rs`:
 
 ```rust
 pub const DEFAULT_REGISTRY: &str = "https://api.extensilica.com";
 ```
 
-Then tag (triggers GitHub Actions release):
+Then tag **in the public xsil repository** (triggers the release workflow):
 
 ```bash
 git tag cli/v0.1.0

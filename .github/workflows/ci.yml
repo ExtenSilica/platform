@@ -13,44 +13,6 @@ env:
   NODE_VERSION: "20"
 
 jobs:
-  # ── Rust CLI ─────────────────────────────────────────────────────────────────
-  cli-check:
-    name: CLI — check + clippy + test
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: cli
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-
-      - name: Cache cargo registry + build
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            cli/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('cli/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-
-      - name: cargo fmt --check
-        run: cargo fmt --all -- --check
-
-      - name: cargo clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-      - name: cargo test
-        run: cargo test --all
-
-      - name: cargo build (debug — confirm it compiles)
-        run: cargo build
-
   # ── Backend ───────────────────────────────────────────────────────────────────
   backend-check:
     name: Backend — typecheck + lint

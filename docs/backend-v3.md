@@ -3,7 +3,7 @@
 **Status:** Target definition (not yet fully implemented)  
 **Date:** March 2026  
 **Branch:** `pivot/npmjs-like-xsil-registry`  
-**Related:** [product-architecture-v3.md](./product-architecture-v3.md), [spec/xsil.md](../spec/xsil.md)
+**Related:** [product-architecture-v3.md](./product-architecture-v3.md), [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md)
 
 ---
 

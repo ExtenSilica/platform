@@ -1,6 +1,6 @@
 # ExtenSilica Architecture
 
-**ExtenSilica** is a **standard and toolchain** for **reproducible RISC-V extensions** (see [spec/xsil.md](../spec/xsil.md), [pivot-v2.md](./pivot-v2.md)).
+**ExtenSilica** is a **standard and toolchain** for **reproducible RISC-V extensions** (see [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md), [pivot-v2.md](./pivot-v2.md)).
 
 There is **no monetization layer**: no credits, license tokens, Stripe, USDC, or payment APIs.
 

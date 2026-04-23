@@ -1,12 +1,12 @@
 # ExtenSilica architecture (v2)
 
-This document is the **concise system architecture** for the XSIL standard: format, tooling, registry, and flows. Normative details live in [spec/xsil.md](../spec/xsil.md) and the linked docs below.
+This document is the **concise system architecture** for the XSIL standard: format, tooling, registry, and flows. Normative details live in [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md) and the linked docs below.
 
 ---
 
 ## XSIL format (`.xsil`)
 
-**XSIL** is a **gzip-compressed tar** whose root contains **`manifest.json`** plus a defined directory layout (simulation assets, toolchain, tests, documentation; optional FPGA/bitstream material). See **[spec/xsil.md](../spec/xsil.md)**.
+**XSIL** is a **gzip-compressed tar** whose root contains **`manifest.json`** plus a defined directory layout (simulation assets, toolchain, tests, documentation; optional FPGA/bitstream material). See **[spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md)**.
 
 | Concern | Role |
 |--------|------|
@@ -21,7 +21,7 @@ The format is the **contract** between publishers and tools: same bytes → same
 
 ## CLI (`xsil`)
 
-The reference **`xsil`** binary ([`cli/`](../cli/)) implements **fetch → validate → run/test/install** against local paths, `.xsil` files, or registry-backed packages.
+The reference **`xsil`** binary ([public `cli/` tree](https://github.com/extensilica/xsil/tree/main/cli)) implements **fetch → validate → run/test/install** against local paths, `.xsil` files, or registry-backed packages.
 
 | Command | Purpose |
 |---------|---------|
@@ -63,7 +63,7 @@ End-to-end path for **`xsil run`** with a package specifier:
 
 Typical loop for someone **publishing** an extension:
 
-1. **Author** RTL, toolchain, sim scripts, tests — layout under a package root matching **[spec/xsil.md](../spec/xsil.md)**.
+1. **Author** RTL, toolchain, sim scripts, tests — layout under a package root matching **[spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md)**.
 2. **Write `manifest.json`** — Required fields, `entry`, `targets`, integrity fields after hashing (see [publishing.md](./publishing.md)).
 3. **Build** — Produce a `.xsil` archive (`xsil build` when implemented, or equivalent packing).
 4. **Publish** — Upload the blob and register the new version with the metadata registry (`xsil publish` when implemented) so clients receive a stable URL and semver record.
@@ -82,7 +82,7 @@ Typical loop for someone **consuming** an extension:
 3. **Verify** — Rely on payload hash (and optional signatures) for integrity.
 4. **Execute** — Simulator by default; opt into FPGA flows only as declared in the package.
 
-Local development can point **`xsil run`** at a **directory** (e.g. [examples/rvx-demo](../examples/rvx-demo)) without publishing.
+Local development can point **`xsil run`** at a **directory** (e.g. [examples/rvx-demo](https://github.com/extensilica/xsil/tree/main/examples/rvx-demo)) without publishing.
 
 ---
 
@@ -90,7 +90,7 @@ Local development can point **`xsil run`** at a **directory** (e.g. [examples/rv
 
 | Document | Topic |
 |----------|--------|
-| [spec/xsil.md](../spec/xsil.md) | Normative `.xsil` layout and manifest |
+| [spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md) | Normative `.xsil` layout and manifest |
 | [execution-model.md](./execution-model.md) | Simulator vs FPGA; no platform board catalog |
 | [publishing.md](./publishing.md) | Build/publish intent |
 | [reproducibility.md](./reproducibility.md) | Why XSIL + executability matter |

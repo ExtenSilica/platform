@@ -2,7 +2,7 @@
 # =============================================================================
 # publish-rvx-demo.sh
 #
-# Publishes examples/rvx-demo@1.0.0 to the production ExtenSilica registry.
+# Publishes the bundled rvx-demo fixture (mirrors extensilica/xsil examples/rvx-demo) to production.
 # Run this ONCE after all §12 production prerequisites are live.
 #
 # Prerequisites (must all be done first):
@@ -29,7 +29,7 @@
 set -euo pipefail
 
 PROD_REGISTRY="https://api.extensilica.com"
-PKG_DIR="$(cd "$(dirname "$0")/../examples/rvx-demo" && pwd)"
+PKG_DIR="$(cd "$(dirname "$0")/../store-backend/test/fixtures/rvx-demo" && pwd)"
 CHANGELOG="Initial public release of the rvx-demo reference package — a minimal RV64GC Fibonacci demo that works with Spike, QEMU, or in demo mode with no simulator installed."
 
 # ── Confirm target ────────────────────────────────────────────────────────────

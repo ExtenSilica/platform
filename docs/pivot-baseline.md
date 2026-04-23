@@ -187,7 +187,7 @@ ExtenSilica/
 
 ## 5. Legacy concepts removed
 
-The following concepts have been removed from the codebase and docs: **browser extensions**, **generic plugin marketplace**, and **simulator plugin distribution**. The platform is defined as a RISC-V bitstream and toolchain distribution platform; package layout and manifest follow the current [XSil spec](../spec/xsil.md) (bitstreams/, toolchain/, boards, isa).
+The following concepts have been removed from the codebase and docs: **browser extensions**, **generic plugin marketplace**, and **simulator plugin distribution**. The platform is defined as a RISC-V bitstream and toolchain distribution platform; package layout and manifest follow the current [XSil spec](https://github.com/extensilica/xsil/blob/main/spec/xsil.md) (bitstreams/, toolchain/, boards, isa).
 
 ---
 

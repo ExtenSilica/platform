@@ -10,8 +10,8 @@ import {
   XsilValidationError,
 } from "../src/lib/xsilPublishValidate";
 
-const repoRoot = path.join(__dirname, "../..");
-const rvxDemoDir = path.join(repoRoot, "examples/rvx-demo");
+/** Copy of `examples/rvx-demo` kept for backend tests (public repo: extensilica/xsil). */
+const rvxDemoDir = path.join(__dirname, "fixtures/rvx-demo");
 
 function packDirToBuffer(dir: string): Buffer {
   const out = path.join(os.tmpdir(), `xsil-test-${process.pid}-${Math.random().toString(16).slice(2)}.xsil`);

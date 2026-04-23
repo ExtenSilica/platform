@@ -4,7 +4,9 @@
 
 **ExtenSilica** is a **standard for publishing reproducible RISC-V extensions**.
 
-**Core:** `.xsil` format (standard) + **CLI** (execution + validation) + **registry** (distribution).
+**Core:** `.xsil` format (standard) + **`xsil` CLI** (public [extensilica/xsil](https://github.com/extensilica/xsil)) + **registry** (this private repo: hosted API + website).
+
+See **[REPOS_AND_PUBLIC_XSIL.md](./REPOS_AND_PUBLIC_XSIL.md)** for the split between this **private** platform repository and the **public** `xsil` tooling repo.
 
 See **[architecture-v2.md](./architecture-v2.md)** for the consolidated architecture (format, CLI, registry, flows). Historical pivot notes: **[pivot-v2.md](./pivot-v2.md)**.
 
@@ -25,8 +27,8 @@ xsil run <package>
 
 ## Examples
 
-- **`xsil init <slug>`** — Scaffold a new package directory (see [developer-publishing.md](./developer-publishing.md) §2).
-- **[../examples/rvx-demo/README.md](../examples/rvx-demo/README.md)** — Minimal local package: `xsil run examples/rvx-demo` (Spike + RISC-V GCC).
+- **Public `xsil` repo** — `xsil init`, `examples/rvx-demo`, and the normative spec: **[github.com/extensilica/xsil](https://github.com/extensilica/xsil)**.
+- **Publisher workflow** in this repo’s docs still applies; for scaffolding see the copy of [developer-publishing.md](./developer-publishing.md) in the public tree (or clone `extensilica/xsil` and open `docs/developer-publishing.md` there).
 
 ## Documents
 

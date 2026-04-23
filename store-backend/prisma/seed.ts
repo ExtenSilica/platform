@@ -97,7 +97,7 @@ async function main() {
       shortDescription: 'Hello-world .xsil package for RISC-V.',
       author: 'extensilica',
       keywords: 'demo,tutorial,spike,riscv',
-      // No Version rows: deploy §9 publishes examples/rvx-demo@1.0.0 from the laptop.
+      // No Version rows: deploy §9 publishes rvx-demo@1.0.0 from the laptop (see scripts/publish-rvx-demo.sh).
       // A pre-seeded 1.0.0 row would block publish with HTTP 409.
       versions: { create: [] },
     },

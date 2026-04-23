@@ -318,7 +318,7 @@ token    = "<api-token>"
 
 ## Component 4 — XSIL Package Format
 
-Full normative definition: **[spec/xsil.md](../spec/xsil.md)**
+Full normative definition: **[spec/xsil.md](https://github.com/extensilica/xsil/blob/main/spec/xsil.md)**
 
 ### Package metadata
 

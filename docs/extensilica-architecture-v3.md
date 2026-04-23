@@ -844,7 +844,7 @@ CLI (xsil — Rust)
 
 | Document | Contents |
 |----------|----------|
-| [`spec/xsil.md`](../spec/xsil.md) | Full `.xsil` format specification |
+| [`spec/xsil.md`](https://github.com/extensilica/xsil/blob/main/spec/xsil.md) | Full `.xsil` format specification |
 | [`docs/api-v3.md`](./api-v3.md) | Complete REST API reference with request/response examples |
 | [`docs/auth-v3.md`](./auth-v3.md) | Auth model, flows, and account rules in detail |
 | [`docs/publishing-flow-v3.md`](./publishing-flow-v3.md) | End-to-end publish flow with validation details |
