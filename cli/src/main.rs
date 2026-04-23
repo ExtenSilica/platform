@@ -14,6 +14,7 @@ use semver::Version;
 mod types;
 mod registry;
 mod manager;
+mod init;
 mod constants;
 
 use registry::RegistryClient;
@@ -59,6 +60,21 @@ enum Commands {
         /// Override message included in the version entry
         #[arg(long, default_value = "")]
         changelog: String,
+    },
+
+    /// Create a new local package directory (manifest, sim/, tests/, docs/, toolchain stub)
+    Init {
+        /// Unscoped package slug: lowercase letters, digits, hyphens (also the directory name)
+        name: String,
+        /// Parent directory for `<name>/` (default: current working directory)
+        #[arg(long, value_name = "DIR")]
+        parent: Option<PathBuf>,
+        /// Remove an existing `<parent>/<name>` directory before creating files
+        #[arg(long)]
+        force: bool,
+        /// Value for `manifest.author` (default: `git config user.name`, else `your-username`)
+        #[arg(long, value_name = "NAME")]
+        author: Option<String>,
     },
 
     /// Download and install a package under ~/.extensilica/extensions/
@@ -177,6 +193,37 @@ fn run() -> Result<()> {
         // ── Publish ───────────────────────────────────────────────────────────
         Commands::Publish { path, changelog } => {
             cmd_publish(&registry, &manager, path, changelog, cli.dry_run)?;
+        }
+
+        Commands::Init {
+            name,
+            parent,
+            force,
+            author,
+        } => {
+            if cli.dry_run {
+                println!(
+                    "{} Would create package skeleton at {}/{}",
+                    "✔".green(),
+                    parent
+                        .as_ref()
+                        .map(|p| p.display().to_string())
+                        .unwrap_or_else(|| ".".to_string()),
+                    name
+                );
+            } else {
+                let created = init::cmd_init(&manager, name, parent.as_deref(), *force, author.as_deref())?;
+                println!(
+                    "{} Created package skeleton at {}",
+                    "✔".green(),
+                    created.display().to_string().bold()
+                );
+                println!("  {}", "Next:".dimmed());
+                println!("    cd {}", created.display());
+                println!("    xsil run .");
+                println!("    xsil test .");
+                println!("    xsil publish . --dry-run");
+            }
         }
 
         // ── Install ───────────────────────────────────────────────────────────

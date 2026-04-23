@@ -106,6 +106,7 @@ cargo install xsil
 ### Commands
 
 ```bash
+xsil init <slug>           # create a new local package directory (manifest + sim/tests/docs stubs)
 xsil install <package>      # download and install under ~/.extensilica/extensions/
 xsil run <package>          # fetch, verify, and execute the package entry point
 xsil test <package>         # fetch, verify, and run the test suite

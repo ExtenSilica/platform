@@ -15,7 +15,9 @@ Design and implement your RISC-V extension, toolchain, simulation assets, or doc
 
 ### 2. Assemble the package directory
 
-Create a directory conforming to the [XSil spec](../spec/xsil.md#3-archive-layout):
+You can scaffold an unscoped package with **`xsil init <slug>`** (creates `./<slug>/` with `manifest.json`, `sim/run.sh`, `tests/run.sh`, `docs/`, `toolchain/README.md`, `.xsilignore`, and a fresh payload checksum). Use `--parent DIR` to place the folder elsewhere, `--author NAME` for `manifest.author`, and `--force` to replace an existing directory.
+
+Otherwise create a directory conforming to the [XSil spec](../spec/xsil.md#3-archive-layout):
 
 ```
 my-package/

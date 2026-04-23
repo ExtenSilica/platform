@@ -25,6 +25,7 @@ xsil run <package>
 
 ## Examples
 
+- **`xsil init <slug>`** — Scaffold a new package directory (see [developer-publishing.md](./developer-publishing.md) §2).
 - **[../examples/rvx-demo/README.md](../examples/rvx-demo/README.md)** — Minimal local package: `xsil run examples/rvx-demo` (Spike + RISC-V GCC).
 
 ## Documents
