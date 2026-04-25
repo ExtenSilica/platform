@@ -17,6 +17,11 @@ model User {
   email        String    @unique
   passwordHash String
   apiToken     String?   @unique
+  /// Set when the user proves control of `email` (verify link or OAuth sign-up).
+  emailVerifiedAt            DateTime?
+  /// SHA-256 hex of the raw token emailed for verification; cleared after success.
+  emailVerificationTokenHash String?   @unique
+  emailVerificationExpires   DateTime?
   bio          String?
   avatarUrl    String?
   createdAt    DateTime  @default(now())
@@ -62,6 +67,8 @@ model Organization {
   description String?
   avatarUrl   String?
   websiteUrl  String?
+  /// Company LinkedIn profile URL (https://www.linkedin.com/company/…)
+  linkedinUrl String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
