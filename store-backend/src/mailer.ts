@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { emailBrandHeaderCell, getEmailLogoAttachments } from './mailerBranding';
 
 /**
  * Zoho Mail SMTP transport for extensilica.com.
@@ -76,6 +77,9 @@ export async function sendDmcaReport(report: DmcaReport): Promise<void> {
     'Submitted via extensilica.com at ' + new Date().toISOString(),
   ].join('\n');
 
+  const logoAtt = await getEmailLogoAttachments();
+  const showLogo = logoAtt.length > 0;
+
   const html = `
 <!DOCTYPE html><html lang="en">
 <head><meta charset="utf-8"><title>DMCA Takedown Request</title></head>
@@ -84,14 +88,10 @@ export async function sendDmcaReport(report: DmcaReport): Promise<void> {
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0"
              style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:36px">
-        <tr>
-          <td style="padding-bottom:20px;border-bottom:1px solid #f3f4f6">
-            <p style="margin:0;font-size:18px;font-weight:700;color:#111827">ExtenSilica</p>
-            <p style="margin:4px 0 0;font-size:13px;color:#dc2626;font-weight:600">
-              DMCA / IP Takedown Request
-            </p>
-          </td>
-        </tr>
+        ${emailBrandHeaderCell(
+          '<span style="color:#dc2626;font-weight:600">DMCA / IP Takedown Request</span>',
+          { showRasterLogo: showLogo },
+        )}
         <tr><td style="padding-top:24px">
           <table width="100%" cellpadding="0" cellspacing="0">
             ${rows.map(([k, v]) => `
@@ -128,6 +128,7 @@ export async function sendDmcaReport(report: DmcaReport): Promise<void> {
     subject: `DMCA Takedown Request — ${report.packageSlug}`,
     text,
     html,
+    attachments: logoAtt,
   });
 }
 
@@ -137,6 +138,9 @@ export async function sendPasswordResetEmail(
   rawToken: string,
 ): Promise<void> {
   const resetUrl = `${SITE_URL}/reset-password?token=${rawToken}`;
+
+  const logoAtt = await getEmailLogoAttachments();
+  const showLogo = logoAtt.length > 0;
 
   const html = `
 <!DOCTYPE html>
@@ -148,16 +152,7 @@ export async function sendPasswordResetEmail(
     <tr><td align="center">
       <table width="560" cellpadding="0" cellspacing="0"
              style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:40px">
-        <tr>
-          <td style="padding-bottom:24px;border-bottom:1px solid #f3f4f6">
-            <p style="margin:0;font-size:18px;font-weight:700;color:#111827">
-              ExtenSilica
-            </p>
-            <p style="margin:4px 0 0;font-size:12px;color:#6b7280">
-              The public registry for <code>.xsil</code> packages
-            </p>
-          </td>
-        </tr>
+        ${emailBrandHeaderCell(undefined, { showRasterLogo: showLogo })}
         <tr>
           <td style="padding-top:28px">
             <h1 style="margin:0 0 8px;font-size:22px;color:#111827">
@@ -232,5 +227,98 @@ export async function sendPasswordResetEmail(
     subject: 'Reset your ExtenSilica password',
     text,
     html,
+    attachments: logoAtt,
+  });
+}
+
+const VERIFY_TOKEN_TTL_HOURS = 24;
+
+export async function sendVerifyEmailAddress(
+  toEmail: string,
+  toUsername: string,
+  rawToken: string,
+): Promise<void> {
+  const verifyUrl = `${SITE_URL}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
+
+  const logoAtt = await getEmailLogoAttachments();
+  const showLogo = logoAtt.length > 0;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Verify your email</title></head>
+<body style="font-family:sans-serif;background:#f9fafb;margin:0;padding:0">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 0">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0"
+             style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:40px">
+        ${emailBrandHeaderCell(undefined, { showRasterLogo: showLogo })}
+        <tr>
+          <td style="padding-top:28px">
+            <h1 style="margin:0 0 8px;font-size:22px;color:#111827">Verify your email</h1>
+            <p style="margin:0 0 20px;color:#374151;line-height:1.6">
+              Hi <strong>${toUsername}</strong>,
+            </p>
+            <p style="margin:0 0 20px;color:#374151;line-height:1.6">
+              Confirm this address to activate your ExtenSilica account and sign in.
+              This link expires in <strong>${VERIFY_TOKEN_TTL_HOURS} hours</strong>.
+            </p>
+            <p style="margin:0 0 28px">
+              <a href="${verifyUrl}"
+                 style="display:inline-block;background:#111827;color:#fff;
+                        padding:12px 24px;border-radius:6px;font-weight:600;
+                        font-size:14px;text-decoration:none">
+                Verify email
+              </a>
+            </p>
+            <p style="margin:0 0 12px;color:#6b7280;font-size:13px">
+              Or copy and paste this URL into your browser:
+            </p>
+            <p style="margin:0 0 28px;font-size:12px;color:#6b7280;word-break:break-all">
+              ${verifyUrl}
+            </p>
+            <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.6">
+              If you did not create an account, you can ignore this email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-top:28px;border-top:1px solid #f3f4f6;font-size:12px;color:#9ca3af">
+            &copy; ${new Date().getFullYear()} ExtenSilica &mdash;
+            <a href="${SITE_URL}" style="color:#9ca3af">extensilica.com</a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim();
+
+  const text = [
+    `Hi ${toUsername},`,
+    '',
+    'Please verify your email for ExtenSilica by opening this link (expires in 24 hours):',
+    '',
+    verifyUrl,
+    '',
+    'If you did not register, ignore this email.',
+    '',
+    '— ExtenSilica',
+  ].join('\n');
+
+  if (!transport) {
+    console.log('[mailer] Would send verify-email:');
+    console.log(`  To:   ${toEmail}`);
+    console.log(`  Link: ${verifyUrl}`);
+    return;
+  }
+
+  await transport.sendMail({
+    from: FROM,
+    to: toEmail,
+    subject: 'Verify your ExtenSilica email',
+    text,
+    html,
+    attachments: logoAtt,
   });
 }
