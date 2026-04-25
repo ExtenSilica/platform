@@ -39,6 +39,7 @@ import {
   BarChart3,
   Trash2,
   Linkedin,
+  Shield,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
@@ -383,12 +384,22 @@ export default function DashboardPage() {
             @{user.username}
           </p>
         </div>
-        <Link href="/publish/new">
-          <Button className="gap-2" size="sm">
-            <Plus className="h-4 w-4" />
-            Publish
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {user.isPlatformAdmin && (
+            <Link href="/dashboard/admin">
+              <Button variant="outline" className="gap-2" size="sm">
+                <Shield className="h-4 w-4" />
+                Platform
+              </Button>
+            </Link>
+          )}
+          <Link href="/publish/new">
+            <Button className="gap-2" size="sm">
+              <Plus className="h-4 w-4" />
+              Publish
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Tabs — single row avoids layout jump when labels wrap */}

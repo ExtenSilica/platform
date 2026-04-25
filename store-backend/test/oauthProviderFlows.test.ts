@@ -229,6 +229,7 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
         email: "newgithub@example.com",
         username: "octocat",
       }),
+      false,
     );
   });
 
@@ -271,6 +272,7 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
     expect(handoffSpy).toHaveBeenCalledWith(
       "rotated_token_______________________________________________",
       expect.any(Object),
+      false,
     );
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
@@ -349,6 +351,7 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
     expect(handoffSpy).toHaveBeenCalledWith(
       "after_race_tok______________________________________________",
       expect.any(Object),
+      false,
     );
   });
 
@@ -466,6 +469,7 @@ describe("Google OAuth flow (mocked HTTP + DB)", () => {
     expect(handoffSpy).toHaveBeenCalledWith(
       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       expect.objectContaining({ email: "goognew@example.com" }),
+      false,
     );
   });
 
@@ -508,6 +512,7 @@ describe("Google OAuth flow (mocked HTTP + DB)", () => {
     expect(handoffSpy).toHaveBeenCalledWith(
       "after_google________________________________________________",
       expect.any(Object),
+      false,
     );
   });
 });

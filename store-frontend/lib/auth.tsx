@@ -23,6 +23,8 @@ export interface AuthUser {
   avatarUrl?: string | null;
   createdAt: string;
   updatedAt?: string;
+  /** Set from the API when the account is listed in PLATFORM_ADMIN_* env on the registry. */
+  isPlatformAdmin?: boolean;
 }
 
 interface AuthContextValue {

@@ -20,6 +20,7 @@ describe("normalizeAuthMePayload", () => {
         createdAt: "2020-01-01T00:00:00.000Z",
       },
       oauthProviders: { hasGithub: true, hasGoogle: false },
+      isPlatformAdmin: true,
     };
     expect(normalizeAuthMePayload(body)).toEqual({
       id: 1,
@@ -28,6 +29,7 @@ describe("normalizeAuthMePayload", () => {
       bio: null,
       avatarUrl: null,
       createdAt: "2020-01-01T00:00:00.000Z",
+      isPlatformAdmin: true,
     });
   });
 

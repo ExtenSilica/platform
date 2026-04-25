@@ -10,6 +10,7 @@ type PendingPayload = {
     avatarUrl: string | null;
     createdAt: string;
   };
+  isPlatformAdmin: boolean;
   expiresAt: number;
 };
 
@@ -34,10 +35,14 @@ function prune(): void {
 /**
  * One-time browser handoff: callback redirects with ?oauth_code=…; frontend POSTs code here for { token, user }.
  */
-export function createPendingExchange(token: string, user: PendingPayload["user"]): string {
+export function createPendingExchange(
+  token: string,
+  user: PendingPayload["user"],
+  isPlatformAdmin: boolean,
+): string {
   prune();
   const code = crypto.randomBytes(24).toString("base64url");
-  store.set(code, { token, user, expiresAt: Date.now() + TTL_MS });
+  store.set(code, { token, user, isPlatformAdmin, expiresAt: Date.now() + TTL_MS });
   return code;
 }
 

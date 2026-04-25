@@ -11,6 +11,7 @@ import statsRoutes from './routes/stats';
 import orgRoutes from './routes/orgs';
 import legalRoutes from './routes/legal';
 import userRoutes from './routes/users';
+import platformAdminRoutes from './routes/platformAdmin';
 import { initStorage, storage } from './storage';
 import { specs } from './swagger';
 import { prisma } from './db';
@@ -129,6 +130,10 @@ app.use('/api/orgs', orgRoutes);
 // Public: GET /users/:username
 app.use('/users', userRoutes);
 app.use('/api/users', userRoutes);
+
+// ── Platform admin (operators only; see PLATFORM_ADMIN_* env vars) ────────
+app.use('/admin', platformAdminRoutes);
+app.use('/api/admin', platformAdminRoutes);
 
 // ── Legal submissions ───────────────────────────────────────────
 // POST /legal/dmca — DMCA / IP takedown request (rate-limited)

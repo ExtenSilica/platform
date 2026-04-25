@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import type { User } from "@prisma/client";
 import { sanitizeUser } from "../controllers/authController";
+import { isPlatformAdminUser } from "../lib/platformAdmin";
 import { createPendingExchange, consumePendingExchange } from "../lib/oauthPendingExchange";
 
 function trimEnv(key: string): string | undefined {
@@ -37,7 +38,11 @@ export function redirectOAuthLoginSuccess(res: Response, oauthHandoffCode: strin
 
 /** One-time browser handoff code (query param); exchange via POST /auth/oauth/exchange. */
 export function createOAuthBrowserHandoff(apiToken: string, user: User): string {
-  return createPendingExchange(apiToken, sanitizeUser(user));
+  return createPendingExchange(
+    apiToken,
+    sanitizeUser(user),
+    isPlatformAdminUser(user),
+  );
 }
 
 /**
@@ -54,5 +59,5 @@ export async function oauthBrowserExchange(req: Request, res: Response): Promise
     res.status(400).json({ error: "Invalid or expired OAuth code." });
     return;
   }
-  res.json({ token: row.token, user: row.user });
+  res.json({ token: row.token, user: row.user, isPlatformAdmin: row.isPlatformAdmin });
 }

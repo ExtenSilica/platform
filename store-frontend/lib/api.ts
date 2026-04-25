@@ -20,6 +20,16 @@ export function getRegistryOrigin(): string {
 
 const API_BASE = getRegistryOrigin();
 
+function withPlatformAdminFlag(
+  user: AuthUser,
+  root: Record<string, unknown>
+): AuthUser {
+  if (typeof root.isPlatformAdmin === "boolean") {
+    return { ...user, isPlatformAdmin: root.isPlatformAdmin };
+  }
+  return user;
+}
+
 /** `GET /auth/me` returns `{ user, oauthProviders? }`. Accept legacy flat `user` shape too. */
 export function normalizeAuthMePayload(body: unknown): AuthUser | null {
   if (!body || typeof body !== "object") return null;
@@ -32,26 +42,29 @@ export function normalizeAuthMePayload(body: unknown): AuthUser | null {
       typeof u.username === "string" &&
       typeof u.email === "string"
     ) {
-      return {
-        id: u.id,
-        username: u.username,
-        email: u.email,
-        emailVerified: typeof u.emailVerified === "boolean" ? u.emailVerified : undefined,
-        bio: (u.bio as string | null | undefined) ?? null,
-        avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
-        createdAt:
-          typeof u.createdAt === "string"
-            ? u.createdAt
-            : u.createdAt instanceof Date
-              ? u.createdAt.toISOString()
-              : "",
-        updatedAt:
-          typeof u.updatedAt === "string"
-            ? u.updatedAt
-            : u.updatedAt instanceof Date
-              ? u.updatedAt.toISOString()
-              : undefined,
-      };
+      return withPlatformAdminFlag(
+        {
+          id: u.id,
+          username: u.username,
+          email: u.email,
+          emailVerified: typeof u.emailVerified === "boolean" ? u.emailVerified : undefined,
+          bio: (u.bio as string | null | undefined) ?? null,
+          avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
+          createdAt:
+            typeof u.createdAt === "string"
+              ? u.createdAt
+              : u.createdAt instanceof Date
+                ? u.createdAt.toISOString()
+                : "",
+          updatedAt:
+            typeof u.updatedAt === "string"
+              ? u.updatedAt
+              : u.updatedAt instanceof Date
+                ? u.updatedAt.toISOString()
+                : undefined,
+        },
+        o
+      );
     }
   }
   if (
@@ -60,26 +73,29 @@ export function normalizeAuthMePayload(body: unknown): AuthUser | null {
     typeof o.email === "string"
   ) {
     const u = o as Record<string, unknown>;
-    return {
-      id: u.id as number,
-      username: u.username as string,
-      email: u.email as string,
-      emailVerified: typeof u.emailVerified === "boolean" ? u.emailVerified : undefined,
-      bio: (u.bio as string | null | undefined) ?? null,
-      avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
-      createdAt:
-        typeof u.createdAt === "string"
-          ? u.createdAt
-          : u.createdAt instanceof Date
-            ? (u.createdAt as Date).toISOString()
-            : "",
-      updatedAt:
-        typeof u.updatedAt === "string"
-          ? u.updatedAt
-          : u.updatedAt instanceof Date
-            ? (u.updatedAt as Date).toISOString()
-            : undefined,
-    };
+    return withPlatformAdminFlag(
+      {
+        id: u.id as number,
+        username: u.username as string,
+        email: u.email as string,
+        emailVerified: typeof u.emailVerified === "boolean" ? u.emailVerified : undefined,
+        bio: (u.bio as string | null | undefined) ?? null,
+        avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
+        createdAt:
+          typeof u.createdAt === "string"
+            ? u.createdAt
+            : u.createdAt instanceof Date
+              ? (u.createdAt as Date).toISOString()
+              : "",
+        updatedAt:
+          typeof u.updatedAt === "string"
+            ? u.updatedAt
+            : u.updatedAt instanceof Date
+              ? (u.updatedAt as Date).toISOString()
+              : undefined,
+      },
+      o
+    );
   }
   return null;
 }
@@ -168,12 +184,10 @@ export async function apiUpdateProfile(
   token: string,
   patch: { bio?: string | null; avatarUrl?: string | null }
 ): Promise<{ user: import("@/lib/auth").AuthUser }> {
-  return apiWrite<{ user: import("@/lib/auth").AuthUser }>(
-    "PATCH",
-    "/auth/me",
-    token,
-    patch
-  );
+  const data = await apiWrite<Record<string, unknown>>("PATCH", "/auth/me", token, patch);
+  const user = normalizeAuthMePayload(data);
+  if (!user) throw new ApiError("Invalid profile response", 500);
+  return { user };
 }
 
 export async function apiChangePassword(
@@ -181,12 +195,34 @@ export async function apiChangePassword(
   currentPassword: string,
   newPassword: string
 ): Promise<{ token: string; user: import("@/lib/auth").AuthUser }> {
-  return apiWrite<{ token: string; user: import("@/lib/auth").AuthUser }>(
-    "PATCH",
-    "/auth/me/password",
-    token,
-    { currentPassword, newPassword }
-  );
+  const res = await fetch(`${API_BASE}/auth/me/password`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  const payload = (await res.json().catch(() => ({}))) as {
+    token?: string;
+    user?: unknown;
+    isPlatformAdmin?: boolean;
+    error?: string;
+    code?: string;
+  };
+  if (!res.ok) {
+    throw new ApiError(
+      payload.error ?? res.statusText,
+      res.status,
+      undefined,
+      typeof payload.code === "string" ? payload.code : undefined
+    );
+  }
+  const user = normalizeAuthMePayload(payload);
+  if (!payload.token || !user) {
+    throw new ApiError("Password change returned an invalid session.", res.status);
+  }
+  return { token: payload.token, user };
 }
 
 export async function apiUploadAvatar(
@@ -200,9 +236,15 @@ export async function apiUploadAvatar(
     headers: { Authorization: `Bearer ${token}` },
     body,
   });
-  const payload = await res.json().catch(() => ({})) as { user?: import("@/lib/auth").AuthUser; error?: string };
+  const payload = (await res.json().catch(() => ({}))) as {
+    user?: unknown;
+    isPlatformAdmin?: boolean;
+    error?: string;
+  };
   if (!res.ok) throw new ApiError(payload.error ?? res.statusText, res.status);
-  return payload as { user: import("@/lib/auth").AuthUser };
+  const user = normalizeAuthMePayload(payload);
+  if (!user) throw new ApiError("Invalid avatar response", 500);
+  return { user };
 }
 
 export async function apiForgotPassword(email: string): Promise<{ ok: boolean; message: string }> {
@@ -302,9 +344,10 @@ export async function apiLogin(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  const payload = await res.json() as {
+  const payload = (await res.json()) as {
     token?: string;
-    user?: AuthUser;
+    user?: unknown;
+    isPlatformAdmin?: boolean;
     error?: string;
     code?: string;
   };
@@ -316,7 +359,11 @@ export async function apiLogin(
       typeof payload.code === "string" ? payload.code : undefined
     );
   }
-  return payload as LoginResult;
+  const user = normalizeAuthMePayload(payload);
+  if (!payload.token || !user) {
+    throw new ApiError("Login returned an invalid session.", res.status);
+  }
+  return { token: payload.token, user };
 }
 
 export type RegisterResult =
@@ -344,8 +391,17 @@ export async function apiRegister(
 /** In-flight verify calls keyed by token so React Strict Mode cannot POST twice and burn the one-time token. */
 const verifyEmailInflight = new Map<string, Promise<LoginResult>>();
 
-function apiVerifyEmailRequest(token: string): Promise<LoginResult> {
-  return apiPostPublic<LoginResult>("/auth/verify-email", { token });
+async function apiVerifyEmailRequest(token: string): Promise<LoginResult> {
+  const raw = await apiPostPublic<{
+    token: string;
+    user?: unknown;
+    isPlatformAdmin?: boolean;
+  }>("/auth/verify-email", { token });
+  const user = normalizeAuthMePayload(raw);
+  if (!raw.token || !user) {
+    throw new ApiError("Email verification returned an invalid session.", 500);
+  }
+  return { token: raw.token, user };
 }
 
 export function apiVerifyEmail(token: string): Promise<LoginResult> {
@@ -418,13 +474,18 @@ export async function apiOAuthExchange(
   });
   const payload = (await res.json().catch(() => ({}))) as {
     token?: string;
-    user?: AuthUser;
+    user?: unknown;
+    isPlatformAdmin?: boolean;
     error?: string;
   };
   if (!res.ok) {
     throw new ApiError(payload.error ?? "OAuth exchange failed", res.status);
   }
-  return payload as LoginResult;
+  const user = normalizeAuthMePayload(payload);
+  if (!payload.token || !user) {
+    throw new ApiError("OAuth exchange returned an invalid session.", res.status);
+  }
+  return { token: payload.token, user };
 }
 
 /* ─── My packages ───────────────────────────────────────────────────────── */
@@ -622,4 +683,120 @@ export async function apiRemoveOrgMember(
   username: string
 ): Promise<void> {
   return apiWrite<void>("DELETE", `/orgs/${orgSlug}/members/${username}`, token);
+}
+
+// ── Platform admin (operators only; backend checks PLATFORM_ADMIN_* env) ───
+
+export interface AdminHealthResponse {
+  ok: boolean;
+  uptimeSeconds: number;
+  latencyMs: number;
+  database: "ok" | "error";
+  storage: { ok: "ok" | "error"; driver: string; error?: string };
+  counts: {
+    users: number;
+    packages: number;
+    versions: number;
+    organizations: number;
+  };
+  platformAdminConfigured: boolean;
+}
+
+export interface AdminUserRow {
+  id: number;
+  username: string;
+  email: string;
+  emailVerified: boolean;
+  emailVerifiedAt: string | null;
+  hasActiveToken: boolean;
+  createdAt: string;
+  updatedAt: string;
+  ownedPackageCount: number;
+  orgMembershipCount: number;
+}
+
+export interface AdminUsersResponse {
+  total: number;
+  skip: number;
+  limit: number;
+  users: AdminUserRow[];
+}
+
+export interface AdminPackageRow {
+  id: number;
+  slug: string;
+  name: string;
+  latestVersion: string | null;
+  totalDownloads: number;
+  weeklyDownloads: number;
+  isDeprecated: boolean;
+  versionCount: number;
+  owner: { id: number; username: string; email: string } | null;
+  org: { id: number; slug: string; displayName: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminPackagesResponse {
+  total: number;
+  skip: number;
+  limit: number;
+  packages: AdminPackageRow[];
+}
+
+export async function apiAdminHealth(token: string): Promise<AdminHealthResponse> {
+  return apiFetch<AdminHealthResponse>("/admin/health", token);
+}
+
+export async function apiAdminUsers(
+  token: string,
+  params?: { limit?: number; skip?: number }
+): Promise<AdminUsersResponse> {
+  const q = new URLSearchParams();
+  if (params?.limit != null) q.set("limit", String(params.limit));
+  if (params?.skip != null) q.set("skip", String(params.skip));
+  const suffix = q.toString() ? `?${q.toString()}` : "";
+  return apiFetch<AdminUsersResponse>(`/admin/users${suffix}`, token);
+}
+
+export async function apiAdminPackages(
+  token: string,
+  params?: { limit?: number; skip?: number }
+): Promise<AdminPackagesResponse> {
+  const q = new URLSearchParams();
+  if (params?.limit != null) q.set("limit", String(params.limit));
+  if (params?.skip != null) q.set("skip", String(params.skip));
+  const suffix = q.toString() ? `?${q.toString()}` : "";
+  return apiFetch<AdminPackagesResponse>(`/admin/packages${suffix}`, token);
+}
+
+export async function apiAdminSetPackageOwner(
+  token: string,
+  slug: string,
+  ownerUsername: string | null
+): Promise<{
+  package: {
+    id: number;
+    slug: string;
+    name: string;
+    owner: { id: number; username: string; email: string } | null;
+    org: { id: number; slug: string; displayName: string } | null;
+  };
+}> {
+  return apiWrite("PATCH", "/admin/packages", token, { slug, ownerUsername });
+}
+
+export async function apiAdminVerifyUserEmail(
+  token: string,
+  userId: number
+): Promise<{
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    emailVerified: boolean;
+    emailVerifiedAt: string;
+  };
+}> {
+  return apiWrite("POST", `/admin/users/${userId}/verify-email`, token);
 }

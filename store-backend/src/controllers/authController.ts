@@ -7,6 +7,7 @@ import { prisma } from '../db';
 import { sendPasswordResetEmail, sendVerifyEmailAddress } from '../mailer';
 import { getOAuthProviderSummaryForUser } from '../services/oauthProviderSummary';
 import { passwordPolicyError } from '../passwordPolicy';
+import { isPlatformAdminUser } from '../lib/platformAdmin';
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -23,6 +24,10 @@ const USERNAME_RE = /^[a-z0-9_-]{2,32}$/;
 
 export function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');
+}
+
+function authFlags(user: { id: number; email: string }) {
+  return { isPlatformAdmin: isPlatformAdminUser(user) };
 }
 
 export function sanitizeUser(user: {
@@ -182,7 +187,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       data: { apiToken },
     });
 
-    res.json({ token: apiToken, user: sanitizeUser(updated) });
+    res.json({ token: apiToken, user: sanitizeUser(updated), ...authFlags(updated) });
   } catch (err) {
     console.error('[auth/login]', err);
     res.status(500).json({ error: 'Login failed. Please try again.' });
@@ -214,7 +219,7 @@ export async function logout(req: Request, res: Response): Promise<void> {
  */
 export async function me(req: Request, res: Response): Promise<void> {
   const oauthProviders = await getOAuthProviderSummaryForUser(req.user!.id);
-  res.json({ user: sanitizeUser(req.user!), oauthProviders });
+  res.json({ user: sanitizeUser(req.user!), oauthProviders, ...authFlags(req.user!) });
 }
 
 /**
@@ -270,7 +275,7 @@ export async function changePassword(req: Request, res: Response): Promise<void>
     });
 
     // Return the new token so the client can swap it without logging out.
-    res.json({ token: newToken, user: sanitizeUser(updated) });
+    res.json({ token: newToken, user: sanitizeUser(updated), ...authFlags(updated) });
   } catch (err) {
     console.error('[auth/changePassword]', err);
     res.status(500).json({ error: 'Password change failed. Please try again.' });
@@ -337,7 +342,7 @@ export async function updateMe(req: Request, res: Response): Promise<void> {
       where: { id: userId },
       data: patch,
     });
-    res.json({ user: sanitizeUser(updated) });
+    res.json({ user: sanitizeUser(updated), ...authFlags(updated) });
   } catch (err) {
     console.error('[auth/updateMe]', err);
     res.status(500).json({ error: 'Profile update failed. Please try again.' });
@@ -492,7 +497,7 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
       },
     });
 
-    res.json({ token: apiToken, user: sanitizeUser(updated) });
+    res.json({ token: apiToken, user: sanitizeUser(updated), ...authFlags(updated) });
   } catch (err) {
     console.error('[auth/verifyEmail]', err);
     res.status(500).json({ error: 'Email verification failed. Please try again.' });
@@ -658,7 +663,7 @@ export async function uploadAvatar(req: Request, res: Response): Promise<void> {
       where: { id: user.id },
       data: { avatarUrl },
     });
-    res.json({ user: sanitizeUser(updated) });
+    res.json({ user: sanitizeUser(updated), ...authFlags(updated) });
   } catch (err) {
     console.error('[auth/uploadAvatar]', err);
     res.status(500).json({ error: 'Failed to save avatar. Please try again.' });

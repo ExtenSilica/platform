@@ -15,7 +15,7 @@ describe("oauthPendingExchange (replay safety)", () => {
   };
 
   it("second consume with the same code returns null (one-time handoff)", () => {
-    const code = createPendingExchange("token-a", user);
+    const code = createPendingExchange("token-a", user, false);
     const first = consumePendingExchange(code);
     expect(first).not.toBeNull();
     expect(first?.token).toBe("token-a");
