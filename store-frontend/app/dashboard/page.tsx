@@ -13,8 +13,10 @@ import {
   apiCreateOrg,
   apiAddOrgMember,
   apiRemoveOrgMember,
+  apiDeleteAccount,
   ApiError,
 } from "@/lib/api";
+import { passwordPolicyError } from "@/lib/passwordPolicy";
 import type { RegistryPackage, MyOrg } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +37,8 @@ import {
   Camera,
   Building2,
   BarChart3,
+  Trash2,
+  Linkedin,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
@@ -51,7 +55,7 @@ function isDashboardTab(v: string | null): v is DashboardTab {
 }
 
 export default function DashboardPage() {
-  const { user, token, isLoading, updateUser, login } = useAuth();
+  const { user, token, isLoading, updateUser, login, logout } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<DashboardTab>("stats");
 
@@ -94,6 +98,11 @@ export default function DashboardPage() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSaved, setPasswordSaved] = useState(false);
 
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmUsername, setDeleteConfirmUsername] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
   // Organizations
   const [orgs, setOrgs] = useState<MyOrg[]>([]);
   const [orgsLoading, setOrgsLoading] = useState(true);
@@ -101,6 +110,7 @@ export default function DashboardPage() {
   const [newOrgName, setNewOrgName] = useState("");
   const [newOrgDisplayName, setNewOrgDisplayName] = useState("");
   const [newOrgDesc, setNewOrgDesc] = useState("");
+  const [newOrgLinkedin, setNewOrgLinkedin] = useState("");
   const [newOrgCreating, setNewOrgCreating] = useState(false);
   const [newOrgError, setNewOrgError] = useState("");
   const [newOrgSuccess, setNewOrgSuccess] = useState("");
@@ -153,6 +163,7 @@ export default function DashboardPage() {
         name: newOrgName.trim(),
         displayName: newOrgDisplayName.trim(),
         description: newOrgDesc.trim() || undefined,
+        linkedinUrl: newOrgLinkedin.trim() || undefined,
       });
       setOrgs((prev) => [
         ...prev,
@@ -161,6 +172,7 @@ export default function DashboardPage() {
       setNewOrgName("");
       setNewOrgDisplayName("");
       setNewOrgDesc("");
+      setNewOrgLinkedin("");
       setNewOrgSuccess(`Organization @${org.slug} created.`);
       setTimeout(() => setNewOrgSuccess(""), 3000);
     } catch (err) {
@@ -276,8 +288,9 @@ export default function DashboardPage() {
     setPasswordError("");
     setPasswordSaved(false);
 
-    if (newPassword.length < 8) {
-      setPasswordError("New password must be at least 8 characters.");
+    const pwErr = passwordPolicyError(newPassword);
+    if (pwErr) {
+      setPasswordError(pwErr);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -305,6 +318,28 @@ export default function DashboardPage() {
       );
     } finally {
       setPasswordSaving(false);
+    }
+  }
+
+  async function handleDeleteAccount(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !user) return;
+    setDeleteError("");
+    if (deleteConfirmUsername.trim().toLowerCase() !== user.username.toLowerCase()) {
+      setDeleteError(`Type your username exactly (${user.username}) to confirm.`);
+      return;
+    }
+    setDeleteBusy(true);
+    try {
+      await apiDeleteAccount(token, deletePassword, deleteConfirmUsername.trim());
+      setDeletePassword("");
+      setDeleteConfirmUsername("");
+      await logout();
+      router.replace("/");
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Failed to delete account.");
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
@@ -611,6 +646,25 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <div className="mb-8 max-w-lg rounded-lg border bg-muted/20 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Email
+              </p>
+              <p className="font-mono text-sm">{user.email}</p>
+            </div>
+            {user.emailVerified === false && (
+              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
+                Unverified
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Used for sign-in and notifications. To change it, contact support for now.
+          </p>
+        </div>
+
         <form
           onSubmit={handleProfileSave}
           className="max-w-lg space-y-5"
@@ -686,7 +740,7 @@ export default function DashboardPage() {
                 id="new-password"
                 type="password"
                 autoComplete="new-password"
-                placeholder="At least 8 characters"
+                placeholder="Letters and digits, 8+ characters"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -709,6 +763,9 @@ export default function DashboardPage() {
               <p className="text-sm text-destructive">{passwordError}</p>
             )}
 
+            <p className="text-xs text-muted-foreground">
+              Use at least 8 characters with at least one letter and one digit.
+            </p>
             <div className="flex items-center gap-3">
               <Button type="submit" disabled={passwordSaving} size="sm" variant="outline">
                 {passwordSaving ? "Updating…" : "Update password"}
@@ -720,6 +777,58 @@ export default function DashboardPage() {
                 </span>
               )}
             </div>
+          </form>
+        </div>
+
+        <div className="mt-12 max-w-lg border-t border-destructive/25 pt-8">
+          <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-destructive">
+            <Trash2 className="h-4 w-4" aria-hidden />
+            Danger zone
+          </h3>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Permanently delete your account and registry profile. You cannot delete your account if
+            you still own published packages—remove or transfer them first.
+          </p>
+          <form onSubmit={handleDeleteAccount} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="delete-confirm-user">Type your username to confirm</Label>
+              <Input
+                id="delete-confirm-user"
+                type="text"
+                autoComplete="username"
+                value={deleteConfirmUsername}
+                onChange={(e) => setDeleteConfirmUsername(e.target.value)}
+                placeholder={user.username}
+                aria-describedby="delete-confirm-hint"
+              />
+              <p id="delete-confirm-hint" className="text-xs text-muted-foreground">
+                Enter <span className="font-mono font-medium">{user.username}</span> (same as in the dashboard header). This cannot be undone.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="delete-password">Your password</Label>
+              <Input
+                id="delete-password"
+                type="password"
+                autoComplete="current-password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Current password"
+              />
+            </div>
+            {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+            <Button
+              type="submit"
+              variant="destructive"
+              size="sm"
+              disabled={
+                deleteBusy ||
+                !deletePassword ||
+                deleteConfirmUsername.trim().toLowerCase() !== user.username.toLowerCase()
+              }
+            >
+              {deleteBusy ? "Deleting…" : "Delete my account"}
+            </Button>
           </form>
         </div>
       </div>
@@ -792,6 +901,17 @@ export default function DashboardPage() {
                       {" · "}
                       {org._count.packages} pkg{org._count.packages !== 1 ? "s" : ""}
                     </span>
+                    {org.linkedinUrl && (
+                      <a
+                        href={org.linkedinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                        title="LinkedIn"
+                      >
+                        <Linkedin className="w-3.5 h-3.5" />
+                      </a>
+                    )}
                     <a
                       href={`/orgs/${org.slug}`}
                       className="text-xs text-muted-foreground hover:text-foreground"
@@ -889,6 +1009,19 @@ export default function DashboardPage() {
                 value={newOrgDesc}
                 onChange={(e) => setNewOrgDesc(e.target.value)}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="orgLinkedin">LinkedIn company profile (optional)</Label>
+              <Input
+                id="orgLinkedin"
+                type="url"
+                placeholder="https://www.linkedin.com/company/your-org"
+                value={newOrgLinkedin}
+                onChange={(e) => setNewOrgLinkedin(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                HTTPS link to your organization&apos;s LinkedIn company page.
+              </p>
             </div>
             {newOrgError && (
               <p className="text-sm text-destructive">{newOrgError}</p>

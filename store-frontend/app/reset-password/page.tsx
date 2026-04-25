@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiResetPassword, ApiError } from "@/lib/api";
+import { passwordPolicyError } from "@/lib/passwordPolicy";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
@@ -29,8 +30,9 @@ function ResetPasswordContent() {
     e.preventDefault();
     setError("");
 
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters.");
+    const pw = passwordPolicyError(newPassword);
+    if (pw) {
+      setError(pw);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -92,11 +94,16 @@ function ResetPasswordContent() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <Field label="New password" htmlFor="new-password" required>
+                <Field
+                  label="New password"
+                  htmlFor="new-password"
+                  required
+                  hint="At least 8 characters, with at least one letter and one digit."
+                >
                   <Input
                     id="new-password"
                     type="password"
-                    placeholder="At least 8 characters"
+                    placeholder="e.g. correcthorse24"
                     autoComplete="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}

@@ -100,6 +100,7 @@ export interface Organization {
   description?: string | null;
   avatarUrl?: string | null;
   websiteUrl?: string | null;
+  linkedinUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   members: OrgMember[];
@@ -122,6 +123,7 @@ export interface MyOrg {
   slug: string;
   displayName: string;
   avatarUrl?: string | null;
+  linkedinUrl?: string | null;
   role: 'owner' | 'admin' | 'member';
   joinedAt: string;
   _count: { members: number; packages: number };

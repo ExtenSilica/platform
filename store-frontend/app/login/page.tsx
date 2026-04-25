@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { apiLogin, ApiError } from "@/lib/api";
+import { apiLogin, apiResendVerification, ApiError, EMAIL_NOT_VERIFIED_CODE } from "@/lib/api";
 import {
   setPostLoginRedirect,
   consumePostLoginRedirect,
@@ -25,7 +25,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
+  const [showResend, setShowResend] = useState(false);
 
   useEffect(() => {
     if (!isLoading && user) router.replace("/dashboard");
@@ -44,15 +47,36 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setInfo("");
+    setShowResend(false);
     setSubmitting(true);
     try {
       const { token, user: me } = await apiLogin(email.trim(), password);
       login(token, me);
       router.push(consumePostLoginRedirect());
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Login failed.");
+      if (err instanceof ApiError && err.code === EMAIL_NOT_VERIFIED_CODE) {
+        setError(err.message);
+        setShowResend(true);
+      } else {
+        setError(err instanceof ApiError ? err.message : "Login failed.");
+      }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    if (!email.trim()) return;
+    setResendBusy(true);
+    setInfo("");
+    try {
+      const r = await apiResendVerification(email.trim());
+      setInfo(r.message);
+    } catch {
+      setInfo("If that address has an unverified account, a new verification email was sent.");
+    } finally {
+      setResendBusy(false);
     }
   }
 
@@ -73,7 +97,24 @@ export default function LoginPage() {
         <div className="rounded-lg border bg-background p-8 shadow-sm">
           {error && (
             <Alert variant="destructive" className="mb-5">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="space-y-2">
+                <span className="block">{error}</span>
+                {showResend && (
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resendBusy}
+                    className="text-sm font-medium underline underline-offset-2 hover:no-underline"
+                  >
+                    {resendBusy ? "Sending…" : "Resend verification email"}
+                  </button>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+          {info && (
+            <Alert className="mb-5 border-primary/30 bg-primary/5">
+              <AlertDescription>{info}</AlertDescription>
             </Alert>
           )}
 

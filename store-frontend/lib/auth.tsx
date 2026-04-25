@@ -18,9 +18,11 @@ export interface AuthUser {
   id: number;
   username: string;
   email: string;
+  emailVerified?: boolean;
   bio?: string | null;
   avatarUrl?: string | null;
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface AuthContextValue {

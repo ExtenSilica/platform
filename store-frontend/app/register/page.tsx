@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { apiRegister, ApiError } from "@/lib/api";
+import { passwordPolicyError } from "@/lib/passwordPolicy";
 import {
   setPostLoginRedirect,
   consumePostLoginRedirect,
@@ -28,7 +29,9 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -46,11 +49,14 @@ export default function RegisterPage() {
   }, []);
 
   const usernameValid = USERNAME_RE.test(username);
-  const passwordStrong = password.length >= 8;
+  const passwordErr = password ? passwordPolicyError(password) : null;
+  const passwordsMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setInfo("");
 
     if (!usernameValid) {
       setError(
@@ -58,18 +64,31 @@ export default function RegisterPage() {
       );
       return;
     }
-    if (!passwordStrong) {
-      setError("Password must be at least 8 characters.");
+    const pw = passwordPolicyError(password);
+    if (pw) {
+      setError(pw);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Re-type your password in both fields—they must match.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const { token, user: me } = await apiRegister(
-        username.trim(),
-        email.trim(),
-        password
-      );
+      const result = await apiRegister(username.trim(), email.trim(), password, confirmPassword);
+      if ("pendingVerification" in result && result.pendingVerification) {
+        setInfo(
+          result.message ??
+            `We sent a verification link to ${result.email}. Open it, then sign in here.`
+        );
+        return;
+      }
+      if (!("token" in result) || !("user" in result)) {
+        setError("Unexpected response from server.");
+        return;
+      }
+      const { token, user: me } = result;
       login(token, me);
       router.push(consumePostLoginRedirect());
     } catch (err) {
@@ -99,13 +118,18 @@ export default function RegisterPage() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          {info && (
+            <Alert className="mb-5 border-primary/30 bg-primary/5">
+              <AlertDescription>{info}</AlertDescription>
+            </Alert>
+          )}
 
           <OauthProviderLinks />
 
           <AuthMethodDivider className="my-1">or register with email</AuthMethodDivider>
 
           <p className="mb-4 text-xs text-muted-foreground">
-            Email path: you choose username and password. Same registry API token model as OAuth.
+            Email path: you choose username and password. We send a confirmation link before you can sign in.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -129,7 +153,7 @@ export default function RegisterPage() {
                   required
                   className={username && usernameValid ? "pr-9" : ""}
                 />
-                {username && usernameValid && (
+                {username && usernameValid && !info && (
                   <Check className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" />
                 )}
               </div>
@@ -151,12 +175,8 @@ export default function RegisterPage() {
               label="Password"
               htmlFor="password"
               required
-              hint="Minimum 8 characters."
-              error={
-                password && !passwordStrong
-                  ? "Password must be at least 8 characters."
-                  : undefined
-              }
+              hint="At least 8 characters, with at least one letter and one digit."
+              error={password && passwordErr ? passwordErr : undefined}
             >
               <Input
                 id="password"
@@ -169,8 +189,27 @@ export default function RegisterPage() {
               />
             </Field>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Creating account…" : "Create account"}
+            <Field
+              label="Confirm password"
+              htmlFor="confirm-password"
+              required
+              error={
+                passwordsMismatch ? "Passwords do not match." : undefined
+              }
+            >
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="Re-enter password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </Field>
+
+            <Button type="submit" className="w-full" disabled={submitting || Boolean(info)}>
+              {submitting ? "Creating account…" : info ? "Check your email" : "Create account"}
             </Button>
           </form>
 

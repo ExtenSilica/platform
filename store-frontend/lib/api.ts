@@ -36,6 +36,7 @@ export function normalizeAuthMePayload(body: unknown): AuthUser | null {
         id: u.id,
         username: u.username,
         email: u.email,
+        emailVerified: typeof u.emailVerified === "boolean" ? u.emailVerified : undefined,
         bio: (u.bio as string | null | undefined) ?? null,
         avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
         createdAt:
@@ -44,6 +45,12 @@ export function normalizeAuthMePayload(body: unknown): AuthUser | null {
             : u.createdAt instanceof Date
               ? u.createdAt.toISOString()
               : "",
+        updatedAt:
+          typeof u.updatedAt === "string"
+            ? u.updatedAt
+            : u.updatedAt instanceof Date
+              ? u.updatedAt.toISOString()
+              : undefined,
       };
     }
   }
@@ -52,7 +59,27 @@ export function normalizeAuthMePayload(body: unknown): AuthUser | null {
     typeof o.username === "string" &&
     typeof o.email === "string"
   ) {
-    return body as AuthUser;
+    const u = o as Record<string, unknown>;
+    return {
+      id: u.id as number,
+      username: u.username as string,
+      email: u.email as string,
+      emailVerified: typeof u.emailVerified === "boolean" ? u.emailVerified : undefined,
+      bio: (u.bio as string | null | undefined) ?? null,
+      avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
+      createdAt:
+        typeof u.createdAt === "string"
+          ? u.createdAt
+          : u.createdAt instanceof Date
+            ? (u.createdAt as Date).toISOString()
+            : "",
+      updatedAt:
+        typeof u.updatedAt === "string"
+          ? u.updatedAt
+          : u.updatedAt instanceof Date
+            ? (u.updatedAt as Date).toISOString()
+            : undefined,
+    };
   }
   return null;
 }
@@ -61,7 +88,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status?: number,
-    public errors?: Record<string, string>
+    public errors?: Record<string, string>,
+    public code?: string
   ) {
     super(message);
     this.name = "ApiError";
@@ -94,12 +122,45 @@ async function apiWrite<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    const payload = await res.json().catch(() => ({})) as { error?: string; errors?: Record<string, string> };
-    throw new ApiError(payload.error ?? res.statusText, res.status, payload.errors);
+    const payload = await res.json().catch(() => ({})) as {
+      error?: string;
+      errors?: Record<string, string>;
+      code?: string;
+    };
+    throw new ApiError(
+      payload.error ?? res.statusText,
+      res.status,
+      payload.errors,
+      typeof payload.code === "string" ? payload.code : undefined
+    );
   }
   if (res.status === 204) return undefined as unknown as T;
   return res.json() as Promise<T>;
 }
+
+async function apiPostPublic<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const payload = await res.json().catch(() => ({})) as {
+    error?: string;
+    code?: string;
+    errors?: Record<string, string>;
+  };
+  if (!res.ok) {
+    throw new ApiError(
+      payload.error ?? res.statusText,
+      res.status,
+      payload.errors,
+      typeof payload.code === "string" ? payload.code : undefined
+    );
+  }
+  return payload as T;
+}
+
+export const EMAIL_NOT_VERIFIED_CODE = "EMAIL_NOT_VERIFIED";
 
 /* ─── Auth / profile ───────────────────────────────────────────────────── */
 
@@ -241,25 +302,92 @@ export async function apiLogin(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  const payload = await res.json() as { token?: string; user?: AuthUser; error?: string };
-  if (!res.ok) throw new ApiError(payload.error ?? "Login failed", res.status);
+  const payload = await res.json() as {
+    token?: string;
+    user?: AuthUser;
+    error?: string;
+    code?: string;
+  };
+  if (!res.ok) {
+    throw new ApiError(
+      payload.error ?? "Login failed",
+      res.status,
+      undefined,
+      typeof payload.code === "string" ? payload.code : undefined
+    );
+  }
   return payload as LoginResult;
 }
+
+export type RegisterResult =
+  | LoginResult
+  | {
+      pendingVerification: true;
+      email: string;
+      message?: string;
+    };
 
 export async function apiRegister(
   username: string,
   email: string,
-  password: string
-): Promise<LoginResult> {
-  const res = await fetch(`${API_BASE}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, email, password }),
+  password: string,
+  confirmPassword: string
+): Promise<RegisterResult> {
+  return apiPostPublic<RegisterResult>("/auth/register", {
+    username,
+    email,
+    password,
+    confirmPassword,
   });
-  const payload = await res.json() as { token?: string; user?: AuthUser; error?: string };
-  if (!res.ok)
-    throw new ApiError(payload.error ?? "Registration failed", res.status);
-  return payload as LoginResult;
+}
+
+/** In-flight verify calls keyed by token so React Strict Mode cannot POST twice and burn the one-time token. */
+const verifyEmailInflight = new Map<string, Promise<LoginResult>>();
+
+function apiVerifyEmailRequest(token: string): Promise<LoginResult> {
+  return apiPostPublic<LoginResult>("/auth/verify-email", { token });
+}
+
+export function apiVerifyEmail(token: string): Promise<LoginResult> {
+  const key = token.trim();
+  if (!key) {
+    return Promise.reject(new ApiError("token is required", 400));
+  }
+  let p = verifyEmailInflight.get(key);
+  if (!p) {
+    p = apiVerifyEmailRequest(key).finally(() => {
+      setTimeout(() => verifyEmailInflight.delete(key), 120_000);
+    });
+    verifyEmailInflight.set(key, p);
+  }
+  return p;
+}
+
+export async function apiResendVerification(email: string): Promise<{ ok: boolean; message: string }> {
+  return apiPostPublic<{ ok: boolean; message: string }>("/auth/resend-verification", { email });
+}
+
+export async function apiDeleteAccount(
+  token: string,
+  password: string,
+  confirmationUsername: string
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/auth/me`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ password, confirmationUsername }),
+  });
+  if (res.status === 204) return;
+  const payload = await res.json().catch(() => ({})) as { error?: string; code?: string };
+  throw new ApiError(
+    payload.error ?? res.statusText,
+    res.status,
+    undefined,
+    typeof payload.code === "string" ? payload.code : undefined
+  );
 }
 
 /** Current user from `GET /auth/me` (Bearer token). */
@@ -441,7 +569,13 @@ export async function apiGetOrg(slug: string): Promise<Organization> {
 
 export async function apiCreateOrg(
   token: string,
-  data: { name: string; displayName: string; description?: string; websiteUrl?: string }
+  data: {
+    name: string;
+    displayName: string;
+    description?: string;
+    websiteUrl?: string;
+    linkedinUrl?: string;
+  }
 ): Promise<Organization> {
   return apiWrite<Organization>("POST", "/orgs", token, data);
 }
@@ -449,7 +583,13 @@ export async function apiCreateOrg(
 export async function apiUpdateOrg(
   token: string,
   slug: string,
-  data: { displayName?: string; description?: string | null; avatarUrl?: string | null; websiteUrl?: string | null }
+  data: {
+    displayName?: string;
+    description?: string | null;
+    avatarUrl?: string | null;
+    websiteUrl?: string | null;
+    linkedinUrl?: string | null;
+  }
 ): Promise<Organization> {
   return apiWrite<Organization>("PATCH", `/orgs/${slug}`, token, data);
 }

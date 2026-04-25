@@ -13,6 +13,7 @@ import {
   Shield,
   Star,
   Users,
+  Linkedin,
 } from "lucide-react";
 import type { Organization } from "@/lib/types";
 
@@ -122,6 +123,18 @@ export default async function OrgPage({
               >
                 <Globe className="w-3.5 h-3.5" />
                 Website
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+            {org.linkedinUrl && (
+              <a
+                href={org.linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 hover:text-foreground hover:underline"
+              >
+                <Linkedin className="w-3.5 h-3.5" />
+                LinkedIn
                 <ExternalLink className="w-3 h-3" />
               </a>
             )}
