@@ -6,7 +6,14 @@ import { prisma } from '../db';
 declare global {
   namespace Express {
     interface Request {
-      user?: Omit<User, 'passwordHash' | 'apiToken'>;
+      /** Public session user — no secrets or email-verification internals. */
+      user?: Omit<
+        User,
+        | 'passwordHash'
+        | 'apiToken'
+        | 'emailVerificationTokenHash'
+        | 'emailVerificationExpires'
+      >;
     }
   }
 }
@@ -32,7 +39,13 @@ export async function authenticate(
     try {
       const user = await prisma.user.findUnique({ where: { apiToken: token } });
       if (user) {
-        const { passwordHash: _ph, apiToken: _at, ...safeUser } = user;
+        const {
+          passwordHash: _ph,
+          apiToken: _at,
+          emailVerificationTokenHash: _vh,
+          emailVerificationExpires: _ve,
+          ...safeUser
+        } = user;
         req.user = safeUser;
       }
     } catch {

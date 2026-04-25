@@ -141,6 +141,7 @@ export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity
           passwordHash,
           apiToken,
           avatarUrl,
+          emailVerifiedAt: new Date(),
         },
       });
       try {

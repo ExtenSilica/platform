@@ -4,10 +4,14 @@ import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
 import { prisma } from '../db';
-import { sendPasswordResetEmail } from '../mailer';
+import { sendPasswordResetEmail, sendVerifyEmailAddress } from '../mailer';
 import { getOAuthProviderSummaryForUser } from '../services/oauthProviderSummary';
+import { passwordPolicyError } from '../passwordPolicy';
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
+const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export const EMAIL_NOT_VERIFIED_CODE = 'EMAIL_NOT_VERIFIED';
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2 MB
@@ -25,31 +29,44 @@ export function sanitizeUser(user: {
   id: number;
   username: string;
   email: string;
+  emailVerifiedAt?: Date | null;
   bio: string | null;
   avatarUrl: string | null;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }) {
   return {
     id: user.id,
     username: user.username,
     email: user.email,
+    emailVerified: Boolean(user.emailVerifiedAt),
     bio: user.bio,
     avatarUrl: user.avatarUrl,
     createdAt: user.createdAt.toISOString(),
+    updatedAt: (user.updatedAt ?? user.createdAt).toISOString(),
   };
 }
 
 /**
  * POST /auth/register
- * Body: { username, email, password }
- * Returns: { token, user }
+ * Body: { username, email, password, confirmPassword } — confirmPassword must match password.
+ * Returns: { pendingVerification: true, email } until the user verifies email; then they sign in.
  */
 export async function register(req: Request, res: Response): Promise<void> {
-  const { username, email, password } = req.body ?? {};
+  const { username, email, password, confirmPassword } = req.body ?? {};
 
   if (!username || !email || !password) {
     res.status(400).json({ error: 'username, email, and password are required.' });
+    return;
+  }
+
+  if (typeof confirmPassword !== 'string' || !confirmPassword) {
+    res.status(400).json({ error: 'confirmPassword is required (re-type your password).' });
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    res.status(400).json({ error: 'Password and confirmation do not match.' });
     return;
   }
 
@@ -65,8 +82,14 @@ export async function register(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  if (typeof password !== 'string' || password.length < 8) {
-    res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  if (typeof password !== 'string') {
+    res.status(400).json({ error: 'Password is required.' });
+    return;
+  }
+
+  const pwErr = passwordPolicyError(password);
+  if (pwErr) {
+    res.status(400).json({ error: pwErr });
     return;
   }
 
@@ -81,18 +104,38 @@ export async function register(req: Request, res: Response): Promise<void> {
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const apiToken = generateToken();
+    const rawVerify = generateToken();
+    const emailVerificationTokenHash = crypto.createHash('sha256').update(rawVerify).digest('hex');
+    const emailVerificationExpires = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
 
     const user = await prisma.user.create({
       data: {
         username: username.toLowerCase(),
         email: email.toLowerCase(),
         passwordHash,
-        apiToken,
+        apiToken: null,
+        emailVerifiedAt: null,
+        emailVerificationTokenHash,
+        emailVerificationExpires,
       },
     });
 
-    res.status(201).json({ token: apiToken, user: sanitizeUser(user) });
+    try {
+      await sendVerifyEmailAddress(user.email, user.username, rawVerify);
+    } catch (mailErr) {
+      console.error('[auth/register] verify email send failed', mailErr);
+      await prisma.user.delete({ where: { id: user.id } });
+      res.status(503).json({
+        error: 'Could not send the verification email. Check SMTP settings or try again later.',
+      });
+      return;
+    }
+
+    res.status(201).json({
+      pendingVerification: true,
+      email: user.email,
+      message: 'Check your inbox to verify your email before signing in.',
+    });
   } catch (err) {
     console.error('[auth/register]', err);
     res.status(500).json({ error: 'Registration failed. Please try again.' });
@@ -122,6 +165,14 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     if (!user || !valid) {
       res.status(401).json({ error: 'Invalid email or password.' });
+      return;
+    }
+
+    if (!user.emailVerifiedAt) {
+      res.status(403).json({
+        error: 'Please verify your email before signing in. Check your inbox for the verification link.',
+        code: EMAIL_NOT_VERIFIED_CODE,
+      });
       return;
     }
 
@@ -163,7 +214,7 @@ export async function logout(req: Request, res: Response): Promise<void> {
  */
 export async function me(req: Request, res: Response): Promise<void> {
   const oauthProviders = await getOAuthProviderSummaryForUser(req.user!.id);
-  res.json({ user: req.user, oauthProviders });
+  res.json({ user: sanitizeUser(req.user!), oauthProviders });
 }
 
 /**
@@ -188,8 +239,9 @@ export async function changePassword(req: Request, res: Response): Promise<void>
     return;
   }
 
-  if (newPassword.length < 8) {
-    res.status(400).json({ error: 'New password must be at least 8 characters.' });
+  const npErr = passwordPolicyError(newPassword);
+  if (npErr) {
+    res.status(400).json({ error: npErr });
     return;
   }
 
@@ -357,8 +409,9 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
     return;
   }
 
-  if (newPassword.length < 8) {
-    res.status(400).json({ error: 'New password must be at least 8 characters.' });
+  const npErr = passwordPolicyError(newPassword);
+  if (npErr) {
+    res.status(400).json({ error: npErr });
     return;
   }
 
@@ -385,7 +438,13 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
       }),
       prisma.user.update({
         where: { id: record.userId },
-        data: { passwordHash: newHash, apiToken: newApiToken },
+        data: {
+          passwordHash: newHash,
+          apiToken: newApiToken,
+          emailVerifiedAt: new Date(),
+          emailVerificationTokenHash: null,
+          emailVerificationExpires: null,
+        },
       }),
     ]);
 
@@ -393,6 +452,143 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
   } catch (err) {
     console.error('[auth/resetPassword]', err);
     res.status(500).json({ error: 'Password reset failed. Please try again.' });
+  }
+}
+
+/**
+ * POST /auth/verify-email
+ * Body: { token } — raw token from the verification email.
+ */
+export async function verifyEmail(req: Request, res: Response): Promise<void> {
+  const { token } = req.body ?? {};
+  if (!token || typeof token !== 'string') {
+    res.status(400).json({ error: 'token is required.' });
+    return;
+  }
+
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        emailVerificationTokenHash: tokenHash,
+        emailVerificationExpires: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      res.status(400).json({ error: 'This verification link is invalid or has expired.' });
+      return;
+    }
+
+    const apiToken = generateToken();
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerifiedAt: new Date(),
+        emailVerificationTokenHash: null,
+        emailVerificationExpires: null,
+        apiToken,
+      },
+    });
+
+    res.json({ token: apiToken, user: sanitizeUser(updated) });
+  } catch (err) {
+    console.error('[auth/verifyEmail]', err);
+    res.status(500).json({ error: 'Email verification failed. Please try again.' });
+  }
+}
+
+const RESEND_VERIFY_OK = {
+  ok: true,
+  message: 'If that address has an unverified account, a new verification email was sent.',
+};
+
+/**
+ * POST /auth/resend-verification
+ * Body: { email } — always 200 to avoid email enumeration.
+ */
+export async function resendVerification(req: Request, res: Response): Promise<void> {
+  const { email } = req.body ?? {};
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    res.json(RESEND_VERIFY_OK);
+    return;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (!user || user.emailVerifiedAt) {
+      res.json(RESEND_VERIFY_OK);
+      return;
+    }
+
+    const rawVerify = generateToken();
+    const emailVerificationTokenHash = crypto.createHash('sha256').update(rawVerify).digest('hex');
+    const emailVerificationExpires = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerificationTokenHash, emailVerificationExpires },
+    });
+
+    await sendVerifyEmailAddress(user.email, user.username, rawVerify);
+  } catch (err) {
+    console.error('[auth/resendVerification]', err);
+  }
+
+  res.json(RESEND_VERIFY_OK);
+}
+
+/**
+ * DELETE /auth/me
+ * Requires: Authorization: Bearer <token>
+ * Body: { password, confirmationUsername } — password must match; confirmationUsername must equal the account username (case-insensitive).
+ */
+export async function deleteAccount(req: Request, res: Response): Promise<void> {
+  const userId = req.user!.id;
+  const { password, confirmationUsername } = req.body ?? {};
+
+  if (!password || typeof password !== 'string') {
+    res.status(400).json({ error: 'password is required to delete your account.' });
+    return;
+  }
+
+  if (!confirmationUsername || typeof confirmationUsername !== 'string') {
+    res.status(400).json({
+      error: 'confirmationUsername is required. Type your username exactly to confirm deletion.',
+    });
+    return;
+  }
+
+  try {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+    if (confirmationUsername.trim().toLowerCase() !== user.username.toLowerCase()) {
+      res.status(400).json({
+        error: `Username confirmation does not match. Type "${user.username}" to confirm.`,
+      });
+      return;
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      res.status(401).json({ error: 'Password is incorrect.' });
+      return;
+    }
+
+    const owned = await prisma.extension.count({ where: { ownerId: userId } });
+    if (owned > 0) {
+      res.status(409).json({
+        error: `You publish ${owned} package(s). Transfer ownership or delete them before closing your account.`,
+      });
+      return;
+    }
+
+    await prisma.user.delete({ where: { id: userId } });
+    res.status(204).send();
+  } catch (err) {
+    console.error('[auth/deleteAccount]', err);
+    res.status(500).json({ error: 'Could not delete account. Please try again.' });
   }
 }
 

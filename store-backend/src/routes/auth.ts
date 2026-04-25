@@ -3,7 +3,20 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import rateLimit from 'express-rate-limit';
-import { register, login, logout, me, updateMe, changePassword, forgotPassword, resetPassword, uploadAvatar } from '../controllers/authController';
+import {
+  register,
+  login,
+  logout,
+  me,
+  updateMe,
+  changePassword,
+  forgotPassword,
+  resetPassword,
+  uploadAvatar,
+  verifyEmail,
+  resendVerification,
+  deleteAccount,
+} from '../controllers/authController';
 import { githubOAuthStart, githubOAuthCallback } from '../controllers/oauthGithubController';
 import { oauthBrowserExchange } from '../services/oauthService';
 import { googleOAuthStart, googleOAuthCallback } from '../controllers/oauthGoogleController';
@@ -37,6 +50,14 @@ const forgotPasswordLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many password reset requests. Please try again in 1 hour.' },
+});
+
+const resendVerificationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many verification emails. Please try again in 1 hour.' },
 });
 
 const githubOAuthStartLimiter = rateLimit({
@@ -85,7 +106,7 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [username, email, password]
+ *             required: [username, email, password, confirmPassword]
  *             properties:
  *               username:
  *                 type: string
@@ -96,9 +117,12 @@ const router = Router();
  *               password:
  *                 type: string
  *                 example: hunter2hunter2
+ *               confirmPassword:
+ *                 type: string
+ *                 description: Must match password exactly.
  *     responses:
  *       201:
- *         description: Account created. Returns token and user profile.
+ *         description: Account created; verify email or returns token (legacy clients).
  *       400:
  *         description: Validation error.
  *       409:
@@ -130,6 +154,9 @@ router.post('/register', registerLimiter, register);
  *         description: Invalid credentials.
  */
 router.post('/login', loginLimiter, login);
+
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerificationLimiter, resendVerification);
 
 /** GitHub OAuth: redirect to GitHub authorize URL (sets signed state cookie). */
 router.get('/github/start', githubOAuthStartLimiter, (req, res) => {
@@ -276,6 +303,8 @@ router.patch('/me', requireAuth, updateMe);
  *         description: Current password is incorrect, or not authenticated.
  */
 router.patch('/me/password', requireAuth, changePassword);
+
+router.delete('/me', requireAuth, deleteAccount);
 
 /**
  * @swagger

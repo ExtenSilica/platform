@@ -11,6 +11,25 @@ const RESERVED_ORG_SLUGS = new Set([
   'undefined', 'null', 'test', 'example', 'demo',
 ]);
 
+/** Optional LinkedIn company (or school) page — https only. */
+function validateLinkedinUrl(raw: string | undefined | null): string | null {
+  if (raw === undefined || raw === null || raw === '') return null;
+  const u = raw.trim();
+  try {
+    const parsed = new URL(u);
+    if (parsed.protocol !== 'https:') return 'linkedinUrl must use https.';
+    const host = parsed.hostname.replace(/^www\./i, '');
+    if (host !== 'linkedin.com') return 'linkedinUrl must be a linkedin.com address.';
+    const path = parsed.pathname.replace(/\/+$/, '') || '/';
+    if (!/^\/(company|school)\/[^/]+/i.test(path)) {
+      return 'Use a LinkedIn company or school URL, e.g. https://www.linkedin.com/company/your-org';
+    }
+    return null;
+  } catch {
+    return 'linkedinUrl must be a valid URL.';
+  }
+}
+
 function validateOrgSlug(slug: string): string | null {
   if (slug.length < 2) return 'Organization name is too short (minimum 2 characters).';
   if (slug.length > 64) return 'Organization name is too long (maximum 64 characters).';
@@ -46,7 +65,10 @@ export const createOrg = async (req: Request, res: Response): Promise<void> => {
   const user = req.user;
   if (!user) { res.status(401).json({ error: 'Authentication required.' }); return; }
 
-  const { name, displayName, description, websiteUrl } = req.body as Record<string, string | undefined>;
+  const { name, displayName, description, websiteUrl, linkedinUrl } = req.body as Record<
+    string,
+    string | undefined
+  >;
 
   if (!name?.trim()) { res.status(400).json({ error: 'Organization name is required.' }); return; }
   if (!displayName?.trim()) { res.status(400).json({ error: 'Display name is required.' }); return; }
@@ -66,6 +88,12 @@ export const createOrg = async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
+  const liErr = validateLinkedinUrl(linkedinUrl);
+  if (liErr) {
+    res.status(400).json({ error: liErr });
+    return;
+  }
+
   try {
     const existing = await prisma.organization.findUnique({ where: { slug } });
     if (existing) {
@@ -79,6 +107,7 @@ export const createOrg = async (req: Request, res: Response): Promise<void> => {
         displayName: displayName.trim(),
         description: description?.trim() || null,
         websiteUrl: websiteUrl?.trim() || null,
+        linkedinUrl: linkedinUrl?.trim() || null,
         members: {
           create: { userId: user.id, role: 'owner' },
         },
@@ -144,7 +173,7 @@ export const listOrgs = async (req: Request, res: Response): Promise<void> => {
         orderBy: { createdAt: 'desc' },
         select: {
           id: true, slug: true, displayName: true, description: true,
-          avatarUrl: true, createdAt: true,
+          avatarUrl: true, linkedinUrl: true, createdAt: true,
           _count: { select: { members: true, packages: true } },
         },
       }),
@@ -173,7 +202,10 @@ export const updateOrg = async (req: Request, res: Response): Promise<void> => {
     const allowed = await requireOrgRole(org.id, user.id, ['owner', 'admin']);
     if (!allowed) { res.status(403).json({ error: 'Only org owners or admins can update organization settings.' }); return; }
 
-    const { displayName, description, avatarUrl, websiteUrl } = req.body as Record<string, string | undefined | null>;
+    const { displayName, description, avatarUrl, websiteUrl, linkedinUrl } = req.body as Record<
+      string,
+      string | undefined | null
+    >;
 
     if (websiteUrl && !/^https?:\/\/.+/.test(websiteUrl)) {
       res.status(400).json({ error: 'websiteUrl must be a valid http/https URL.' });
@@ -183,6 +215,13 @@ export const updateOrg = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: 'avatarUrl must be a valid http/https URL.' });
       return;
     }
+    if (linkedinUrl !== undefined && linkedinUrl !== null && linkedinUrl !== '') {
+      const le = validateLinkedinUrl(linkedinUrl);
+      if (le) {
+        res.status(400).json({ error: le });
+        return;
+      }
+    }
 
     const updated = await prisma.organization.update({
       where: { slug },
@@ -191,6 +230,7 @@ export const updateOrg = async (req: Request, res: Response): Promise<void> => {
         ...(description !== undefined && { description: description?.trim() || null }),
         ...(avatarUrl !== undefined && { avatarUrl: avatarUrl?.trim() || null }),
         ...(websiteUrl !== undefined && { websiteUrl: websiteUrl?.trim() || null }),
+        ...(linkedinUrl !== undefined && { linkedinUrl: linkedinUrl?.trim() || null }),
       },
     });
     res.json(updated);
@@ -442,7 +482,7 @@ export const getMyOrgs = async (req: Request, res: Response): Promise<void> => {
       include: {
         org: {
           select: {
-            id: true, slug: true, displayName: true, avatarUrl: true,
+            id: true, slug: true, displayName: true, avatarUrl: true, linkedinUrl: true,
             _count: { select: { members: true, packages: true } },
           },
         },
