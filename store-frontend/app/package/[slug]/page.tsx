@@ -5,6 +5,10 @@ import ReactMarkdown from "react-markdown";
 
 import { fetchPackage, fetchPackageReviews, fetchPackageStats } from "@/lib/api";
 import type { RegistryVersion, Review, PackageStats } from "@/lib/types";
+import {
+  targetsDisplayFromJson,
+  toolchainToString,
+} from "@/lib/xsil-parser";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/star-rating";
@@ -52,17 +56,6 @@ function fmtBytes(b: number) {
 
 function fmtNum(n: number) {
   return n.toLocaleString();
-}
-
-function parseTargets(t: string | null | undefined): string[] {
-  if (!t) return [];
-  try {
-    const j = JSON.parse(t);
-    if (Array.isArray(j)) return j.map(String);
-  } catch {
-    // not JSON
-  }
-  return t.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
 /* ─── metadata ──────────────────────────────────────────────────────────────*/
@@ -140,7 +133,7 @@ export default async function PackagePage({
 
   const latest: RegistryVersion | undefined = pkg.versions?.[0];
   const keywords = pkg.keywords ?? [];
-  const targets = parseTargets(latest?.targets);
+  const targetsUi = targetsDisplayFromJson(latest?.targets ?? null);
   const readme = pkg.longDescription || pkg.description || "";
   const installCmd = `xsil install ${pkg.slug}`;
   const runCmd = `xsil run ${pkg.slug}`;
@@ -339,21 +332,36 @@ export default async function PackagePage({
                   <Row
                     icon={<Wrench className="h-3.5 w-3.5" />}
                     label="Toolchain"
-                    value={latest.toolchain}
+                    value={
+                      <span className="break-words font-mono text-xs leading-snug">
+                        {toolchainToString(latest.toolchain)}
+                      </span>
+                    }
                   />
                 )}
-                {targets.length > 0 && (
+                {targetsUi.badges.length > 0 && (
                   <Row
                     icon={<Terminal className="h-3.5 w-3.5" />}
                     label="Targets"
                     value={
-                      <span className="flex flex-wrap gap-1">
-                        {targets.map((t) => (
-                          <Badge key={t} variant="outline" className="font-mono text-[10px]">
-                            {t}
-                          </Badge>
-                        ))}
-                      </span>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-1">
+                          {targetsUi.badges.map((id) => (
+                            <Badge
+                              key={id}
+                              variant="outline"
+                              className="font-mono text-[10px]"
+                            >
+                              {id}
+                            </Badge>
+                          ))}
+                        </div>
+                        {targetsUi.pretty && (
+                          <pre className="max-h-48 max-w-full overflow-auto rounded-md border bg-muted/30 p-2 text-left font-mono text-[10px] leading-snug text-muted-foreground">
+                            {targetsUi.pretty}
+                          </pre>
+                        )}
+                      </div>
                     }
                   />
                 )}
