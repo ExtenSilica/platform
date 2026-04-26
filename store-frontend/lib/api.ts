@@ -715,6 +715,17 @@ export interface AdminUserRow {
   orgMembershipCount: number;
 }
 
+export interface AdminUserDetail {
+  id: number;
+  username: string;
+  email: string;
+  emailVerified: boolean;
+  bio: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminUsersResponse {
   total: number;
   skip: number;
@@ -735,6 +746,17 @@ export interface AdminPackageRow {
   org: { id: number; slug: string; displayName: string } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AdminPackageDetail extends AdminPackageRow {
+  description?: string;
+  shortDescription?: string | null;
+  longDescription?: string | null;
+  keywords?: string;
+  license?: string | null;
+  repositoryUrl?: string | null;
+  homepageUrl?: string | null;
+  deprecationMessage?: string | null;
 }
 
 export interface AdminPackagesResponse {
@@ -799,4 +821,70 @@ export async function apiAdminVerifyUserEmail(
   };
 }> {
   return apiWrite("POST", `/admin/users/${userId}/verify-email`, token);
+}
+
+export async function apiAdminCreateUser(
+  token: string,
+  input: { username: string; email: string; password: string; emailVerified?: boolean }
+): Promise<{ user: { id: number; username: string; email: string; emailVerified: boolean; createdAt: string } }> {
+  return apiWrite("POST", "/admin/users", token, input);
+}
+
+export async function apiAdminUpdateUser(
+  token: string,
+  userId: number,
+  patch: { email?: string; bio?: string | null; avatarUrl?: string | null; emailVerified?: boolean }
+): Promise<{ user: AdminUserDetail }> {
+  return apiWrite("PATCH", `/admin/users/${userId}`, token, patch);
+}
+
+export async function apiAdminResetUserPassword(
+  token: string,
+  userId: number,
+  password: string
+): Promise<{ ok: true } | { ok: boolean }> {
+  return apiWrite("POST", `/admin/users/${userId}/reset-password`, token, { password });
+}
+
+export async function apiAdminDeleteUser(token: string, userId: number): Promise<void> {
+  return apiWrite<void>("DELETE", `/admin/users/${userId}`, token);
+}
+
+export async function apiAdminCreatePackage(
+  token: string,
+  input: {
+    slug: string;
+    name: string;
+    description: string;
+    author: string;
+    ownerUsername?: string;
+    orgSlug?: string;
+  }
+): Promise<{ package: { id: number; slug: string; name: string } }> {
+  return apiWrite("POST", "/admin/packages", token, input);
+}
+
+export async function apiAdminUpdatePackage(
+  token: string,
+  slug: string,
+  patch: {
+    name?: string;
+    description?: string;
+    shortDescription?: string | null;
+    longDescription?: string | null;
+    keywords?: string;
+    license?: string | null;
+    repositoryUrl?: string | null;
+    homepageUrl?: string | null;
+    isDeprecated?: boolean;
+    deprecationMessage?: string | null;
+    ownerUsername?: string | null;
+    orgSlug?: string | null;
+  }
+): Promise<{ package: AdminPackageDetail }> {
+  return apiWrite("PATCH", `/admin/packages/${slug}`, token, patch);
+}
+
+export async function apiAdminDeletePackage(token: string, slug: string): Promise<void> {
+  return apiWrite<void>("DELETE", `/admin/packages/${slug}`, token);
 }

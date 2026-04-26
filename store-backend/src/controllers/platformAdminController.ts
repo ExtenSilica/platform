@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
 import { storage } from '../storage';
 import { isPlatformAdminConfigured } from '../lib/platformAdmin';
+import { passwordPolicyError } from '../passwordPolicy';
 
 const MAX_PAGE = 200;
+const BCRYPT_ROUNDS = 12;
 
 function clampLimit(raw: unknown): number {
   const n = parseInt(String(raw ?? ''), 10);
@@ -257,4 +260,457 @@ export async function postAdminVerifyUserEmail(req: Request, res: Response): Pro
       emailVerifiedAt: updated.emailVerifiedAt!.toISOString(),
     },
   });
+}
+
+/**
+ * POST /admin/users
+ * Body: { username, email, password, emailVerified?: boolean }
+ */
+export async function postAdminCreateUser(req: Request, res: Response): Promise<void> {
+  const { username, email, password, emailVerified } = req.body ?? {};
+
+  if (typeof username !== 'string' || !username.trim()) {
+    res.status(400).json({ error: 'username is required.' });
+    return;
+  }
+  if (typeof email !== 'string' || !email.includes('@')) {
+    res.status(400).json({ error: 'A valid email is required.' });
+    return;
+  }
+  if (typeof password !== 'string') {
+    res.status(400).json({ error: 'password is required.' });
+    return;
+  }
+  const pwErr = passwordPolicyError(password);
+  if (pwErr) {
+    res.status(400).json({ error: pwErr });
+    return;
+  }
+
+  const normalizedUsername = username.trim().toLowerCase();
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const existing = await prisma.user.findFirst({
+    where: { OR: [{ email: normalizedEmail }, { username: normalizedUsername }] },
+    select: { id: true, email: true, username: true },
+  });
+  if (existing) {
+    const field = existing.email === normalizedEmail ? 'email' : 'username';
+    res.status(409).json({ error: `That ${field} is already registered.` });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const created = await prisma.user.create({
+    data: {
+      username: normalizedUsername,
+      email: normalizedEmail,
+      passwordHash,
+      apiToken: null,
+      emailVerifiedAt: emailVerified ? new Date() : null,
+      emailVerificationTokenHash: null,
+      emailVerificationExpires: null,
+    },
+  });
+
+  res.status(201).json({
+    user: {
+      id: created.id,
+      username: created.username,
+      email: created.email,
+      emailVerified: Boolean(created.emailVerifiedAt),
+      createdAt: created.createdAt.toISOString(),
+    },
+  });
+}
+
+/**
+ * PATCH /admin/users/:id
+ * Body: { email?, bio?, avatarUrl?, emailVerified? }
+ */
+export async function patchAdminUser(req: Request, res: Response): Promise<void> {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id) || id < 1) {
+    res.status(400).json({ error: 'Invalid user id.' });
+    return;
+  }
+
+  const { email, bio, avatarUrl, emailVerified } = req.body ?? {};
+
+  const patch: {
+    email?: string;
+    bio?: string | null;
+    avatarUrl?: string | null;
+    emailVerifiedAt?: Date | null;
+    emailVerificationTokenHash?: string | null;
+    emailVerificationExpires?: Date | null;
+  } = {};
+
+  if ('email' in (req.body ?? {})) {
+    if (email === null || email === '') {
+      res.status(400).json({ error: 'email cannot be empty.' });
+      return;
+    }
+    if (typeof email !== 'string' || !email.includes('@')) {
+      res.status(400).json({ error: 'A valid email is required.' });
+      return;
+    }
+    patch.email = email.trim().toLowerCase();
+  }
+
+  if ('bio' in (req.body ?? {})) {
+    if (bio === null || bio === '') patch.bio = null;
+    else if (typeof bio !== 'string') {
+      res.status(400).json({ error: 'bio must be a string.' });
+      return;
+    } else patch.bio = bio.trim().slice(0, 2000);
+  }
+
+  if ('avatarUrl' in (req.body ?? {})) {
+    if (avatarUrl === null || avatarUrl === '') patch.avatarUrl = null;
+    else if (typeof avatarUrl !== 'string') {
+      res.status(400).json({ error: 'avatarUrl must be a string.' });
+      return;
+    } else patch.avatarUrl = avatarUrl.trim().slice(0, 500);
+  }
+
+  if ('emailVerified' in (req.body ?? {})) {
+    if (typeof emailVerified !== 'boolean') {
+      res.status(400).json({ error: 'emailVerified must be a boolean.' });
+      return;
+    }
+    if (emailVerified) {
+      patch.emailVerifiedAt = new Date();
+      patch.emailVerificationTokenHash = null;
+      patch.emailVerificationExpires = null;
+    } else {
+      patch.emailVerifiedAt = null;
+    }
+  }
+
+  if (Object.keys(patch).length === 0) {
+    res.status(400).json({ error: 'Nothing to update.' });
+    return;
+  }
+
+  try {
+    const updated = await prisma.user.update({ where: { id }, data: patch });
+    res.json({
+      user: {
+        id: updated.id,
+        username: updated.username,
+        email: updated.email,
+        emailVerified: Boolean(updated.emailVerifiedAt),
+        bio: updated.bio ?? null,
+        avatarUrl: updated.avatarUrl ?? null,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      },
+    });
+  } catch (err) {
+    // Prisma unique violations show up as 500 otherwise; surface a friendly message.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Unique constraint') || msg.includes('P2002')) {
+      res.status(409).json({ error: 'email is already in use.' });
+      return;
+    }
+    console.error('[admin/users/patch]', err);
+    res.status(500).json({ error: 'Failed to update user.' });
+  }
+}
+
+/**
+ * POST /admin/users/:id/reset-password
+ * Body: { password }
+ */
+export async function postAdminResetUserPassword(req: Request, res: Response): Promise<void> {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id) || id < 1) {
+    res.status(400).json({ error: 'Invalid user id.' });
+    return;
+  }
+  const { password } = req.body ?? {};
+  if (typeof password !== 'string') {
+    res.status(400).json({ error: 'password is required.' });
+    return;
+  }
+  const pwErr = passwordPolicyError(password);
+  if (pwErr) {
+    res.status(400).json({ error: pwErr });
+    return;
+  }
+
+  const user = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+  if (!user) {
+    res.status(404).json({ error: 'User not found.' });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  await prisma.user.update({
+    where: { id },
+    data: { passwordHash, apiToken: null },
+  });
+  res.json({ ok: true });
+}
+
+/**
+ * DELETE /admin/users/:id
+ */
+export async function deleteAdminUser(req: Request, res: Response): Promise<void> {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id) || id < 1) {
+    res.status(400).json({ error: 'Invalid user id.' });
+    return;
+  }
+  const user = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+  if (!user) {
+    res.status(404).json({ error: 'User not found.' });
+    return;
+  }
+  await prisma.user.delete({ where: { id } });
+  res.status(204).send();
+}
+
+/**
+ * POST /admin/packages
+ * Body: { slug, name, description, author, ownerUsername?, orgSlug? }
+ */
+export async function postAdminCreatePackage(req: Request, res: Response): Promise<void> {
+  const { slug, name, description, author, ownerUsername, orgSlug } = req.body ?? {};
+
+  if (typeof slug !== 'string' || !slug.trim()) {
+    res.status(400).json({ error: 'slug is required.' });
+    return;
+  }
+  if (typeof name !== 'string' || !name.trim()) {
+    res.status(400).json({ error: 'name is required.' });
+    return;
+  }
+  if (typeof description !== 'string' || !description.trim()) {
+    res.status(400).json({ error: 'description is required.' });
+    return;
+  }
+  if (typeof author !== 'string' || !author.trim()) {
+    res.status(400).json({ error: 'author is required.' });
+    return;
+  }
+
+  const normalizedSlug = slug.trim();
+  const exists = await prisma.extension.findUnique({ where: { slug: normalizedSlug }, select: { id: true } });
+  if (exists) {
+    res.status(409).json({ error: 'That package slug already exists.' });
+    return;
+  }
+
+  let ownerId: number | null = null;
+  if (typeof ownerUsername === 'string' && ownerUsername.trim()) {
+    const u = await prisma.user.findUnique({ where: { username: ownerUsername.trim().toLowerCase() } });
+    if (!u) {
+      res.status(400).json({ error: `User not found: ${ownerUsername}` });
+      return;
+    }
+    ownerId = u.id;
+  }
+
+  let orgId: number | null = null;
+  if (typeof orgSlug === 'string' && orgSlug.trim()) {
+    const org = await prisma.organization.findUnique({ where: { slug: orgSlug.trim() } });
+    if (!org) {
+      res.status(400).json({ error: `Org not found: ${orgSlug}` });
+      return;
+    }
+    orgId = org.id;
+  }
+
+  const created = await prisma.extension.create({
+    data: {
+      slug: normalizedSlug,
+      name: name.trim(),
+      description: description.trim(),
+      author: author.trim(),
+      ownerId,
+      orgId,
+      keywords: '',
+    },
+    include: {
+      owner: { select: { id: true, username: true, email: true } },
+      org: { select: { id: true, slug: true, displayName: true } },
+    },
+  });
+
+  res.status(201).json({
+    package: {
+      id: created.id,
+      slug: created.slug,
+      name: created.name,
+      owner: created.owner
+        ? { id: created.owner.id, username: created.owner.username, email: created.owner.email }
+        : null,
+      org: created.org
+        ? { id: created.org.id, slug: created.org.slug, displayName: created.org.displayName }
+        : null,
+      createdAt: created.createdAt.toISOString(),
+    },
+  });
+}
+
+/**
+ * PATCH /admin/packages/:slug
+ * Body: editable package metadata + ownerUsername? + orgSlug?
+ */
+export async function patchAdminPackageBySlug(req: Request, res: Response): Promise<void> {
+  const slug = String(req.params.slug ?? '').trim();
+  if (!slug) {
+    res.status(400).json({ error: 'slug is required.' });
+    return;
+  }
+  const pkg = await prisma.extension.findUnique({ where: { slug } });
+  if (!pkg) {
+    res.status(404).json({ error: 'Package not found.' });
+    return;
+  }
+
+  const {
+    name,
+    description,
+    shortDescription,
+    longDescription,
+    keywords,
+    license,
+    repositoryUrl,
+    homepageUrl,
+    isDeprecated,
+    deprecationMessage,
+    ownerUsername,
+    orgSlug,
+  } = req.body ?? {};
+
+  const patch: Record<string, unknown> = {};
+  const setIf = (k: string, v: unknown) => {
+    if (k in (req.body ?? {})) patch[k] = v;
+  };
+
+  if ('name' in (req.body ?? {})) {
+    if (typeof name !== 'string' || !name.trim()) {
+      res.status(400).json({ error: 'name must be a non-empty string.' });
+      return;
+    }
+    patch.name = name.trim();
+  }
+  if ('description' in (req.body ?? {})) {
+    if (typeof description !== 'string' || !description.trim()) {
+      res.status(400).json({ error: 'description must be a non-empty string.' });
+      return;
+    }
+    patch.description = description.trim();
+  }
+  if ('shortDescription' in (req.body ?? {})) setIf('shortDescription', shortDescription ? String(shortDescription).trim() : null);
+  if ('longDescription' in (req.body ?? {})) setIf('longDescription', longDescription ? String(longDescription) : null);
+  if ('keywords' in (req.body ?? {})) setIf('keywords', typeof keywords === 'string' ? keywords.trim() : '');
+  if ('license' in (req.body ?? {})) setIf('license', license ? String(license).trim() : null);
+  if ('repositoryUrl' in (req.body ?? {})) setIf('repositoryUrl', repositoryUrl ? String(repositoryUrl).trim() : null);
+  if ('homepageUrl' in (req.body ?? {})) setIf('homepageUrl', homepageUrl ? String(homepageUrl).trim() : null);
+  if ('isDeprecated' in (req.body ?? {})) {
+    if (typeof isDeprecated !== 'boolean') {
+      res.status(400).json({ error: 'isDeprecated must be boolean.' });
+      return;
+    }
+    patch.isDeprecated = isDeprecated;
+  }
+  if ('deprecationMessage' in (req.body ?? {})) setIf('deprecationMessage', deprecationMessage ? String(deprecationMessage) : null);
+
+  if ('ownerUsername' in (req.body ?? {})) {
+    if (ownerUsername === null || ownerUsername === '') {
+      patch.ownerId = null;
+    } else if (typeof ownerUsername === 'string') {
+      const u = await prisma.user.findUnique({ where: { username: ownerUsername.trim().toLowerCase() } });
+      if (!u) {
+        res.status(400).json({ error: `User not found: ${ownerUsername}` });
+        return;
+      }
+      patch.ownerId = u.id;
+    } else {
+      res.status(400).json({ error: 'ownerUsername must be a string or null.' });
+      return;
+    }
+  }
+
+  if ('orgSlug' in (req.body ?? {})) {
+    if (orgSlug === null || orgSlug === '') {
+      patch.orgId = null;
+    } else if (typeof orgSlug === 'string') {
+      const org = await prisma.organization.findUnique({ where: { slug: orgSlug.trim() } });
+      if (!org) {
+        res.status(400).json({ error: `Org not found: ${orgSlug}` });
+        return;
+      }
+      patch.orgId = org.id;
+    } else {
+      res.status(400).json({ error: 'orgSlug must be a string or null.' });
+      return;
+    }
+  }
+
+  if (Object.keys(patch).length === 0) {
+    res.status(400).json({ error: 'Nothing to update.' });
+    return;
+  }
+
+  const updated = await prisma.extension.update({
+    where: { id: pkg.id },
+    data: patch,
+    include: {
+      owner: { select: { id: true, username: true, email: true } },
+      org: { select: { id: true, slug: true, displayName: true } },
+      _count: { select: { versions: true } },
+    },
+  });
+
+  res.json({
+    package: {
+      id: updated.id,
+      slug: updated.slug,
+      name: updated.name,
+      description: updated.description,
+      shortDescription: updated.shortDescription ?? null,
+      longDescription: updated.longDescription ?? null,
+      keywords: updated.keywords,
+      license: updated.license ?? null,
+      repositoryUrl: updated.repositoryUrl ?? null,
+      homepageUrl: updated.homepageUrl ?? null,
+      isDeprecated: updated.isDeprecated,
+      deprecationMessage: updated.deprecationMessage ?? null,
+      latestVersion: updated.latestVersion ?? null,
+      totalDownloads: updated.totalDownloads,
+      weeklyDownloads: updated.weeklyDownloads,
+      versionCount: updated._count.versions,
+      owner: updated.owner
+        ? { id: updated.owner.id, username: updated.owner.username, email: updated.owner.email }
+        : null,
+      org: updated.org
+        ? { id: updated.org.id, slug: updated.org.slug, displayName: updated.org.displayName }
+        : null,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    },
+  });
+}
+
+/**
+ * DELETE /admin/packages/:slug
+ */
+export async function deleteAdminPackage(req: Request, res: Response): Promise<void> {
+  const slug = String(req.params.slug ?? '').trim();
+  if (!slug) {
+    res.status(400).json({ error: 'slug is required.' });
+    return;
+  }
+  const pkg = await prisma.extension.findUnique({ where: { slug }, select: { id: true } });
+  if (!pkg) {
+    res.status(404).json({ error: 'Package not found.' });
+    return;
+  }
+  await prisma.extension.delete({ where: { id: pkg.id } });
+  res.status(204).send();
 }
