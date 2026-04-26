@@ -180,8 +180,9 @@ export function HomeIndex() {
           </h1>
 
           <p className="mb-8 text-lg text-muted-foreground">
-            Discover, publish, and run reproducible RISC-V extensions
-            using{" "}
+            Discover, publish, and run reproducible RISC-V extensions — the{" "}
+            <span className="font-semibold text-foreground">pre-silicon bridge</span>{" "}
+            for evaluating ideas before RTL/FPGA/ASIC decisions — using{" "}
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
               .xsil
             </code>{" "}
@@ -210,7 +211,7 @@ export function HomeIndex() {
           {/* Example commands — focal terminal */}
           <div className="mx-auto mt-10 max-w-lg scale-[1.08] sm:scale-100 sm:max-w-xl">
             <p className="mb-2.5 text-base font-semibold text-foreground sm:text-[1.0625rem]">
-              Run any RISC-V extension in one command
+              Try a published extension with one command when it declares a runnable path
             </p>
             <div className="relative">
               {/* edge glow */}

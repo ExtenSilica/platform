@@ -4,26 +4,35 @@
 
 **ExtenSilica** is a **standard for publishing reproducible RISC-V extensions**.
 
+Product positioning and the single **readiness (RL)** scale are summarized in **[pre-silicon-bridge.md](./pre-silicon-bridge.md)**; the full checklist and vocabulary are in **[pre-silicon-bridge-readiness.md](./pre-silicon-bridge-readiness.md)**.
+
 **Core:** `.xsil` format (standard) + **`xsil` CLI** (public [ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)) + **registry** (this private repo: hosted API + website).
 
 See **[REPOS_AND_PUBLIC_XSIL.md](./REPOS_AND_PUBLIC_XSIL.md)** for the split between this **private** platform repository and the **public** `xsil` tooling repo.
 
 See **[architecture-v2.md](./architecture-v2.md)** for the consolidated architecture (format, CLI, registry, flows). Historical pivot notes: **[pivot-v2.md](./pivot-v2.md)**.
 
-RISC-V softcore extension packages are delivered as FPGA bitstreams and toolchains inside `.xsil` archives.
+`.xsil` packages are primarily for **pre-silicon evaluation**: simulators (Spike, QEMU), declared toolchains, tests, and optional FPGA/RTL metadata—so teams can reproduce runs and compare artifacts before heavier RTL or ASIC investment.
 
-An extension package (`.xsil`) contains:
+A typical extension package (`.xsil`) may include:
 
-- **Optional FPGA bitstreams** (paths and ids declared per package, not from a global board list)
-- **Custom GCC/toolchain** for the extended ISA
-- **Example software**
-- **Metadata and signatures** for integrity and trust
+- **Simulation / emulation assets** and declared **targets** (e.g. Spike, QEMU)
+- **Optional FPGA bitstreams** or RTL references when the author ships them (paths/ids per package)
+- **Custom or bundled GCC/toolchain** for the extended ISA when included
+- **Example software**, **tests**, and **metadata** (including checksums for integrity)
 
 **Primary user command:**
 
 ```bash
 xsil run <package>
 ```
+
+## Registry API vocabulary (readiness)
+
+Package summaries returned by **GET `/orgs/:slug`**, **GET `/users/:username`** (profile packages), and **admin** package list/detail include:
+
+- **`readinessLevel`** — integer **RL 1–5** (preferred field name; matches UI “Readiness”).
+- **`maturityLevel`** — **same integer**, kept for **backward compatibility** with older clients. New integrations should use **`readinessLevel`** only.
 
 ## Examples
 
@@ -32,6 +41,8 @@ xsil run <package>
 
 ## Documents
 
+- **[pre-silicon-bridge.md](./pre-silicon-bridge.md)** — Short platform page: **pre-silicon bridge** claim, RL1–5 table, where it appears (webapp + `xsil info`), link to the full reference below.
+- **[pre-silicon-bridge-readiness.md](./pre-silicon-bridge-readiness.md)** — Reference doc: **“pre-silicon bridge”** positioning, **single** readiness scale (RL), capabilities vocabulary, and the implementation TODO list for webapp + backend + `xsil`.
 - **[deploy-runbook.md](./deploy-runbook.md)** — **Production deploy:** target host setup (DB, TLS, DNS, env vars), backend + frontend rollout, post-deploy checks. Pair with **[launch-checklist-v3.md](./launch-checklist-v3.md)** §12.
 - **[architecture-v2.md](./architecture-v2.md)** — XSIL standard architecture: format, CLI, registry, execution / developer / user flows.
 - **[publishing.md](./publishing.md)** — Minimal publishing workflow: `xsil build`, `xsil publish`; package structure, required files, `entry`, simulator vs FPGA targets.

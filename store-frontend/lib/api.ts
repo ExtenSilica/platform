@@ -277,7 +277,7 @@ export type ListPackagesQuery = {
   q?: string;
   author?: string;
   org?: string;
-  /** Maturity level 1–5 (matches package detail ladder). */
+  /** Readiness level 1–5 (matches package detail ladder). */
   level?: string | number;
   sort?: "created" | "downloads";
   order?: "asc" | "desc";
@@ -771,6 +771,9 @@ export interface AdminPackageRow {
   weeklyDownloads: number;
   isDeprecated: boolean;
   versionCount: number;
+  /** RL 1–5 (preferred; same value as legacy maturityLevel). */
+  readinessLevel: number;
+  /** @deprecated Same integer as readinessLevel; kept for older API clients. */
   maturityLevel: number;
   capabilityBadges: string[];
   owner: { id: number; username: string; email: string } | null;

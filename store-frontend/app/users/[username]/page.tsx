@@ -126,7 +126,7 @@ export default async function UserProfilePage({
                     {pkg.description || "No description."}
                   </p>
                   <PackageCapabilityChips
-                    level={pkg.maturityLevel}
+                    level={pkg.readinessLevel ?? pkg.maturityLevel}
                     badges={pkg.capabilityBadges}
                     maxBadges={4}
                   />

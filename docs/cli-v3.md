@@ -6,6 +6,8 @@
 **Branch:** `pivot/npmjs-like-xsil-registry`  
 **Related:** [publishing-flow-v3.md](./publishing-flow-v3.md), [auth-v3.md](./auth-v3.md), [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md)
 
+**Canonical CLI doc:** Substantive behaviour for the public `xsil` tool is maintained in **[github.com/ExtenSilica/xsil — `docs/cli-v3.md`](https://github.com/ExtenSilica/xsil/blob/main/docs/cli-v3.md)**. This copy exists for convenience next to private-platform docs; if the two diverge, prefer the public repo.
+
 ---
 
 ## Overview
@@ -302,13 +304,15 @@ Each installed package version gets its own directory. The manifest, simulation 
 
 ## Integrity Model
 
-Every `install`, `run`, and `test` command validates the payload hash before executing:
+Every `install`, `run`, and `test` command validates the **payload** hash (non-manifest files) before executing:
 
 1. Compute SHA-256 over all non-manifest files (sorted lexicographically by path).
 2. Compare with `manifest.checksums.payload` (v2) or `manifest.payloadHash` (v1).
 3. If they differ → abort with an error.
 
-This guarantee means: if you run `xsil run rvv-demo@1.0.0` today and again in two years, you will get **exactly the same bytes** executing on your machine — or you will get an explicit integrity error, never a silent substitution.
+**What this promises:** when validation succeeds, the **extracted package files** covered by that checksum match what the author published for that version—you do not get a silent substitution of those files. It does **not** imply every run is bitwise-identical across hosts or time (resolved toolchains, host-dependent resolution, OS caches, and anything outside the payload hash can still differ). If validation fails, the CLI aborts with an explicit integrity error.
+
+For target selection and when `xsil run` may still fail after a good checksum, see [execution-model.md](https://github.com/ExtenSilica/xsil/blob/main/docs/execution-model.md) in the public `xsil` repo.
 
 ---
 

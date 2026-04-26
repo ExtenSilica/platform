@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db';
-import { sortBySemverDesc } from '../lib/semverSort';
-import { computePackageMaturityFromVersion } from '../lib/maturity';
+import { packageReadinessSummary } from '../lib/packageReadinessSummary';
 
 // GET /users/:username
 // Public profile — never exposes email, password hash, or API token.
@@ -44,10 +43,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
     avatarUrl: user.avatarUrl ?? null,
     createdAt: user.createdAt.toISOString(),
     packages:  user.ownedPackages.map((p) => {
-      const nonY = p.versions.filter((v) => !v.isYanked);
-      const sorted = sortBySemverDesc(nonY);
-      const latest = sorted[0] ?? sortBySemverDesc(p.versions)[0];
-      const { level, badges } = computePackageMaturityFromVersion(latest ?? null);
+      const { maturityLevel, capabilityBadges } = packageReadinessSummary(p, p.versions);
       return {
         slug:            p.slug,
         name:            p.name,
@@ -55,8 +51,9 @@ export const getUserProfile = async (req: Request, res: Response) => {
         latestVersion:   p.latestVersion ?? null,
         totalDownloads:  p.totalDownloads,
         weeklyDownloads: p.weeklyDownloads,
-        maturityLevel:   level,
-        capabilityBadges: badges,
+        readinessLevel: maturityLevel,
+        maturityLevel,
+        capabilityBadges,
       };
     }),
   });

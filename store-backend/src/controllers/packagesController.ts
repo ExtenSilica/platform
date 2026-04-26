@@ -3,11 +3,12 @@ import { Extension, Version } from '@prisma/client';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as semver from 'semver';
 import { prisma } from '../db';
 import { Prisma } from '@prisma/client';
 import { sortBySemverDesc } from '../lib/semverSort';
-import { computePackageMaturityFromVersion } from '../lib/maturity';
+import { computeReadinessFromVersion } from '../lib/readiness';
+import { syncExtensionLatestReadiness } from '../lib/extensionLatestReadiness';
+import { computeLatestVersion } from '../lib/packageLatestVersion';
 import {
   validatePublishedXsilBuffer,
   XsilValidationError,
@@ -84,10 +85,6 @@ function validatePackageSlug(slug: string): string | null {
   return null;
 }
 
-/**
- * Return the highest non-yanked semver from a list of version records.
- * Falls back to the highest yanked version if all are yanked.
- */
 function firstFormString(body: Record<string, unknown>, key: string): string | undefined {
   const v = body[key];
   if (v == null) return undefined;
@@ -98,20 +95,9 @@ function firstFormString(body: Record<string, unknown>, key: string): string | u
   return typeof v === 'string' ? v : undefined;
 }
 
-function computeLatestVersion(versions: Array<{ version: string; isYanked: boolean }>): string | null {
-  const valid = (v: string) => semver.valid(v) !== null;
-  const rcompare = (a: string, b: string) => semver.rcompare(a, b);
-
-  const active = versions.filter((v) => !v.isYanked && valid(v.version));
-  if (active.length > 0) return active.sort((a, b) => rcompare(a.version, b.version))[0].version;
-
-  const all = versions.filter((v) => valid(v.version));
-  if (all.length > 0) return all.sort((a, b) => rcompare(a.version, b.version))[0].version;
-
-  return null;
-}
-
 function mapVersion(v: Version) {
+  const readinessLevel = (v as Version & { readinessLevel?: number | null }).readinessLevel ?? null;
+  const capabilities = (v as Version & { capabilities?: string | null }).capabilities ?? null;
   return {
     id: v.id,
     version: v.version,
@@ -125,6 +111,9 @@ function mapVersion(v: Version) {
     execution: (v as Version & { execution?: string | null }).execution ?? null,
     dependencies: (v as Version & { dependencies?: string | null }).dependencies ?? null,
     resolutionMode: (v as Version & { resolutionMode?: string | null }).resolutionMode ?? null,
+    readinessLevel,
+    capabilities,
+    evidence: (v as Version & { evidence?: string | null }).evidence ?? null,
     size: v.size,
     downloadCount: v.downloadCount,
     isYanked: v.isYanked,
@@ -231,6 +220,10 @@ export const listPackages = async (req: Request, res: Response) => {
   const levelFilter =
     levelRaw && /^[1-5]$/.test(levelRaw) ? (parseInt(levelRaw, 10) as 1 | 2 | 3 | 4 | 5) : null;
 
+  if (levelFilter !== null) {
+    where.latestReadinessLevel = levelFilter;
+  }
+
   const order = orderRaw === 'asc' ? 'asc' : 'desc';
   const sortDownloads = sort === 'downloads' || sort === 'totaldownloads';
 
@@ -254,24 +247,6 @@ export const listPackages = async (req: Request, res: Response) => {
     });
 
     let rows = packages.map((p) => mapPackage(trimExtensionToLatestSemverVersion(p as ExtensionWithVersions)));
-
-    if (levelFilter !== null) {
-      rows = rows.filter((pkg) => {
-        const latest = pkg.versions[0];
-        const { level } = computePackageMaturityFromVersion(
-          latest
-            ? {
-                isa: latest.isa ?? null,
-                toolchain: latest.toolchain ?? null,
-                targets: latest.targets ?? null,
-                resolutionMode: latest.resolutionMode ?? null,
-                execution: latest.execution ?? null,
-              }
-            : null,
-        );
-        return level === levelFilter;
-      });
-    }
 
     rows.sort((a, b) => {
       if (sortDownloads) {
@@ -600,6 +575,14 @@ export const publishVersion = async (req: Request, res: Response) => {
 
     let newVersion;
     try {
+      const readiness = computeReadinessFromVersion({
+        isa: mfIsa || null,
+        toolchain: mfToolchain || null,
+        targets: mfTargets || null,
+        execution: mfExecution || null,
+        dependencies: mfDeps || null,
+        resolutionMode: mfResolution ? mfResolution.trim() : null,
+      });
       newVersion = await prisma.version.create({
         data: {
           extensionId: pkg.id,
@@ -614,6 +597,9 @@ export const publishVersion = async (req: Request, res: Response) => {
           execution: mfExecution || null,
           dependencies: mfDeps || null,
           resolutionMode: mfResolution ? mfResolution.trim() : null,
+          readinessLevel: readiness.readinessLevel,
+          capabilities: JSON.stringify(readiness.capabilities),
+          evidence: validated.evidenceJson,
           size: file.size,
         },
       });
@@ -635,6 +621,8 @@ export const publishVersion = async (req: Request, res: Response) => {
       where: { id: pkg.id },
       data: { latestVersion: newLatest },
     });
+
+    await syncExtensionLatestReadiness(pkg.id);
 
     res.status(201).json(mapVersion(newVersion));
   } catch (error) {
@@ -936,6 +924,8 @@ export const yankVersion = async (req: Request, res: Response) => {
       where: { id: pkg.id },
       data: { latestVersion: newLatest },
     });
+
+    await syncExtensionLatestReadiness(pkg.id);
 
     res.json({
       version:    updatedVer.version,

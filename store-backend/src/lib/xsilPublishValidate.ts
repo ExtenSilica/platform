@@ -118,8 +118,94 @@ export interface ManifestJson {
   execution?: unknown;
   dependencies?: unknown;
   resolution?: unknown;
+  /** Optional evaluation evidence (URLs + optional content hashes). See docs/pre-silicon-bridge-readiness.md */
+  evidence?: unknown;
   payloadHash?: string;
   checksums?: { payload?: string; archive?: string };
+}
+
+const EVIDENCE_KINDS = new Set(['documentation', 'ci', 'artifact', 'other']);
+const EVIDENCE_MAX_ITEMS = 24;
+const EVIDENCE_LABEL_MAX = 200;
+const EVIDENCE_URL_MAX = 2048;
+
+/**
+ * When absent or empty, returns null. Otherwise returns canonical JSON for `Version.evidence`.
+ * @throws XsilValidationError if `evidence` is present but malformed.
+ */
+export function validateAndStringifyManifestEvidence(evidence: unknown): string | null {
+  if (evidence == null) return null;
+  if (!Array.isArray(evidence)) {
+    throw new XsilValidationError('manifest.evidence must be an array when present.');
+  }
+  if (evidence.length === 0) return null;
+  if (evidence.length > EVIDENCE_MAX_ITEMS) {
+    throw new XsilValidationError(`manifest.evidence must have at most ${EVIDENCE_MAX_ITEMS} items.`);
+  }
+
+  const out: Array<{ kind: string; label?: string; url: string; sha256?: string }> = [];
+
+  for (let i = 0; i < evidence.length; i++) {
+    const item = evidence[i];
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      throw new XsilValidationError(`manifest.evidence[${i}] must be an object.`);
+    }
+    const o = item as Record<string, unknown>;
+    const kind = typeof o.kind === 'string' ? o.kind.trim() : '';
+    if (!EVIDENCE_KINDS.has(kind)) {
+      throw new XsilValidationError(
+        `manifest.evidence[${i}].kind must be one of: documentation, ci, artifact, other.`,
+      );
+    }
+    const urlRaw = typeof o.url === 'string' ? o.url.trim() : '';
+    if (!urlRaw || urlRaw.length > EVIDENCE_URL_MAX) {
+      throw new XsilValidationError(`manifest.evidence[${i}].url must be a non-empty https URL.`);
+    }
+    let u: URL;
+    try {
+      u = new URL(urlRaw);
+    } catch {
+      throw new XsilValidationError(`manifest.evidence[${i}].url is not a valid URL.`);
+    }
+    if (u.protocol !== 'https:') {
+      throw new XsilValidationError(`manifest.evidence[${i}].url must use https.`);
+    }
+
+    const row: { kind: string; label?: string; url: string; sha256?: string } = {
+      kind,
+      url: u.toString(),
+    };
+
+    if (o.label !== undefined && o.label !== null) {
+      if (typeof o.label !== 'string') {
+        throw new XsilValidationError(`manifest.evidence[${i}].label must be a string when set.`);
+      }
+      const label = o.label.trim();
+      if (label.length > EVIDENCE_LABEL_MAX) {
+        throw new XsilValidationError(
+          `manifest.evidence[${i}].label must be at most ${EVIDENCE_LABEL_MAX} characters.`,
+        );
+      }
+      if (label) row.label = label;
+    }
+
+    if (o.sha256 !== undefined && o.sha256 !== null) {
+      if (typeof o.sha256 !== 'string') {
+        throw new XsilValidationError(`manifest.evidence[${i}].sha256 must be a string when set.`);
+      }
+      const h = o.sha256.trim().toLowerCase();
+      if (!/^[0-9a-f]{64}$/.test(h)) {
+        throw new XsilValidationError(
+          `manifest.evidence[${i}].sha256 must be 64 lowercase hexadecimal characters.`,
+        );
+      }
+      row.sha256 = h;
+    }
+
+    out.push(row);
+  }
+
+  return JSON.stringify(out);
 }
 
 function effectiveDeclaredPayloadHash(m: ManifestJson): string {
@@ -208,6 +294,8 @@ export interface ValidatePublishedXsilResult {
   /** `sha256:<hex>` for Version.checksumPayload */
   checksumPayloadStored: string;
   manifest: ManifestJson;
+  /** Canonical JSON array for `Version.evidence`, or null when omitted / empty */
+  evidenceJson: string | null;
 }
 
 /**
@@ -285,9 +373,12 @@ export function validatePublishedXsilBuffer(
       }
     }
 
+    const evidenceJson = validateAndStringifyManifestEvidence(manifest.evidence);
+
     return {
       checksumPayloadStored: `sha256:${computedPayloadHex}`,
       manifest,
+      evidenceJson,
     };
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });

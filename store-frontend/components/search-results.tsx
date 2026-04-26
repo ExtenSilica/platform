@@ -110,7 +110,7 @@ export function SearchResults() {
             <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
             Filters &amp; sort
             <span className="ml-auto text-xs font-normal text-muted-foreground group-open:hidden">
-              Author, organization, maturity level, downloads
+              Author, organization, readiness level, downloads
             </span>
           </summary>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -140,7 +140,7 @@ export function SearchResults() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="registry-level" className="text-xs">
-                Maturity level
+                Readiness level
               </Label>
               <select
                 id="registry-level"
@@ -148,12 +148,12 @@ export function SearchResults() {
                 defaultValue={level || "any"}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <option value="any">Any level</option>
-                <option value="1">Level 1</option>
-                <option value="2">Level 2</option>
-                <option value="3">Level 3</option>
-                <option value="4">Level 4</option>
-                <option value="5">Level 5</option>
+                <option value="any">Any readiness</option>
+                <option value="1">RL1</option>
+                <option value="2">RL2</option>
+                <option value="3">RL3</option>
+                <option value="4">RL4</option>
+                <option value="5">RL5</option>
               </select>
             </div>
             <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
@@ -198,7 +198,8 @@ export function SearchResults() {
       </form>
 
       <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-xl font-bold">
+        <div>
+          <h1 className="text-xl font-bold">
           {query || hasStructuredFilters ? (
             <>
               {query ? (
@@ -214,7 +215,7 @@ export function SearchResults() {
                   {[
                     author && `Author: ${author}`,
                     org && `Org: @${org}`,
-                    level && `Level ${level}`,
+                    level && `RL${level}`,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
@@ -224,7 +225,12 @@ export function SearchResults() {
           ) : (
             "All packages"
           )}
-        </h1>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Pre-silicon bridge</span>: evaluate RISC-V
+            extensions before RTL/FPGA/ASIC decisions.
+          </p>
+        </div>
         {!loading && !error && (
           <p className="shrink-0 text-sm text-muted-foreground">
             {packages.length} package{packages.length !== 1 ? "s" : ""}

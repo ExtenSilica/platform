@@ -11,6 +11,10 @@ export interface RegistryVersion {
   execution?: string | null;
   dependencies?: string | null;
   resolutionMode?: string | null;
+  readinessLevel?: number | null;
+  capabilities?: string | null;
+  /** Canonical JSON array from optional `manifest.evidence` at publish. */
+  evidence?: string | null;
   size?: number | null;
   downloadCount: number;
   isYanked: boolean;
@@ -82,6 +86,9 @@ export interface UserProfile {
     latestVersion?: string | null;
     totalDownloads: number;
     weeklyDownloads: number;
+    /** RL 1–5 (preferred; same value as legacy maturityLevel). */
+    readinessLevel: number;
+    /** @deprecated Same integer as readinessLevel; kept for older API clients. */
     maturityLevel: number;
     capabilityBadges: string[];
   }>;
@@ -121,6 +128,9 @@ export interface Organization {
     weeklyDownloads: number;
     isDeprecated: boolean;
     createdAt: string;
+    /** RL 1–5 (preferred; same value as legacy maturityLevel). */
+    readinessLevel: number;
+    /** @deprecated Same integer as readinessLevel; kept for older API clients. */
     maturityLevel: number;
     capabilityBadges: string[];
   }>;

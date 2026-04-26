@@ -387,8 +387,8 @@ const GROUPS: FaqGroup[] = [
               an error.
             </p>
             <p className="mt-3">
-              This gives you a strong guarantee that what runs on your machine is
-              exactly what the author published, regardless of how the file was
+              This gives you a strong integrity check: what runs matches the
+              author-published payload checksum, regardless of how the file was
               served.
             </p>
           </>

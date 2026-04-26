@@ -6,6 +6,7 @@ import { describe, it, expect } from "vitest";
 
 import {
   computePayloadHashFromDir,
+  validateAndStringifyManifestEvidence,
   validatePublishedXsilBuffer,
   XsilValidationError,
 } from "../src/lib/xsilPublishValidate";
@@ -43,6 +44,21 @@ describe("xsilPublishValidate", () => {
       formVersion: manifest.version,
     });
     expect(r.checksumPayloadStored.startsWith("sha256:")).toBe(true);
+    expect(r.evidenceJson).toBeNull();
+  });
+
+  it("validateAndStringifyManifestEvidence accepts a minimal https row", () => {
+    const j = validateAndStringifyManifestEvidence([
+      { kind: "documentation", url: "https://example.com/README", label: "Docs" },
+    ]);
+    expect(j).toContain("documentation");
+    expect(j).toContain("https://example.com/README");
+  });
+
+  it("validateAndStringifyManifestEvidence rejects non-https URL", () => {
+    expect(() =>
+      validateAndStringifyManifestEvidence([{ kind: "ci", url: "http://example.com/x" }]),
+    ).toThrow(XsilValidationError);
   });
 
   it("rejects slug / manifest.name mismatch", () => {

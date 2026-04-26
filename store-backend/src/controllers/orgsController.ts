@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db';
-import { sortBySemverDesc } from '../lib/semverSort';
-import { computePackageMaturityFromVersion } from '../lib/maturity';
+import { packageReadinessSummary } from '../lib/packageReadinessSummary';
 
 // ── Slug validation ───────────────────────────────────────────────────────────
 
@@ -155,10 +154,7 @@ export const getOrg = async (req: Request, res: Response): Promise<void> => {
 
     const { packages: rawPackages, ...orgRest } = org;
     const packages = rawPackages.map((pkg) => {
-      const nonY = pkg.versions.filter((v) => !v.isYanked);
-      const sorted = sortBySemverDesc(nonY);
-      const latest = sorted[0] ?? sortBySemverDesc(pkg.versions)[0];
-      const { level, badges } = computePackageMaturityFromVersion(latest ?? null);
+      const { maturityLevel, capabilityBadges } = packageReadinessSummary(pkg, pkg.versions);
       return {
         id: pkg.id,
         slug: pkg.slug,
@@ -169,8 +165,9 @@ export const getOrg = async (req: Request, res: Response): Promise<void> => {
         weeklyDownloads: pkg.weeklyDownloads,
         isDeprecated: pkg.isDeprecated,
         createdAt: pkg.createdAt.toISOString(),
-        maturityLevel: level,
-        capabilityBadges: badges,
+        readinessLevel: maturityLevel,
+        maturityLevel,
+        capabilityBadges,
       };
     });
 

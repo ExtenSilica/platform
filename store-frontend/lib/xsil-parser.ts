@@ -15,6 +15,8 @@ export interface XsilManifest {
   readme?: string;
   keywords?: string[];
   checksums?: { payload?: string; archive?: string };
+  /** Optional evaluation evidence (HTTPS links + optional digests). Echoed as `Version.evidence` on the registry. */
+  evidence?: unknown;
 }
 
 function parseTarEntries(tar: Uint8Array): Record<string, Uint8Array> {
@@ -243,4 +245,51 @@ export function computeCapabilityBadges(input: {
   if (hasHw && level >= 2) level = 5;
 
   return { badges, level };
+}
+
+export type ManifestEvidenceKind = "documentation" | "ci" | "artifact" | "other";
+
+export interface ManifestEvidenceItem {
+  kind: ManifestEvidenceKind;
+  url: string;
+  label?: string;
+  sha256?: string;
+}
+
+const REGISTRY_EVIDENCE_KINDS = new Set<string>(["documentation", "ci", "artifact", "other"]);
+
+/** Parse `Version.evidence` JSON from the registry (lenient; drops invalid rows). */
+export function parseRegistryEvidence(raw: string | null | undefined): ManifestEvidenceItem[] {
+  const s = raw?.trim();
+  if (!s) return [];
+  let j: unknown;
+  try {
+    j = JSON.parse(s);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(j)) return [];
+  const out: ManifestEvidenceItem[] = [];
+  for (const row of j) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const o = row as Record<string, unknown>;
+    const kind = typeof o.kind === "string" ? o.kind.trim() : "";
+    const url = typeof o.url === "string" ? o.url.trim() : "";
+    if (!REGISTRY_EVIDENCE_KINDS.has(kind) || !url.startsWith("https://")) continue;
+    try {
+      const u = new URL(url);
+      if (u.protocol !== "https:") continue;
+    } catch {
+      continue;
+    }
+    const item: ManifestEvidenceItem = { kind: kind as ManifestEvidenceKind, url };
+    if (typeof o.label === "string" && o.label.trim()) {
+      item.label = o.label.trim().slice(0, 200);
+    }
+    if (typeof o.sha256 === "string" && /^[0-9a-f]{64}$/i.test(o.sha256.trim())) {
+      item.sha256 = o.sha256.trim().toLowerCase();
+    }
+    out.push(item);
+  }
+  return out;
 }

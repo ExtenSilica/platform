@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
-import { sortBySemverDesc } from '../lib/semverSort';
-import { computePackageMaturityFromVersion } from '../lib/maturity';
+import { packageReadinessSummary } from '../lib/packageReadinessSummary';
 import { storage } from '../storage';
 import { isPlatformAdminConfigured } from '../lib/platformAdmin';
 import { passwordPolicyError } from '../passwordPolicy';
@@ -150,10 +149,7 @@ export async function listAdminPackages(req: Request, res: Response): Promise<vo
     skip,
     limit,
     packages: packages.map((p) => {
-      const nonY = p.versions.filter((v) => !v.isYanked);
-      const sorted = sortBySemverDesc(nonY);
-      const latest = sorted[0] ?? sortBySemverDesc(p.versions)[0];
-      const { level, badges } = computePackageMaturityFromVersion(latest ?? null);
+      const { maturityLevel, capabilityBadges } = packageReadinessSummary(p, p.versions);
       return {
         id: p.id,
         slug: p.slug,
@@ -163,8 +159,9 @@ export async function listAdminPackages(req: Request, res: Response): Promise<vo
         weeklyDownloads: p.weeklyDownloads,
         isDeprecated: p.isDeprecated,
         versionCount: p._count.versions,
-        maturityLevel: level,
-        capabilityBadges: badges,
+        readinessLevel: maturityLevel,
+        maturityLevel,
+        capabilityBadges,
         owner: p.owner
           ? { id: p.owner.id, username: p.owner.username, email: p.owner.email }
           : null,
@@ -687,10 +684,7 @@ export async function patchAdminPackageBySlug(req: Request, res: Response): Prom
     },
   });
 
-  const nonY = updated.versions.filter((v) => !v.isYanked);
-  const sorted = sortBySemverDesc(nonY);
-  const latest = sorted[0] ?? sortBySemverDesc(updated.versions)[0];
-  const { level, badges } = computePackageMaturityFromVersion(latest ?? null);
+  const { maturityLevel, capabilityBadges } = packageReadinessSummary(updated, updated.versions);
 
   res.json({
     package: {
@@ -710,8 +704,9 @@ export async function patchAdminPackageBySlug(req: Request, res: Response): Prom
       totalDownloads: updated.totalDownloads,
       weeklyDownloads: updated.weeklyDownloads,
       versionCount: updated._count.versions,
-      maturityLevel: level,
-      capabilityBadges: badges,
+      readinessLevel: maturityLevel,
+      maturityLevel,
+      capabilityBadges,
       owner: updated.owner
         ? { id: updated.owner.id, username: updated.owner.username, email: updated.owner.email }
         : null,

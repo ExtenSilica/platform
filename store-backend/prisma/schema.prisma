@@ -107,6 +107,8 @@ model Extension {
   repositoryUrl    String?
   homepageUrl      String?
   latestVersion       String?
+  /// RL of semver-latest non-yanked version (denormalized; see syncExtensionLatestReadiness).
+  latestReadinessLevel Int?
   totalDownloads      Int       @default(0)
   weeklyDownloads     Int       @default(0)
   isDeprecated        Boolean   @default(false)
@@ -120,6 +122,8 @@ model Extension {
 
   owner User?         @relation("ExtensionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   org   Organization? @relation("ExtensionOrg",   fields: [orgId],   references: [id], onDelete: SetNull)
+
+  @@index([latestReadinessLevel])
 }
 
 model Maintainer {
@@ -153,6 +157,12 @@ model Version {
   resolutionMode  String?
   /// Dependency declarations (e.g. tools list) as JSON.
   dependencies    String?
+  /// Pre-silicon readiness level (RL) derived from stored manifest echoes.
+  readinessLevel  Int?
+  /// Capability list as JSON array of strings (derived; kept in sync with readinessLevel).
+  capabilities    String?
+  /// Optional `manifest.evidence` echo: JSON array of { kind, url, label?, sha256? }.
+  evidence        String?
   size            Int?      // archive bytes
   downloadCount   Int       @default(0)
   isYanked        Boolean   @default(false)

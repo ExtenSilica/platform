@@ -10,6 +10,7 @@ import {
   toolchainToString,
   computeCapabilityBadges,
   executionIndicatesTests,
+  parseRegistryEvidence,
 } from "@/lib/xsil-parser";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,9 @@ import {
   History,
   BarChart2,
   Sparkles,
+  CheckCircle2,
+  XCircle,
+  Link2,
 } from "lucide-react";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -59,6 +63,29 @@ function fmtBytes(b: number) {
 
 function fmtNum(n: number) {
   return n.toLocaleString();
+}
+
+function readinessName(level: number): string {
+  // Current ladder is 1–5. Keep labels conservative and stable.
+  switch (level) {
+    case 1: return "Packaged";
+    case 2: return "Runnable";
+    case 3: return "Reproducible";
+    case 4: return "Testable";
+    case 5: return "HW-evaluable";
+    default: return "Readiness";
+  }
+}
+
+function safeParseJsonObject(raw: string | null | undefined): Record<string, unknown> | null {
+  if (!raw?.trim()) return null;
+  try {
+    const j = JSON.parse(raw) as unknown;
+    if (j && typeof j === "object" && !Array.isArray(j)) return j as Record<string, unknown>;
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /* ─── metadata ──────────────────────────────────────────────────────────────*/
@@ -145,6 +172,16 @@ export default async function PackagePage({
     dependenciesRaw: latest?.dependencies ?? null,
     hasTests: executionIndicatesTests(latest?.execution ?? null),
   });
+  const readinessLevelDisplay =
+    typeof latest?.readinessLevel === "number" && latest.readinessLevel >= 1 && latest.readinessLevel <= 5
+      ? latest.readinessLevel
+      : maturity.level;
+  const execObj = safeParseJsonObject(latest?.execution ?? null);
+  const hasEntry = Boolean(execObj && typeof execObj.entry === "string" && execObj.entry.trim());
+  const hasTestEntry = Boolean(execObj && typeof execObj.testEntry === "string" && execObj.testEntry.trim());
+  const badgeSet = new Set(maturity.badges);
+  const evidenceRows = parseRegistryEvidence(latest?.evidence ?? null);
+
   const readme = pkg.longDescription || pkg.description || "";
   const installCmd = `xsil install ${pkg.slug}`;
   const runCmd = `xsil run ${pkg.slug}`;
@@ -160,12 +197,18 @@ export default async function PackagePage({
       : null
   );
 
-  const NAV = [
+  const NAV: { id: string; label: string }[] = [
+    { id: "readiness", label: "Readiness" },
+  ];
+  if (evidenceRows.length > 0) {
+    NAV.push({ id: "evidence", label: "Evidence" });
+  }
+  NAV.push(
     { id: "readme", label: "README" },
     { id: "versions", label: "Versions" },
     { id: "downloads", label: "Downloads" },
     { id: "reviews", label: `Reviews${reviewCount ? ` (${reviewCount})` : ""}` },
-  ];
+  );
 
   return (
     <div className="min-h-screen">
@@ -215,6 +258,9 @@ export default async function PackagePage({
             {latest?.isYanked && (
               <Badge variant="destructive">latest yanked</Badge>
             )}
+            <Badge variant="secondary" className="text-xs">
+              Readiness: <span className="font-mono ml-1">RL{readinessLevelDisplay}</span> — {readinessName(readinessLevelDisplay)}
+            </Badge>
           </div>
 
           {/* Author line */}
@@ -234,6 +280,11 @@ export default async function PackagePage({
           {/* Description */}
           <p className="mb-3 max-w-2xl text-base text-muted-foreground leading-relaxed">
             {pkg.description || pkg.shortDescription || "No description provided."}
+          </p>
+
+          <p className="mb-4 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Pre-silicon bridge</span>: this package is
+            meant to be <span className="font-medium">evaluable</span> before RTL/FPGA/ASIC decisions.
           </p>
 
           {/* Average rating */}
@@ -342,11 +393,13 @@ export default async function PackagePage({
                 {maturity.badges.length > 0 && (
                   <Row
                     icon={<Sparkles className="h-3.5 w-3.5" />}
-                    label="Maturity"
+                    label="Readiness"
                     value={
                       <div className="space-y-2">
                         <div className="text-xs text-muted-foreground">
-                          Level <span className="font-mono">{maturity.level}</span>
+                          <span className="text-foreground/80">Readiness:</span>{" "}
+                          <span className="font-mono">RL{readinessLevelDisplay}</span>{" "}
+                          — {readinessName(readinessLevelDisplay)}
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {maturity.badges.map((b) => (
@@ -470,6 +523,82 @@ export default async function PackagePage({
 
           {/* ══ Main content ══════════════════════════════════════════════ */}
           <main className="min-w-0 flex-1 space-y-0">
+
+            {/* ── Capabilities / readiness checklist ── */}
+            <Section id="readiness" title="Readiness & capabilities" icon={Sparkles}>
+              <div className="rounded-lg border bg-background p-4">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">Readiness:</span>{" "}
+                  <span className="font-mono">RL{readinessLevelDisplay}</span> — {readinessName(readinessLevelDisplay)}
+                </p>
+
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {[
+                    { label: "Runnable (entry declared)", ok: hasEntry },
+                    { label: "Testable (testEntry declared)", ok: hasTestEntry },
+                    { label: "Repro: bundled", ok: badgeSet.has("Repro: bundled") },
+                    { label: "Repro: resolved", ok: badgeSet.has("Repro: resolved") },
+                    { label: "Repro: host-dependent", ok: badgeSet.has("Repro: host-dependent") },
+                    { label: "Toolchain: bundled", ok: badgeSet.has("Toolchain: bundled") },
+                    { label: "Toolchain: external", ok: badgeSet.has("Toolchain: external") },
+                    { label: "Sim: Spike", ok: badgeSet.has("Sim: Spike") },
+                    { label: "Emu: QEMU", ok: badgeSet.has("Emu: QEMU") },
+                    { label: "RTL", ok: badgeSet.has("RTL") },
+                    { label: "FPGA", ok: badgeSet.has("FPGA") },
+                    { label: "Tests", ok: badgeSet.has("Tests") },
+                  ].map(({ label, ok }) => (
+                    <div key={label} className="flex items-center gap-2 text-sm">
+                      {ok ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground/70" />
+                      )}
+                      <span className={ok ? "text-foreground" : "text-muted-foreground"}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Section>
+
+            {evidenceRows.length > 0 && (
+              <Section id="evidence" title="Evidence" icon={Link2}>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Pointers and optional digests supplied by the author at publish time. This is not a
+                  silicon sign-off; verify links and hashes yourself.
+                </p>
+                <ul className="space-y-3">
+                  {evidenceRows.map((row, i) => (
+                    <li
+                      key={`${row.url}-${i}`}
+                      className="rounded-lg border bg-background p-4 text-sm"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary" className="font-mono text-[10px]">
+                          {row.kind}
+                        </Badge>
+                        {row.label && (
+                          <span className="font-medium text-foreground">{row.label}</span>
+                        )}
+                      </div>
+                      <a
+                        href={row.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 flex items-center gap-1.5 break-all text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                        {row.url}
+                      </a>
+                      {row.sha256 && (
+                        <p className="mt-2 font-mono text-[11px] text-muted-foreground break-all">
+                          sha256: {row.sha256}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            )}
 
             {/* ── README ── */}
             <Section id="readme" title="README" icon={BookOpen}>

@@ -30,8 +30,9 @@ const STEPS = [
   },
   {
     icon: Cpu,
-    label: "Run on silicon",
-    detail: "Execute on a RISC-V simulator (Spike/QEMU), FPGA, or real hardware",
+    label: "Run & evaluate",
+    detail:
+      "Use Spike, QEMU, FPGA, or other declared targets — hands-on evaluation before heavier RTL/ASIC commitments",
     code: "xsil run",
   },
 ];
@@ -94,13 +95,13 @@ export function HowItWorks() {
       <div className="mx-auto mb-12 max-w-2xl text-center">
         <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-riscv/20 bg-riscv/[0.07] px-3 py-1 text-xs font-medium text-riscv">
           <Cpu className="h-3 w-3" />
-          From code to silicon
+          Pre-silicon evaluation
         </div>
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
           Execution pipeline
         </h2>
         <p className="mt-2 text-muted-foreground">
-          From source code to execution on a RISC-V environment.
+          From source code to reproducible runs on the RISC-V targets your package declares.
         </p>
       </div>
 
