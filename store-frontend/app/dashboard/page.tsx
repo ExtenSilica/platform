@@ -18,6 +18,11 @@ import {
 } from "@/lib/api";
 import { passwordPolicyError } from "@/lib/passwordPolicy";
 import type { RegistryPackage, MyOrg } from "@/lib/types";
+import {
+  computeCapabilityBadges,
+  executionIndicatesTests,
+} from "@/lib/xsil-parser";
+import { PackageCapabilityChips } from "@/components/package-capability-chips";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -502,74 +507,97 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {packages.map((pkg) => (
-              <div
-                key={pkg.id}
-                className="flex flex-col gap-3 rounded-xl border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold">{pkg.name}</span>
-                    {pkg.latestVersion && (
-                      <span className="rounded-full border bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        {pkg.latestVersion}
-                      </span>
+            {packages.map((pkg) => {
+              const latest = pkg.versions?.[0];
+              const maturity = computeCapabilityBadges({
+                isa: latest?.isa ?? null,
+                toolchain: latest?.toolchain ?? null,
+                targetsRaw: latest?.targets ?? null,
+                resolutionMode: latest?.resolutionMode ?? null,
+                dependenciesRaw: latest?.dependencies ?? null,
+                hasTests: executionIndicatesTests(latest?.execution ?? null),
+              });
+              return (
+                <div
+                  key={pkg.id}
+                  className="flex flex-col gap-3 rounded-xl border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">{pkg.name}</span>
+                      {pkg.latestVersion && (
+                        <span className="rounded-full border bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                          {pkg.latestVersion}
+                        </span>
+                      )}
+                      {pkg.isDeprecated && (
+                        <span className="rounded-full border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive">
+                          deprecated
+                        </span>
+                      )}
+                    </div>
+                    {pkg.org && (
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        <span className="font-mono">@{pkg.org.slug}</span>
+                        <span className="mx-1">·</span>
+                        <span>{pkg.org.displayName}</span>
+                      </p>
                     )}
-                    {pkg.isDeprecated && (
-                      <span className="rounded-full border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive">
-                        deprecated
+                    <PackageCapabilityChips
+                      level={maturity.level}
+                      badges={maturity.badges}
+                      maxBadges={5}
+                    />
+                    <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
+                      {pkg.description || "No description."}
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Download className="h-3 w-3" />
+                        {fmtNum(pkg.totalDownloads)} downloads
                       </span>
-                    )}
+                      <span>
+                        {pkg.versions?.length ?? 0} version
+                        {(pkg.versions?.length ?? 0) !== 1 ? "s" : ""}
+                      </span>
+                    </div>
                   </div>
-                  <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
-                    {pkg.description || "No description."}
-                  </p>
-                  <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Download className="h-3 w-3" />
-                      {fmtNum(pkg.totalDownloads)} downloads
-                    </span>
-                    <span>
-                      {pkg.versions?.length ?? 0} version
-                      {(pkg.versions?.length ?? 0) !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  <Link
-                    href={`/package/${pkg.slug}`}
-                    className="flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    View
-                  </Link>
-                  <Link
-                    href={`/publish/${pkg.slug}/version`}
-                    className="flex h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-3 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    New version
-                  </Link>
-                  <Link
-                    href={`/publish/${pkg.slug}/settings`}
-                    className="flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                  >
-                    <Settings className="h-3.5 w-3.5" />
-                    Settings
-                  </Link>
-                  <Link
-                    href={`/publish/${pkg.slug}/maintainers`}
-                    className="flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                  >
-                    <Users className="h-3.5 w-3.5" />
-                    Maintainers
-                  </Link>
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    <Link
+                      href={`/package/${pkg.slug}`}
+                      className="flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      View
+                    </Link>
+                    <Link
+                      href={`/publish/${pkg.slug}/version`}
+                      className="flex h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-3 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      New version
+                    </Link>
+                    <Link
+                      href={`/publish/${pkg.slug}/settings`}
+                      className="flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                      Settings
+                    </Link>
+                    <Link
+                      href={`/publish/${pkg.slug}/maintainers`}
+                      className="flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      Maintainers
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import {
   targetsDisplayFromJson,
   toolchainToString,
   computeCapabilityBadges,
+  executionIndicatesTests,
 } from "@/lib/xsil-parser";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
@@ -142,7 +143,7 @@ export default async function PackagePage({
     targetsRaw: latest?.targets ?? null,
     resolutionMode: latest?.resolutionMode ?? null,
     dependenciesRaw: latest?.dependencies ?? null,
-    hasTests: Boolean(pkg.latestVersion), // best-effort: versions imply tests exist; refined once tests are indexed explicitly
+    hasTests: executionIndicatesTests(latest?.execution ?? null),
   });
   const readme = pkg.longDescription || pkg.description || "";
   const installCmd = `xsil install ${pkg.slug}`;

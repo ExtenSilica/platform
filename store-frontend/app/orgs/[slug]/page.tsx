@@ -16,6 +16,7 @@ import {
   Linkedin,
 } from "lucide-react";
 import type { Organization } from "@/lib/types";
+import { PackageCapabilityChips } from "@/components/package-capability-chips";
 
 export async function generateMetadata({
   params,
@@ -180,6 +181,11 @@ export default async function OrgPage({
                     <p className="text-sm text-muted-foreground line-clamp-1">
                       {pkg.description}
                     </p>
+                    <PackageCapabilityChips
+                      level={pkg.maturityLevel}
+                      badges={pkg.capabilityBadges}
+                      maxBadges={4}
+                    />
                   </div>
                   <div className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1 pt-0.5">
                     <Download className="w-3 h-3" />

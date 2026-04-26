@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db';
+import { sortBySemverDesc } from '../lib/semverSort';
+import { computePackageMaturityFromVersion } from '../lib/maturity';
 
 // ── Slug validation ───────────────────────────────────────────────────────────
 
@@ -138,17 +140,41 @@ export const getOrg = async (req: Request, res: Response): Promise<void> => {
         },
         packages: {
           orderBy: { totalDownloads: 'desc' },
-          select: {
-            id: true, slug: true, name: true, description: true,
-            latestVersion: true, totalDownloads: true, weeklyDownloads: true,
-            isDeprecated: true, createdAt: true,
+          include: {
+            versions: {
+              where: { isYanked: false },
+              orderBy: { publishedAt: 'desc' },
+              take: 80,
+            },
           },
         },
       },
     });
 
     if (!org) { res.status(404).json({ error: 'Organization not found.' }); return; }
-    res.json(org);
+
+    const { packages: rawPackages, ...orgRest } = org;
+    const packages = rawPackages.map((pkg) => {
+      const nonY = pkg.versions.filter((v) => !v.isYanked);
+      const sorted = sortBySemverDesc(nonY);
+      const latest = sorted[0] ?? sortBySemverDesc(pkg.versions)[0];
+      const { level, badges } = computePackageMaturityFromVersion(latest ?? null);
+      return {
+        id: pkg.id,
+        slug: pkg.slug,
+        name: pkg.name,
+        description: pkg.description,
+        latestVersion: pkg.latestVersion,
+        totalDownloads: pkg.totalDownloads,
+        weeklyDownloads: pkg.weeklyDownloads,
+        isDeprecated: pkg.isDeprecated,
+        createdAt: pkg.createdAt.toISOString(),
+        maturityLevel: level,
+        capabilityBadges: badges,
+      };
+    });
+
+    res.json({ ...orgRest, packages });
   } catch (err) {
     console.error('[orgs/get]', err);
     res.status(500).json({ error: 'Failed to retrieve organization.' });

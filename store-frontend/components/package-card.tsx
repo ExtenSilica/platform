@@ -8,6 +8,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AlertTriangle, Download, Cpu } from "lucide-react";
+import {
+  computeCapabilityBadges,
+  executionIndicatesTests,
+} from "@/lib/xsil-parser";
+import { PackageCapabilityChips } from "@/components/package-capability-chips";
 
 const ISA_KEYWORDS: Record<string, string> = {
   rvv: "RVV",
@@ -35,6 +40,15 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
   const keywords = pkg.keywords?.slice(0, 3) ?? [];
   const isaLabel = deriveIsaLabel(pkg);
   const hasSpecificIsa = isaLabel !== "RISC-V extension";
+  const latest = pkg.versions?.[0];
+  const maturity = computeCapabilityBadges({
+    isa: latest?.isa ?? null,
+    toolchain: latest?.toolchain ?? null,
+    targetsRaw: latest?.targets ?? null,
+    resolutionMode: latest?.resolutionMode ?? null,
+    dependenciesRaw: latest?.dependencies ?? null,
+    hasTests: executionIndicatesTests(latest?.execution ?? null),
+  });
 
   return (
     <Link href={`/package/${pkg.slug}`} className="group block h-full">
@@ -56,6 +70,14 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
               </span>
             )}
           </div>
+          {pkg.org && (
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              <span className="font-mono">@{pkg.org.slug}</span>
+              <span className="mx-1">·</span>
+              <span>{pkg.org.displayName}</span>
+            </p>
+          )}
+          <PackageCapabilityChips level={maturity.level} badges={maturity.badges} />
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className="rounded-md border border-border/50 bg-muted/45 px-2 py-0.5 font-mono text-[10px] text-muted-foreground/80">
               RISC-V extension

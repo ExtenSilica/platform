@@ -44,6 +44,8 @@ export interface RegistryPackage {
   createdAt: string;
   updatedAt: string;
   versions: RegistryVersion[];
+  /** Present when the registry includes org scope on list/detail responses. */
+  org?: { slug: string; displayName: string } | null;
 }
 
 export interface Review {
@@ -80,6 +82,8 @@ export interface UserProfile {
     latestVersion?: string | null;
     totalDownloads: number;
     weeklyDownloads: number;
+    maturityLevel: number;
+    capabilityBadges: string[];
   }>;
 }
 
@@ -117,6 +121,8 @@ export interface Organization {
     weeklyDownloads: number;
     isDeprecated: boolean;
     createdAt: string;
+    maturityLevel: number;
+    capabilityBadges: string[];
   }>;
 }
 

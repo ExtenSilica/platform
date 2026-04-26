@@ -82,7 +82,7 @@ export function HomeIndex() {
     setError(null);
     setLoading(true);
     try {
-      const data = await fetchPackages(undefined, 6);
+      const data = await fetchPackages({ limit: 6, sort: "downloads", order: "desc" });
       setPackages(data);
     } catch (err) {
       console.error(err);

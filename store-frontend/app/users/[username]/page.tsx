@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { fetchUser } from "@/lib/api";
 import { ArrowLeft, Calendar, Download, Package, User } from "lucide-react";
+import { PackageCapabilityChips } from "@/components/package-capability-chips";
 
 export async function generateMetadata({
   params,
@@ -124,6 +125,11 @@ export default async function UserProfilePage({
                   <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
                     {pkg.description || "No description."}
                   </p>
+                  <PackageCapabilityChips
+                    level={pkg.maturityLevel}
+                    badges={pkg.capabilityBadges}
+                    maxBadges={4}
+                  />
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-sm font-medium">

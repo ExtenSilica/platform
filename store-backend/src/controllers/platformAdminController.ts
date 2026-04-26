@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
+import { sortBySemverDesc } from '../lib/semverSort';
+import { computePackageMaturityFromVersion } from '../lib/maturity';
 import { storage } from '../storage';
 import { isPlatformAdminConfigured } from '../lib/platformAdmin';
 import { passwordPolicyError } from '../passwordPolicy';
@@ -133,6 +135,11 @@ export async function listAdminPackages(req: Request, res: Response): Promise<vo
         owner: { select: { id: true, username: true, email: true } },
         org: { select: { id: true, slug: true, displayName: true } },
         _count: { select: { versions: true } },
+        versions: {
+          where: { isYanked: false },
+          orderBy: { publishedAt: 'desc' },
+          take: 80,
+        },
       },
     }),
     prisma.extension.count(),
@@ -142,24 +149,32 @@ export async function listAdminPackages(req: Request, res: Response): Promise<vo
     total,
     skip,
     limit,
-    packages: packages.map((p) => ({
-      id: p.id,
-      slug: p.slug,
-      name: p.name,
-      latestVersion: p.latestVersion,
-      totalDownloads: p.totalDownloads,
-      weeklyDownloads: p.weeklyDownloads,
-      isDeprecated: p.isDeprecated,
-      versionCount: p._count.versions,
-      owner: p.owner
-        ? { id: p.owner.id, username: p.owner.username, email: p.owner.email }
-        : null,
-      org: p.org
-        ? { id: p.org.id, slug: p.org.slug, displayName: p.org.displayName }
-        : null,
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString(),
-    })),
+    packages: packages.map((p) => {
+      const nonY = p.versions.filter((v) => !v.isYanked);
+      const sorted = sortBySemverDesc(nonY);
+      const latest = sorted[0] ?? sortBySemverDesc(p.versions)[0];
+      const { level, badges } = computePackageMaturityFromVersion(latest ?? null);
+      return {
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        latestVersion: p.latestVersion,
+        totalDownloads: p.totalDownloads,
+        weeklyDownloads: p.weeklyDownloads,
+        isDeprecated: p.isDeprecated,
+        versionCount: p._count.versions,
+        maturityLevel: level,
+        capabilityBadges: badges,
+        owner: p.owner
+          ? { id: p.owner.id, username: p.owner.username, email: p.owner.email }
+          : null,
+        org: p.org
+          ? { id: p.org.id, slug: p.org.slug, displayName: p.org.displayName }
+          : null,
+        createdAt: p.createdAt.toISOString(),
+        updatedAt: p.updatedAt.toISOString(),
+      };
+    }),
   });
 }
 
@@ -664,8 +679,18 @@ export async function patchAdminPackageBySlug(req: Request, res: Response): Prom
       owner: { select: { id: true, username: true, email: true } },
       org: { select: { id: true, slug: true, displayName: true } },
       _count: { select: { versions: true } },
+      versions: {
+        where: { isYanked: false },
+        orderBy: { publishedAt: 'desc' },
+        take: 80,
+      },
     },
   });
+
+  const nonY = updated.versions.filter((v) => !v.isYanked);
+  const sorted = sortBySemverDesc(nonY);
+  const latest = sorted[0] ?? sortBySemverDesc(updated.versions)[0];
+  const { level, badges } = computePackageMaturityFromVersion(latest ?? null);
 
   res.json({
     package: {
@@ -685,6 +710,8 @@ export async function patchAdminPackageBySlug(req: Request, res: Response): Prom
       totalDownloads: updated.totalDownloads,
       weeklyDownloads: updated.weeklyDownloads,
       versionCount: updated._count.versions,
+      maturityLevel: level,
+      capabilityBadges: badges,
       owner: updated.owner
         ? { id: updated.owner.id, username: updated.owner.username, email: updated.owner.email }
         : null,

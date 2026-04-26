@@ -44,6 +44,7 @@ import {
   KeyRound,
   CheckCircle2,
 } from "lucide-react";
+import { PackageCapabilityChips } from "@/components/package-capability-chips";
 
 const PAGE_SIZE = 50;
 
@@ -813,6 +814,7 @@ export default function PlatformAdminPage() {
                 <tr className="border-b bg-muted/50 text-left text-xs font-medium text-muted-foreground">
                   <th className="p-3">Slug</th>
                   <th className="p-3">Name</th>
+                  <th className="min-w-[140px] p-3">Maturity</th>
                   <th className="p-3">Owner</th>
                   <th className="p-3">Org</th>
                   <th className="p-3">Deprecated</th>
@@ -824,6 +826,13 @@ export default function PlatformAdminPage() {
                   <tr key={p.id} className="border-b last:border-0">
                     <td className="max-w-[160px] break-all p-3 font-mono text-xs">{p.slug}</td>
                     <td className="p-3 text-xs">{p.name}</td>
+                    <td className="max-w-[220px] p-3 align-top">
+                      <PackageCapabilityChips
+                        level={p.maturityLevel}
+                        badges={p.capabilityBadges}
+                        maxBadges={4}
+                      />
+                    </td>
                     <td className="p-3 text-xs">{p.owner ? <span className="font-mono">{p.owner.username}</span> : "—"}</td>
                     <td className="p-3 text-xs">{p.org ? <span className="font-mono">{p.org.slug}</span> : "—"}</td>
                     <td className="p-3 text-xs">{p.isDeprecated ? <Badge variant="outline">yes</Badge> : "no"}</td>

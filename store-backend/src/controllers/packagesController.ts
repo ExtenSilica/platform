@@ -5,13 +5,19 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
 import { prisma } from '../db';
+import { Prisma } from '@prisma/client';
+import { sortBySemverDesc } from '../lib/semverSort';
+import { computePackageMaturityFromVersion } from '../lib/maturity';
 import {
   validatePublishedXsilBuffer,
   XsilValidationError,
 } from '../lib/xsilPublishValidate';
 import { storage } from '../storage';
 
-export type ExtensionWithVersions = Extension & { versions: Version[] };
+export type ExtensionWithVersions = Extension & {
+  versions: Version[];
+  org?: { slug: string; displayName: string } | null;
+};
 
 const SEMVER_RE =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([\w.-]+))?(?:\+([\w.-]+))?$/;
@@ -76,21 +82,6 @@ function validatePackageSlug(slug: string): string | null {
     return `"${slug}" is a reserved name and cannot be used for a package.`;
   }
   return null;
-}
-
-/**
- * Sort versions by semver descending (newest first).
- * Versions that are not valid semver strings are placed at the end.
- */
-function sortBySemverDesc<T extends { version: string }>(versions: T[]): T[] {
-  return [...versions].sort((a, b) => {
-    const av = semver.valid(a.version);
-    const bv = semver.valid(b.version);
-    if (av && bv) return semver.rcompare(av, bv);
-    if (av) return -1; // valid sorts before invalid
-    if (bv) return 1;
-    return a.version.localeCompare(b.version);
-  });
 }
 
 /**
@@ -179,36 +170,125 @@ export function mapPackage(
     createdAt: ext.createdAt.toISOString(),
     updatedAt: ext.updatedAt.toISOString(),
     versions,
+    org:
+      ext.org != null
+        ? { slug: ext.org.slug, displayName: ext.org.displayName }
+        : null,
   };
+}
+
+/** Keep only the latest non-yanked semver version row (for list payloads). */
+function trimExtensionToLatestSemverVersion(ext: ExtensionWithVersions): ExtensionWithVersions {
+  const nonYanked = ext.versions.filter((v) => !v.isYanked);
+  const sorted = sortBySemverDesc(nonYanked);
+  if (sorted.length > 0) {
+    return { ...ext, versions: [sorted[0]] };
+  }
+  const fallback = sortBySemverDesc(ext.versions);
+  return { ...ext, versions: fallback[0] ? [fallback[0]] : [] };
 }
 
 /* ─── Read ──────────────────────────────────────────────────────────────── */
 
 export const listPackages = async (req: Request, res: Response) => {
-  const { q } = req.query;
-  const where: { OR?: Array<Record<string, { contains: string }>> } = {};
+  const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const author = typeof req.query.author === 'string' ? req.query.author.trim() : '';
+  const orgRaw = typeof req.query.org === 'string' ? req.query.org.trim().replace(/^@+/, '') : '';
+  const levelRaw = typeof req.query.level === 'string' ? req.query.level.trim() : '';
+  const sort = typeof req.query.sort === 'string' ? req.query.sort.trim().toLowerCase() : '';
+  const orderRaw = typeof req.query.order === 'string' ? req.query.order.trim().toLowerCase() : '';
+  const limitRaw = req.query.limit;
 
-  if (q && typeof q === 'string' && q.trim()) {
+  const where: Prisma.ExtensionWhereInput = {};
+
+  if (q) {
     where.OR = [
-      { name: { contains: q } },
-      { description: { contains: q } },
-      { keywords: { contains: q } },
+      { name: { contains: q, mode: 'insensitive' } },
+      { description: { contains: q, mode: 'insensitive' } },
+      { keywords: { contains: q, mode: 'insensitive' } },
+      { slug: { contains: q, mode: 'insensitive' } },
+      { author: { contains: q, mode: 'insensitive' } },
     ];
+  }
+
+  if (author) {
+    where.author = { contains: author, mode: 'insensitive' };
+  }
+
+  if (orgRaw) {
+    const orgSlug = orgRaw.toLowerCase();
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+      {
+        OR: [
+          { org: { slug: orgSlug } },
+          { slug: { startsWith: `@${orgSlug}/`, mode: 'insensitive' } },
+        ],
+      },
+    ];
+  }
+
+  const levelFilter =
+    levelRaw && /^[1-5]$/.test(levelRaw) ? (parseInt(levelRaw, 10) as 1 | 2 | 3 | 4 | 5) : null;
+
+  const order = orderRaw === 'asc' ? 'asc' : 'desc';
+  const sortDownloads = sort === 'downloads' || sort === 'totaldownloads';
+
+  let limitN = 0;
+  if (limitRaw !== undefined && limitRaw !== '') {
+    const n = parseInt(String(limitRaw), 10);
+    if (!Number.isNaN(n) && n > 0) limitN = Math.min(500, n);
   }
 
   try {
     const packages = await prisma.extension.findMany({
       where,
       include: {
+        org: { select: { slug: true, displayName: true } },
         versions: {
           where: { isYanked: false },
           orderBy: { publishedAt: 'desc' },
-          take: 1,
+          take: 80,
         },
       },
-      orderBy: { createdAt: 'desc' },
     });
-    res.json(packages.map((p) => mapPackage(p)));
+
+    let rows = packages.map((p) => mapPackage(trimExtensionToLatestSemverVersion(p as ExtensionWithVersions)));
+
+    if (levelFilter !== null) {
+      rows = rows.filter((pkg) => {
+        const latest = pkg.versions[0];
+        const { level } = computePackageMaturityFromVersion(
+          latest
+            ? {
+                isa: latest.isa ?? null,
+                toolchain: latest.toolchain ?? null,
+                targets: latest.targets ?? null,
+                resolutionMode: latest.resolutionMode ?? null,
+                execution: latest.execution ?? null,
+              }
+            : null,
+        );
+        return level === levelFilter;
+      });
+    }
+
+    rows.sort((a, b) => {
+      if (sortDownloads) {
+        return order === 'desc'
+          ? b.totalDownloads - a.totalDownloads
+          : a.totalDownloads - b.totalDownloads;
+      }
+      const ta = new Date(a.createdAt).getTime();
+      const tb = new Date(b.createdAt).getTime();
+      return order === 'desc' ? tb - ta : ta - tb;
+    });
+
+    if (limitN > 0) {
+      rows = rows.slice(0, limitN);
+    }
+
+    res.json(rows);
   } catch (error) {
     console.error('[packages/list]', error);
     res.status(500).json({ error: 'Failed to list packages.' });
@@ -221,7 +301,10 @@ export const getPackageBySlug = async (req: Request, res: Response) => {
     const [pkg, reviewAgg] = await Promise.all([
       prisma.extension.findUnique({
         where: { slug: name },
-        include: { versions: { orderBy: { publishedAt: 'desc' } } },
+        include: {
+          org: { select: { slug: true, displayName: true } },
+          versions: { orderBy: { publishedAt: 'desc' } },
+        },
       }),
       prisma.review.aggregate({
         where: { package: { slug: name } },
@@ -248,7 +331,10 @@ export const getPackageVersion = async (req: Request, res: Response) => {
   try {
     const pkg = await prisma.extension.findUnique({
       where: { slug: name },
-      include: { versions: { orderBy: { publishedAt: 'desc' } } },
+      include: {
+        org: { select: { slug: true, displayName: true } },
+        versions: { orderBy: { publishedAt: 'desc' } },
+      },
     });
     if (!pkg) {
       res.status(404).json({ error: 'Package not found.' });
@@ -762,14 +848,20 @@ export const getMyPackages = async (req: Request, res: Response) => {
     const packages = await prisma.extension.findMany({
       where: { ownerId: user.id },
       include: {
+        org: { select: { slug: true, displayName: true } },
         versions: {
+          where: { isYanked: false },
           orderBy: { publishedAt: 'desc' },
-          take: 1,
+          take: 80,
         },
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json(packages.map((p) => mapPackage(p)));
+    res.json(
+      packages.map((p) =>
+        mapPackage(trimExtensionToLatestSemverVersion(p as ExtensionWithVersions)),
+      ),
+    );
   } catch (error) {
     console.error('[packages/mine]', error);
     res.status(500).json({ error: 'Failed to fetch your packages.' });

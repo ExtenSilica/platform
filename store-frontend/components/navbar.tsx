@@ -22,8 +22,11 @@ export function Navbar() {
   const currentQuery = isSearchPage ? (searchParams.get("q") ?? "") : "";
 
   function handleSearch(term: string) {
-    const params = new URLSearchParams();
-    if (term) params.set("q", term);
+    const params = isSearchPage
+      ? new URLSearchParams(searchParams.toString())
+      : new URLSearchParams();
+    if (term.trim()) params.set("q", term.trim());
+    else params.delete("q");
     router.replace(`/search?${params.toString()}`);
   }
 

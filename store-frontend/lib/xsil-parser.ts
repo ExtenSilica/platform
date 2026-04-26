@@ -164,6 +164,15 @@ function safeParseJsonObject(raw: string | null | undefined): Record<string, unk
   }
 }
 
+/** True when manifest `execution` declares a test entry (registry JSON blob). */
+export function executionIndicatesTests(executionRaw: string | null | undefined): boolean {
+  const o = safeParseJsonObject(executionRaw ?? null);
+  if (!o) return false;
+  if (typeof o.testEntry === "string" && o.testEntry.trim()) return true;
+  if (typeof o.tests === "string" && o.tests.trim()) return true;
+  return false;
+}
+
 function toolchainExternalFlag(
   tc: XsilManifest["toolchain"] | null | undefined
 ): boolean | null {

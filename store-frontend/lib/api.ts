@@ -273,13 +273,42 @@ export async function apiResetPassword(
 
 /* ─── Public read ──────────────────────────────────────────────────────── */
 
+export type ListPackagesQuery = {
+  q?: string;
+  author?: string;
+  org?: string;
+  /** Maturity level 1–5 (matches package detail ladder). */
+  level?: string | number;
+  sort?: "created" | "downloads";
+  order?: "asc" | "desc";
+  limit?: number;
+};
+
+/**
+ * List / search public packages. Pass a string as shorthand for `{ q: string }`,
+ * or an options object for filters and sort.
+ */
 export async function fetchPackages(
-  query?: string,
-  limit?: number
+  queryOrOpts?: string | ListPackagesQuery,
+  limitLegacy?: number
 ): Promise<RegistryPackage[]> {
   const qs = new URLSearchParams();
-  if (query) qs.set("q", query);
-  if (limit) qs.set("limit", String(limit));
+  let opts: ListPackagesQuery;
+  if (typeof queryOrOpts === "string" || queryOrOpts === undefined) {
+    opts = { q: queryOrOpts, limit: limitLegacy };
+  } else {
+    opts = queryOrOpts;
+  }
+  if (opts.q?.trim()) qs.set("q", opts.q.trim());
+  if (opts.author?.trim()) qs.set("author", opts.author.trim());
+  if (opts.org?.trim()) qs.set("org", opts.org.trim().replace(/^@+/, ""));
+  if (opts.level !== undefined && opts.level !== "" && opts.level !== null) {
+    qs.set("level", String(opts.level).trim());
+  }
+  if (opts.sort === "downloads") qs.set("sort", "downloads");
+  else if (opts.sort === "created") qs.set("sort", "created");
+  if (opts.order) qs.set("order", opts.order);
+  if (opts.limit != null && opts.limit > 0) qs.set("limit", String(opts.limit));
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return apiFetch<RegistryPackage[]>(`/packages${suffix}`);
 }
@@ -742,6 +771,8 @@ export interface AdminPackageRow {
   weeklyDownloads: number;
   isDeprecated: boolean;
   versionCount: number;
+  maturityLevel: number;
+  capabilityBadges: string[];
   owner: { id: number; username: string; email: string } | null;
   org: { id: number; slug: string; displayName: string } | null;
   createdAt: string;

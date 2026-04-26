@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db';
+import { sortBySemverDesc } from '../lib/semverSort';
+import { computePackageMaturityFromVersion } from '../lib/maturity';
 
 // GET /users/:username
 // Public profile — never exposes email, password hash, or API token.
@@ -17,14 +19,13 @@ export const getUserProfile = async (req: Request, res: Response) => {
       avatarUrl: true,
       createdAt: true,
       ownedPackages: {
-        where: { orgId: null },        // personal packages only (scoped live under orgs)
-        select: {
-          slug:            true,
-          name:            true,
-          description:     true,
-          latestVersion:   true,
-          totalDownloads:  true,
-          weeklyDownloads: true,
+        where: { orgId: null }, // personal packages only (scoped live under orgs)
+        include: {
+          versions: {
+            where: { isYanked: false },
+            orderBy: { publishedAt: 'desc' },
+            take: 80,
+          },
         },
         orderBy: { totalDownloads: 'desc' },
       },
@@ -42,13 +43,21 @@ export const getUserProfile = async (req: Request, res: Response) => {
     bio:       user.bio       ?? null,
     avatarUrl: user.avatarUrl ?? null,
     createdAt: user.createdAt.toISOString(),
-    packages:  user.ownedPackages.map((p) => ({
-      slug:            p.slug,
-      name:            p.name,
-      description:     p.description ?? '',
-      latestVersion:   p.latestVersion ?? null,
-      totalDownloads:  p.totalDownloads,
-      weeklyDownloads: p.weeklyDownloads,
-    })),
+    packages:  user.ownedPackages.map((p) => {
+      const nonY = p.versions.filter((v) => !v.isYanked);
+      const sorted = sortBySemverDesc(nonY);
+      const latest = sorted[0] ?? sortBySemverDesc(p.versions)[0];
+      const { level, badges } = computePackageMaturityFromVersion(latest ?? null);
+      return {
+        slug:            p.slug,
+        name:            p.name,
+        description:     p.description ?? '',
+        latestVersion:   p.latestVersion ?? null,
+        totalDownloads:  p.totalDownloads,
+        weeklyDownloads: p.weeklyDownloads,
+        maturityLevel:   level,
+        capabilityBadges: badges,
+      };
+    }),
   });
 };
