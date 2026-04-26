@@ -147,6 +147,12 @@ model Version {
   targets         String?   // JSON blob from manifest targets
   toolchain       String?
   isa             String?
+  /// Execution metadata blob from manifest (e.g. { entry, testEntry, env }).
+  execution       String?
+  /// Resolution policy (bundled | resolved | host-dependent).
+  resolutionMode  String?
+  /// Dependency declarations (e.g. tools list) as JSON.
+  dependencies    String?
   size            Int?      // archive bytes
   downloadCount   Int       @default(0)
   isYanked        Boolean   @default(false)

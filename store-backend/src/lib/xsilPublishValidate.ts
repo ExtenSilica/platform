@@ -110,7 +110,14 @@ export interface ManifestJson {
   version?: string;
   description?: string;
   author?: string;
+  isa?: string;
   entry?: string;
+  testEntry?: string;
+  toolchain?: unknown;
+  targets?: unknown;
+  execution?: unknown;
+  dependencies?: unknown;
+  resolution?: unknown;
   payloadHash?: string;
   checksums?: { payload?: string; archive?: string };
 }
@@ -146,7 +153,13 @@ function validatePublishManifestFields(m: ManifestJson): void {
   const version = (m.version ?? '').trim();
   const description = (m.description ?? '').trim();
   const author = (m.author ?? '').trim();
-  const entry = m.entry != null ? String(m.entry).trim() : '';
+  const legacyEntry = m.entry != null ? String(m.entry).trim() : '';
+  const exec = m.execution as Record<string, unknown> | undefined;
+  const execEntry =
+    exec && typeof exec === 'object' && typeof exec.entry === 'string'
+      ? String(exec.entry).trim()
+      : '';
+  const entry = execEntry || legacyEntry;
 
   if (!name) throw new XsilValidationError('manifest.name is required.');
   if (!version) throw new XsilValidationError('manifest.version is required.');

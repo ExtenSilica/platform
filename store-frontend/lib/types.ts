@@ -8,6 +8,9 @@ export interface RegistryVersion {
   isa?: string | null;
   toolchain?: string | null;
   targets?: string | null;
+  execution?: string | null;
+  dependencies?: string | null;
+  resolutionMode?: string | null;
   size?: number | null;
   downloadCount: number;
   isYanked: boolean;

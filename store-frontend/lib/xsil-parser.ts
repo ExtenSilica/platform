@@ -9,9 +9,9 @@ export interface XsilManifest {
   repository?: string;
   homepage?: string;
   isa?: string;
-  targets?: string | string[];
+  targets?: string | string[] | Record<string, unknown>;
   entry?: string;
-  toolchain?: string | { name?: string; version?: string };
+  toolchain?: string | { name?: string; version?: string } | Record<string, unknown>;
   readme?: string;
   keywords?: string[];
   checksums?: { payload?: string; archive?: string };
@@ -123,7 +123,7 @@ export function toolchainToString(
           ? String(o.version)
           : "";
       const line = ver ? `${o.triple} · v${ver}` : o.triple;
-      if (o.external === true) return `${line} (bundled)`;
+      if (o.external === true) return `${line} (external)`;
       return line;
     }
     if (typeof o.name === "string") {
@@ -135,6 +135,103 @@ export function toolchainToString(
       return "";
     }
   }
-  if (tc.name) return tc.version ? `${tc.name} ${tc.version}` : tc.name;
   return "";
+}
+
+export type PackageMaturityLevel = 1 | 2 | 3 | 4 | 5;
+
+export type CapabilityBadge =
+  | "ISA"
+  | "Repro: bundled"
+  | "Repro: resolved"
+  | "Repro: host-dependent"
+  | "Toolchain: bundled"
+  | "Toolchain: external"
+  | "Sim: Spike"
+  | "Emu: QEMU"
+  | "FPGA"
+  | "RTL"
+  | "Tests";
+
+function safeParseJsonObject(raw: string | null | undefined): Record<string, unknown> | null {
+  if (!raw?.trim()) return null;
+  try {
+    const j = JSON.parse(raw) as unknown;
+    if (j && typeof j === "object" && !Array.isArray(j)) return j as Record<string, unknown>;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function toolchainExternalFlag(
+  tc: XsilManifest["toolchain"] | null | undefined
+): boolean | null {
+  if (!tc) return null;
+  if (typeof tc === "string") {
+    const o = safeParseJsonObject(tc);
+    if (o && typeof o.external === "boolean") return o.external;
+    return null;
+  }
+  if (typeof tc === "object" && tc !== null && !Array.isArray(tc)) {
+    const o = tc as Record<string, unknown>;
+    if (typeof o.external === "boolean") return o.external;
+    return null;
+  }
+  return null;
+}
+
+export function computeCapabilityBadges(input: {
+  isa?: string | null;
+  toolchain?: XsilManifest["toolchain"] | null;
+  targetsRaw?: string | null;
+  resolutionMode?: string | null;
+  dependenciesRaw?: string | null;
+  hasTests?: boolean;
+}): { badges: CapabilityBadge[]; level: PackageMaturityLevel } {
+  const badges: CapabilityBadge[] = [];
+
+  // ISA is always declared for registry versions, but keep this defensive for older rows.
+  if (input.isa?.trim()) badges.push("ISA");
+
+  const tcExternal = toolchainExternalFlag(input.toolchain ?? null);
+  if (tcExternal === true) badges.push("Toolchain: external");
+  else if (tcExternal === false) badges.push("Toolchain: bundled");
+
+  const targetsObj = safeParseJsonObject(input.targetsRaw ?? null);
+  const keys = targetsObj ? Object.keys(targetsObj) : [];
+  if (keys.includes("spike")) badges.push("Sim: Spike");
+  if (keys.includes("qemu")) badges.push("Emu: QEMU");
+  if (keys.includes("fpga")) badges.push("FPGA");
+  if (keys.includes("rtl")) badges.push("RTL");
+
+  if (input.hasTests) badges.push("Tests");
+
+  const rm = (input.resolutionMode ?? "").trim().toLowerCase();
+  if (rm === "bundled") badges.push("Repro: bundled");
+  else if (rm === "resolved") badges.push("Repro: resolved");
+  else if (rm === "host-dependent" || rm === "host_dependent" || rm === "hostdependent") {
+    badges.push("Repro: host-dependent");
+  } else if (tcExternal === true) {
+    // Legacy fallback: toolchain.external=true implies host-dependent.
+    badges.push("Repro: host-dependent");
+  }
+
+  // Level derivation (completeness ladder)
+  // 1: ISA-only
+  // 2: runnable sim/emulation declared
+  // 3: reproducible sim (bundled toolchain)
+  // 4: tested (tests present)
+  // 5: hardware-capable (fpga or rtl declared)
+  const hasSim = keys.includes("spike") || keys.includes("qemu");
+  const hasHw = keys.includes("fpga") || keys.includes("rtl");
+  const bundledToolchain = tcExternal === false;
+
+  let level: PackageMaturityLevel = 1;
+  if (hasSim) level = 2;
+  if (level >= 2 && bundledToolchain) level = 3;
+  if (level >= 2 && input.hasTests) level = (level >= 3 ? 4 : 4);
+  if (hasHw && level >= 2) level = 5;
+
+  return { badges, level };
 }

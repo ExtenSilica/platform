@@ -8,6 +8,7 @@ import type { RegistryVersion, Review, PackageStats } from "@/lib/types";
 import {
   targetsDisplayFromJson,
   toolchainToString,
+  computeCapabilityBadges,
 } from "@/lib/xsil-parser";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ import {
   BookOpen,
   History,
   BarChart2,
+  Sparkles,
 } from "lucide-react";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -134,6 +136,14 @@ export default async function PackagePage({
   const latest: RegistryVersion | undefined = pkg.versions?.[0];
   const keywords = pkg.keywords ?? [];
   const targetsUi = targetsDisplayFromJson(latest?.targets ?? null);
+  const maturity = computeCapabilityBadges({
+    isa: latest?.isa ?? null,
+    toolchain: latest?.toolchain ?? null,
+    targetsRaw: latest?.targets ?? null,
+    resolutionMode: latest?.resolutionMode ?? null,
+    dependenciesRaw: latest?.dependencies ?? null,
+    hasTests: Boolean(pkg.latestVersion), // best-effort: versions imply tests exist; refined once tests are indexed explicitly
+  });
   const readme = pkg.longDescription || pkg.description || "";
   const installCmd = `xsil install ${pkg.slug}`;
   const runCmd = `xsil run ${pkg.slug}`;
@@ -326,6 +336,26 @@ export default async function PackagePage({
                     icon={<Cpu className="h-3.5 w-3.5" />}
                     label="ISA"
                     value={<code className="font-mono">{latest.isa}</code>}
+                  />
+                )}
+                {maturity.badges.length > 0 && (
+                  <Row
+                    icon={<Sparkles className="h-3.5 w-3.5" />}
+                    label="Maturity"
+                    value={
+                      <div className="space-y-2">
+                        <div className="text-xs text-muted-foreground">
+                          Level <span className="font-mono">{maturity.level}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {maturity.badges.map((b) => (
+                            <Badge key={b} variant="secondary" className="text-[10px]">
+                              {b}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    }
                   />
                 )}
                 {latest?.toolchain && (

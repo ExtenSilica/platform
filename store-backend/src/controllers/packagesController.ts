@@ -131,6 +131,9 @@ function mapVersion(v: Version) {
     targets: v.targets,
     toolchain: v.toolchain,
     isa: v.isa,
+    execution: (v as Version & { execution?: string | null }).execution ?? null,
+    dependencies: (v as Version & { dependencies?: string | null }).dependencies ?? null,
+    resolutionMode: (v as Version & { resolutionMode?: string | null }).resolutionMode ?? null,
     size: v.size,
     downloadCount: v.downloadCount,
     isYanked: v.isYanked,
@@ -423,7 +426,7 @@ export const publishVersion = async (req: Request, res: Response) => {
   }
 
   const { name } = req.params;
-  const { version, changelog, isa, targets, toolchain } = req.body as Record<string, string | undefined>;
+  const { version, changelog } = req.body as Record<string, string | undefined>;
   const file = req.file;
 
   if (!file) {
@@ -498,6 +501,17 @@ export const publishVersion = async (req: Request, res: Response) => {
     // Transfer the temp file to the storage backend (moves for local, uploads for S3).
     await storage.put(key, file.path);
 
+    const mf = validated.manifest ?? {};
+    const mfIsa = typeof mf.isa === 'string' ? mf.isa.trim() : '';
+    const mfTargets = mf.targets != null ? JSON.stringify(mf.targets) : '';
+    const mfToolchain = mf.toolchain != null ? JSON.stringify(mf.toolchain) : '';
+    const mfExecution = mf.execution != null ? JSON.stringify(mf.execution) : '';
+    const mfDeps = mf.dependencies != null ? JSON.stringify(mf.dependencies) : '';
+    const mfResolution =
+      mf.resolution && typeof mf.resolution === 'object' && (mf.resolution as Record<string, unknown>).mode
+        ? String((mf.resolution as Record<string, unknown>).mode)
+        : null;
+
     let newVersion;
     try {
       newVersion = await prisma.version.create({
@@ -508,9 +522,12 @@ export const publishVersion = async (req: Request, res: Response) => {
           xsilUrl,
           checksum,
           checksumPayload: validated.checksumPayloadStored,
-          isa: isa?.trim() || null,
-          targets: targets?.trim() || null,
-          toolchain: toolchain?.trim() || null,
+          isa: mfIsa || null,
+          targets: mfTargets || null,
+          toolchain: mfToolchain || null,
+          execution: mfExecution || null,
+          dependencies: mfDeps || null,
+          resolutionMode: mfResolution ? mfResolution.trim() : null,
           size: file.size,
         },
       });
