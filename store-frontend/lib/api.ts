@@ -657,6 +657,16 @@ export async function apiGetOrg(slug: string): Promise<Organization> {
   return apiFetch<Organization>(`/orgs/${slug}`);
 }
 
+/** Public org lookup for SSR (same pattern as {@link fetchUser}). */
+export async function fetchOrgPublic(slug: string): Promise<Organization | null> {
+  const res = await fetch(`${API_BASE}/orgs/${encodeURIComponent(slug)}`, {
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new ApiError(res.statusText, res.status);
+  return res.json() as Promise<Organization>;
+}
+
 export async function apiCreateOrg(
   token: string,
   data: {

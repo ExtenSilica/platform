@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { fetchUser } from "@/lib/api";
+import { fetchOrgPublic, fetchUser } from "@/lib/api";
 import { ArrowLeft, Calendar, Download, Package, User } from "lucide-react";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
 
@@ -29,7 +29,11 @@ export default async function UserProfilePage({
   params: { username: string };
 }) {
   const user = await fetchUser(params.username).catch(() => null);
-  if (!user) notFound();
+  if (!user) {
+    const org = await fetchOrgPublic(params.username);
+    if (org) redirect(`/orgs/${params.username}`);
+    notFound();
+  }
 
   return (
     <div className="container max-w-5xl px-4 py-8">
