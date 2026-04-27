@@ -44,7 +44,7 @@ const GROUPS: FaqGroup[] = [
             versioned, self-describing archives that bundle RISC-V simulation assets,
             toolchains, test suites, documentation, and optional FPGA artifacts.
             Think of it as <strong>npmjs.com for reproducible RISC-V extensions</strong>:
-            you can search for packages, install them with one command, publish your own
+            you can search for packages, install them with <C>xsil install</C>, publish your own
             work, and view download statistics and reviews.
           </>
         ),
