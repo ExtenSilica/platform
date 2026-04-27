@@ -20,6 +20,7 @@ import { passwordPolicyError } from "@/lib/passwordPolicy";
 import type { RegistryPackage, MyOrg } from "@/lib/types";
 import {
   computeCapabilityBadges,
+  displayReadinessLevel,
   executionIndicatesTests,
 } from "@/lib/xsil-parser";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
@@ -517,6 +518,7 @@ export default function DashboardPage() {
                 dependenciesRaw: latest?.dependencies ?? null,
                 hasTests: executionIndicatesTests(latest?.execution ?? null),
               });
+              const readinessLevel = displayReadinessLevel(latest, maturity.level);
               return (
                 <div
                   key={pkg.id}
@@ -544,7 +546,7 @@ export default function DashboardPage() {
                       </p>
                     )}
                     <PackageCapabilityChips
-                      level={maturity.level}
+                      level={readinessLevel}
                       badges={maturity.badges}
                       maxBadges={5}
                     />

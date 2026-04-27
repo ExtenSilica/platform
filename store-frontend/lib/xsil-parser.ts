@@ -247,6 +247,19 @@ export function computeCapabilityBadges(input: {
   return { badges, level };
 }
 
+/**
+ * Prefer registry-stored RL (1–5) on the semver-latest version when present; otherwise use the
+ * client-computed ladder from `computeCapabilityBadges` so cards and dashboards match list/detail APIs.
+ */
+export function displayReadinessLevel(
+  latest: { readinessLevel?: number | null } | null | undefined,
+  computedLevel: number,
+): number {
+  const rl = latest?.readinessLevel;
+  if (typeof rl === "number" && rl >= 1 && rl <= 5) return rl;
+  return computedLevel;
+}
+
 export type ManifestEvidenceKind = "documentation" | "ci" | "artifact" | "other";
 
 export interface ManifestEvidenceItem {

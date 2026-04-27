@@ -9,6 +9,7 @@ import {
   targetsDisplayFromJson,
   toolchainToString,
   computeCapabilityBadges,
+  displayReadinessLevel,
   executionIndicatesTests,
   parseRegistryEvidence,
 } from "@/lib/xsil-parser";
@@ -172,10 +173,7 @@ export default async function PackagePage({
     dependenciesRaw: latest?.dependencies ?? null,
     hasTests: executionIndicatesTests(latest?.execution ?? null),
   });
-  const readinessLevelDisplay =
-    typeof latest?.readinessLevel === "number" && latest.readinessLevel >= 1 && latest.readinessLevel <= 5
-      ? latest.readinessLevel
-      : maturity.level;
+  const readinessLevelDisplay = displayReadinessLevel(latest, maturity.level);
   const execObj = safeParseJsonObject(latest?.execution ?? null);
   const hasEntry = Boolean(execObj && typeof execObj.entry === "string" && execObj.entry.trim());
   const hasTestEntry = Boolean(execObj && typeof execObj.testEntry === "string" && execObj.testEntry.trim());

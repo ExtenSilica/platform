@@ -10,6 +10,7 @@ import {
 import { AlertTriangle, Download, Cpu } from "lucide-react";
 import {
   computeCapabilityBadges,
+  displayReadinessLevel,
   executionIndicatesTests,
 } from "@/lib/xsil-parser";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
@@ -49,6 +50,7 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
     dependenciesRaw: latest?.dependencies ?? null,
     hasTests: executionIndicatesTests(latest?.execution ?? null),
   });
+  const readinessLevel = displayReadinessLevel(latest, maturity.level);
 
   return (
     <Link href={`/package/${pkg.slug}`} className="group block h-full">
@@ -77,7 +79,7 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
               <span>{pkg.org.displayName}</span>
             </p>
           )}
-          <PackageCapabilityChips level={maturity.level} badges={maturity.badges} />
+          <PackageCapabilityChips level={readinessLevel} badges={maturity.badges} />
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className="rounded-md border border-border/50 bg-muted/45 px-2 py-0.5 font-mono text-[10px] text-muted-foreground/80">
               RISC-V extension
