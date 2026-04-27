@@ -40,7 +40,7 @@ const FEATURES = [
     icon: Package,
     title: "Package registry",
     description:
-      "Every .xsil package has a canonical name, version history, and a discoverable metadata page — installable in one command.",
+      "Every .xsil package has a canonical name, version history, and a discoverable metadata page — install with xsil install when you are ready to run it locally.",
   },
   {
     icon: GitBranch,
@@ -171,7 +171,7 @@ export function HomeIndex() {
           </div>
 
           <h1 className="mb-4 text-4xl font-black tracking-tighter text-foreground sm:text-5xl">
-            The public registry for{" "}
+            The pre-silicon bridge for{" "}
             <span className="relative inline-block">
               <span className="text-riscv-accent drop-shadow-[0_0_12px_hsl(var(--riscv-accent)/0.35)]">RISC-V</span>
               <span className="absolute -bottom-1 left-0 h-px w-full bg-gradient-to-r from-transparent via-riscv-accent/50 to-transparent" />
@@ -180,13 +180,9 @@ export function HomeIndex() {
           </h1>
 
           <p className="mb-8 text-lg text-muted-foreground">
-            Discover, publish, and run reproducible RISC-V extensions — the{" "}
-            <span className="font-semibold text-foreground">pre-silicon bridge</span>{" "}
-            for evaluating ideas before RTL/FPGA/ASIC decisions — using{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-              .xsil
-            </code>{" "}
-            packages.
+            Reproducible{" "}
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">.xsil</code>{" "}
+            packages for simulator, toolchain, and optional FPGA/RTL evaluation.
           </p>
 
           {/* Search bar */}
@@ -211,7 +207,7 @@ export function HomeIndex() {
           {/* Example commands — focal terminal */}
           <div className="mx-auto mt-10 max-w-lg scale-[1.08] sm:scale-100 sm:max-w-xl">
             <p className="mb-2.5 text-base font-semibold text-foreground sm:text-[1.0625rem]">
-              Try a published extension with one command when it declares a runnable path
+              Try a runnable extension in one command.
             </p>
             <div className="relative">
               {/* edge glow */}
@@ -247,7 +243,7 @@ export function HomeIndex() {
             </div>
             </div>
             <p className="mt-3 text-sm text-muted-foreground">
-              No manual toolchain setup required.
+              Dependency-resolved execution when supported.
             </p>
           </div>
         </div>

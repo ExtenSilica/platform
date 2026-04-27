@@ -25,12 +25,12 @@ const STEPS = [
   {
     icon: Download,
     label: "Install",
-    detail: "Anyone can install a RISC-V extension with a single command, verified by checksum",
+    detail: "Install from the registry with one command, verified by checksum",
     code: "xsil install",
   },
   {
     icon: Cpu,
-    label: "Run & evaluate",
+    label: "Evaluate before RTL/FPGA/ASIC",
     detail:
       "Use Spike, QEMU, FPGA, or other declared targets — hands-on evaluation before heavier RTL/ASIC commitments",
     code: "xsil run",
