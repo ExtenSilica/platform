@@ -48,15 +48,15 @@ export default function DmcaPage() {
           </p>
           <Ul>
             <li>
-              <Strong>Acknowledge</Strong> receipt within 2 business days.
+              <Strong>Acknowledge</Strong> receipt as soon as reasonably possible.
             </li>
             <li>
               <Strong>Notify</Strong> the package author of the claim and give them
               an opportunity to respond or remove the content.
             </li>
             <li>
-              <Strong>Act</Strong> within 5 business days — typically by yanking the
-              affected version(s) or removing the package. Complete deletion of
+              <Strong>Act</Strong> within a reasonable timeframe — typically by yanking
+              the affected version(s) or removing the package. Complete deletion of
               artifacts is reserved for confirmed illegal content or court orders.
             </li>
             <li>
@@ -97,8 +97,8 @@ export default function DmcaPage() {
           </Ul>
           <p>
             Upon receiving a valid counter-notice we will notify the original
-            complainant and restore the content within 10–14 business days unless
-            the complainant seeks a court order.
+            complainant and, where required by applicable law, restore the content
+            unless the complainant seeks a court order.
           </p>
         </Section>
 

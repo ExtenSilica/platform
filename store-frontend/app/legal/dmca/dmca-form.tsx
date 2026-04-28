@@ -68,7 +68,7 @@ export default function DmcaForm() {
         </p>
         <p className="mt-2 text-sm text-green-700 dark:text-green-400">
           Your takedown request has been submitted. We will review it and respond
-          to <strong>{fields.reporterEmail}</strong> within 5 business days.
+          to <strong>{fields.reporterEmail}</strong> as soon as reasonably possible.
         </p>
       </div>
     );

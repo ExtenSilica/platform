@@ -189,9 +189,9 @@ export default function TermsPage() {
             <li>Your contact information and electronic signature.</li>
           </Ul>
           <p>
-            We will acknowledge receipt within 2 business days and take appropriate
-            action — typically yanking or removing the affected version(s) — within
-            5 business days.
+            We aim to acknowledge receipt promptly and take appropriate action — typically
+            yanking or removing the affected version(s) — within a reasonable timeframe,
+            depending on the completeness of the request and the nature of the claim.
           </p>
           <p>
             <Strong>Yanking vs. deletion.</Strong> Because published versions are

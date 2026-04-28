@@ -53,9 +53,10 @@ const GROUPS: FaqGroup[] = [
         q: "Is ExtenSilica free to use?",
         a: (
           <>
-            Yes — completely free. There are no paid tiers, publishing fees, download
-            quotas, or rate limits for ordinary use. The registry is operated as an
-            open infrastructure project for the RISC-V community.
+            Yes — free to use. There are no paid tiers, publishing fees, or download
+            quotas. To protect the service from abuse, we may apply reasonable
+            rate-limiting or temporary restrictions during unusual traffic or
+            incident response.
           </>
         ),
       },
@@ -271,9 +272,13 @@ const GROUPS: FaqGroup[] = [
         q: "Does ExtenSilica support organizations or scoped packages?",
         a: (
           <>
-            Organization accounts and scoped package names (e.g.,{" "}
-            <C>@myorg/package</C>) are planned for a future release. Today, all
-            packages live in a single global namespace.
+            Yes. ExtenSilica supports organizations and scoped package slugs (e.g.,{" "}
+            <C>@myorg/package</C>).
+            <p className="mt-3">
+              Organization profiles live under <C>/orgs/&lt;slug&gt;</C>. Package
+              pages and CLI commands accept scoped slugs wherever a package name is
+              accepted.
+            </p>
           </>
         ),
       },
