@@ -100,6 +100,15 @@ export default function CreatePackagePage() {
         </p>
       </div>
 
+      <Alert className="mb-6 border-amber-500/30 bg-amber-500/10">
+        <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <AlertDescription className="text-amber-800 dark:text-amber-300">
+          Marketplace policy: only{" "}
+          <code className="mx-1 rounded bg-amber-500/20 px-1 py-0.5 font-mono text-xs">resolution.mode=resolved</code>
+          packages can be published. All declared tool dependencies must be verified in ExtenSilica artifacts.
+        </AlertDescription>
+      </Alert>
+
       {error && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />

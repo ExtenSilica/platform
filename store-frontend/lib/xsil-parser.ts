@@ -15,6 +15,8 @@ export interface XsilManifest {
   readme?: string;
   keywords?: string[];
   checksums?: { payload?: string; archive?: string };
+  resolution?: { mode?: string; [k: string]: unknown } | Record<string, unknown>;
+  dependencies?: { tools?: unknown[]; [k: string]: unknown } | Record<string, unknown>;
   /** Optional evaluation evidence (HTTPS links + optional digests). Echoed as `Version.evidence` on the registry. */
   evidence?: unknown;
 }

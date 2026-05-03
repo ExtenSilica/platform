@@ -4,7 +4,14 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
-import { fetchPackage, apiPublishVersion, ApiError } from "@/lib/api";
+import {
+  fetchPackage,
+  apiPublishVersion,
+  apiResolveArtifacts,
+  ApiError,
+  type MissingToolArtifact,
+  type ResolvedToolArtifact,
+} from "@/lib/api";
 import type { RegistryPackage } from "@/lib/types";
 import {
   parseXsilManifest,
@@ -29,6 +36,53 @@ function fmtBytes(b: number) {
   return `${(b / 1048576).toFixed(1)} MB`;
 }
 
+type DeclaredToolDependency = {
+  name: string;
+  version: string;
+  platform: string;
+  url: string;
+  sha256: string;
+};
+
+function normalizeSha256(v: string): string {
+  const t = v.trim().toLowerCase();
+  if (t.startsWith("sha256:")) return t.slice("sha256:".length).trim();
+  if (t.startsWith("sha256-")) return t.slice("sha256-".length).trim();
+  return t;
+}
+
+function extractDeclaredDependencies(m: XsilManifest | null): DeclaredToolDependency[] {
+  const deps = m?.dependencies;
+  if (!deps || typeof deps !== "object") return [];
+  const tools = (deps as { tools?: unknown[] }).tools;
+  if (!Array.isArray(tools)) return [];
+
+  const out: DeclaredToolDependency[] = [];
+  for (const toolRaw of tools) {
+    if (!toolRaw || typeof toolRaw !== "object") continue;
+    const tool = toolRaw as Record<string, unknown>;
+    const name = typeof tool.name === "string" ? tool.name.trim() : "";
+    const version = typeof tool.version === "string" ? tool.version.trim() : "";
+    const platforms = tool.platforms;
+    if (!name || !version || !platforms || typeof platforms !== "object") continue;
+
+    for (const [platform, artRaw] of Object.entries(platforms as Record<string, unknown>)) {
+      if (!artRaw || typeof artRaw !== "object") continue;
+      const art = artRaw as Record<string, unknown>;
+      const url = typeof art.url === "string" ? art.url.trim() : "";
+      const sha256 = typeof art.sha256 === "string" ? normalizeSha256(art.sha256) : "";
+      if (!platform || !url || !sha256) continue;
+      out.push({ name, version, platform, url, sha256 });
+    }
+  }
+
+  return out;
+}
+
+function depKey(name: string, version: string, platform: string, sha256: string): string {
+  return `${name}::${version}::${platform}::${normalizeSha256(sha256)}`;
+}
+
 export default function PublishVersionPage() {
   const { user, token, isLoading } = useAuth();
   const router = useRouter();
@@ -51,6 +105,12 @@ export default function PublishVersionPage() {
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [depCheckError, setDepCheckError] = useState("");
+  const [depCheckBusy, setDepCheckBusy] = useState(false);
+  const [depReady, setDepReady] = useState(false);
+  const [resolvedDeps, setResolvedDeps] = useState<ResolvedToolArtifact[]>([]);
+  const [missingDeps, setMissingDeps] = useState<MissingToolArtifact[]>([]);
+  const [declaredDeps, setDeclaredDeps] = useState<DeclaredToolDependency[]>([]);
 
   const dropRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,10 +147,85 @@ export default function PublishVersionPage() {
       if (parsed.isa) setIsa(parsed.isa);
       if (parsed.targets) setTargets(targetsToString(parsed.targets));
       if (parsed.toolchain) setToolchain(toolchainToString(parsed.toolchain));
+      const deps = extractDeclaredDependencies(parsed);
+      setDeclaredDeps(deps);
+      setResolvedDeps([]);
+      setMissingDeps([]);
+      setDepReady(false);
+      setDepCheckError("");
     } else {
       setManifestError("Could not read manifest.json from archive. Fill in details manually.");
+      setDeclaredDeps([]);
+      setResolvedDeps([]);
+      setMissingDeps([]);
+      setDepReady(false);
+      setDepCheckError("");
     }
   }, []);
+
+  const verifyDependencies = useCallback(async () => {
+    if (!token) return;
+    if (!manifest) {
+      setDepReady(false);
+      setDepCheckError("Manifest not loaded from .xsil.");
+      return;
+    }
+    const mode = String((manifest.resolution as { mode?: unknown } | undefined)?.mode ?? "")
+      .trim()
+      .toLowerCase();
+    if (mode !== "resolved") {
+      setDepReady(false);
+      setResolvedDeps([]);
+      setMissingDeps([]);
+      setDepCheckError('Only resolution.mode="resolved" is accepted.');
+      return;
+    }
+    const deps = extractDeclaredDependencies(manifest);
+    if (deps.length === 0) {
+      setDepReady(false);
+      setResolvedDeps([]);
+      setMissingDeps([]);
+      setDepCheckError("resolved package must declare dependencies.tools[].");
+      return;
+    }
+
+    setDepCheckBusy(true);
+    setDepCheckError("");
+    try {
+      const response = await apiResolveArtifacts(token, manifest.dependencies ?? {});
+      setResolvedDeps(response.resolved);
+      setMissingDeps(response.missing);
+      const resolvedKeys = new Set(
+        response.resolved.map((r) => depKey(r.name, r.version, r.platform, r.sha256))
+      );
+      const unresolvedDeclared = deps.filter(
+        (d) => !resolvedKeys.has(depKey(d.name, d.version, d.platform, d.sha256))
+      );
+      if (response.missing.length > 0 || unresolvedDeclared.length > 0) {
+        setDepReady(false);
+        setDepCheckError(
+          "Some dependencies are not registered in ExtenSilica artifacts yet."
+        );
+      } else {
+        setDepReady(true);
+      }
+    } catch (err) {
+      setDepReady(false);
+      setResolvedDeps([]);
+      setMissingDeps([]);
+      setDepCheckError(err instanceof ApiError ? err.message : "Failed to verify dependencies.");
+    } finally {
+      setDepCheckBusy(false);
+    }
+  }, [token, manifest]);
+
+  useEffect(() => {
+    if (!manifest || !token) {
+      setDepReady(false);
+      return;
+    }
+    verifyDependencies();
+  }, [manifest, token, verifyDependencies]);
 
   function handleFileDrop(e: React.DragEvent) {
     e.preventDefault();
@@ -107,6 +242,10 @@ export default function PublishVersionPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !file) return;
+    if (!depReady) {
+      setApiError("Dependencies are not fully verified in ExtenSilica yet.");
+      return;
+    }
     setApiError("");
     setSubmitting(true);
 
@@ -169,6 +308,15 @@ export default function PublishVersionPage() {
         </p>
       </div>
 
+      <Alert className="mb-6 border-amber-500/30 bg-amber-500/10">
+        <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <AlertDescription className="text-amber-800 dark:text-amber-300">
+          Marketplace policy: publish is allowed only for{" "}
+          <code className="mx-1 rounded bg-amber-500/20 px-1 py-0.5 font-mono text-xs">resolution.mode=resolved</code>
+          packages with all declared tool dependencies verified in ExtenSilica artifacts.
+        </AlertDescription>
+      </Alert>
+
       {apiError && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
@@ -229,6 +377,11 @@ export default function PublishVersionPage() {
                     setFile(null);
                     setManifest(null);
                     setManifestError("");
+                    setDeclaredDeps([]);
+                    setResolvedDeps([]);
+                    setMissingDeps([]);
+                    setDepReady(false);
+                    setDepCheckError("");
                   }}
                   className="shrink-0 text-muted-foreground hover:text-foreground"
                 >
@@ -343,13 +496,86 @@ export default function PublishVersionPage() {
             </Field>
           </section>
 
+          {/* ── Resolved dependency verification ── */}
+          <section className="rounded-xl border bg-background p-6 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-semibold">3. Dependency verification</h2>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={depCheckBusy || !manifest || !token}
+                onClick={verifyDependencies}
+              >
+                {depCheckBusy ? "Checking…" : "Re-check"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Publish is enabled only when all declared tools are verified in ExtenSilica artifacts.
+            </p>
+
+            {!manifest && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                Upload a .xsil file so dependencies can be verified.
+              </p>
+            )}
+
+            {manifest && (
+              <>
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <Badge variant={depReady ? "default" : "outline"}>
+                    {depReady ? "Verified in ExtenSilica" : "Not verified"}
+                  </Badge>
+                  <Badge variant="muted">declared: {declaredDeps.length}</Badge>
+                  <Badge variant="muted">resolved: {resolvedDeps.length}</Badge>
+                  <Badge variant={missingDeps.length > 0 ? "destructive" : "muted"}>
+                    missing: {missingDeps.length}
+                  </Badge>
+                </div>
+
+                {depCheckError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{depCheckError}</AlertDescription>
+                  </Alert>
+                )}
+
+                {declaredDeps.length > 0 && (
+                  <div className="rounded-lg border divide-y">
+                    {declaredDeps.map((d) => {
+                      const ok = resolvedDeps.some(
+                        (r) => depKey(r.name, r.version, r.platform, r.sha256) ===
+                          depKey(d.name, d.version, d.platform, d.sha256)
+                      );
+                      return (
+                        <div key={depKey(d.name, d.version, d.platform, d.sha256)} className="px-3 py-2 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="font-mono">
+                              {d.name}@{d.version} [{d.platform}]
+                            </div>
+                            <Badge variant={ok ? "default" : "destructive"}>
+                              {ok ? "verified" : "missing"}
+                            </Badge>
+                          </div>
+                          <div className="mt-1 text-muted-foreground truncate">
+                            sha256:{d.sha256}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
           <div className="flex justify-end gap-3">
             <Link href="/dashboard">
               <Button variant="outline" type="button">
                 Cancel
               </Button>
             </Link>
-            <Button type="submit" disabled={submitting || !file || !version.trim()}>
+            <Button type="submit" disabled={submitting || !file || !version.trim() || !depReady || depCheckBusy}>
               {submitting ? "Publishing…" : "Publish version"}
             </Button>
           </div>

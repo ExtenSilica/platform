@@ -558,6 +558,26 @@ export interface UpdatePackageInput {
   deprecationMessage?: string | null;
 }
 
+export interface ResolvedToolArtifact {
+  name: string;
+  version: string;
+  platform: string;
+  sha256: string;
+  url: string;
+}
+
+export interface MissingToolArtifact {
+  name: string;
+  version: string;
+  platform: string;
+  sha256: string;
+}
+
+export interface ResolveArtifactsResult {
+  resolved: ResolvedToolArtifact[];
+  missing: MissingToolArtifact[];
+}
+
 export async function apiUpdatePackage(
   token: string,
   slug: string,
@@ -579,6 +599,18 @@ export async function apiPublishVersion(
   const payload = await res.json() as { error?: string } & Partial<RegistryVersion>;
   if (!res.ok) throw new ApiError(payload.error ?? "Publish failed", res.status);
   return payload as RegistryVersion;
+}
+
+export async function apiResolveArtifacts(
+  token: string,
+  dependencies: unknown
+): Promise<ResolveArtifactsResult> {
+  return apiWrite<ResolveArtifactsResult>(
+    "POST",
+    "/artifacts/resolve",
+    token,
+    { dependencies }
+  );
 }
 
 /* ─── Reviews ───────────────────────────────────────────────────────────── */

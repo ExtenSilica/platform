@@ -50,9 +50,9 @@ const FEATURES = [
   },
   {
     icon: Shield,
-    title: "Reproducible by design",
+    title: "Resolved-only in marketplace",
     description:
-      "The manifest embeds a SHA-256 payloadHash over all package files. The CLI recomputes it on every install — if the bytes differ, execution is refused.",
+      "Marketplace publishing accepts only resolution.mode=resolved. All declared tool dependencies must be verified in ExtenSilica artifacts before publish is allowed.",
   },
   {
     icon: Terminal,
@@ -243,7 +243,7 @@ export function HomeIndex() {
             </div>
             </div>
             <p className="mt-3 text-sm text-muted-foreground">
-              Dependency-resolved execution when supported.
+              Resolved dependencies are fetched, hash-verified, and cached by the CLI.
             </p>
           </div>
         </div>
@@ -382,11 +382,11 @@ export function HomeIndex() {
             <code className="rounded bg-muted px-1.5 font-mono text-sm">
               manifest.json
             </code>
-            , run{" "}
+            , register your tool artifacts in ExtenSilica, then run{" "}
             <code className="rounded bg-muted px-1.5 font-mono text-sm">
               xsil publish
             </code>
-            , and your RISC-V extension is indexed and installable in seconds.
+            . Publish is gated until every declared dependency is verified.
           </p>
           <div className="inline-flex items-center gap-3 rounded-lg border border-border/80 bg-[hsl(222_30%_8%)] px-5 py-3 font-mono text-sm text-gray-200 shadow-lg dark:bg-[hsl(222_40%_6%)]">
             <span className="text-green-400/70">$</span>

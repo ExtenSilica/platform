@@ -171,6 +171,12 @@ const GROUPS: FaqGroup[] = [
                 </pre>
               </li>
               <li>
+                For marketplace publishing, set{" "}
+                <C>resolution.mode = "resolved"</C> and ensure every tool dependency
+                is registered in ExtenSilica artifacts (same <C>sha256</C>, version,
+                and platform).
+              </li>
+              <li>
                 Publish when ready:
                 <pre className="mt-2 rounded-md border bg-muted/50 px-3 py-2 font-mono text-sm">
                   xsil publish ./my-package/
@@ -180,8 +186,20 @@ const GROUPS: FaqGroup[] = [
             <p className="mt-3">
               The CLI validates your manifest, computes SHA-256 checksums, packs the
               directory into a <C>.xsil</C> archive, and uploads it to the registry.
-              Your package is indexed immediately.
+              Packages that are not <C>resolved</C> or have missing tool artifacts
+              are rejected by the backend.
             </p>
+          </>
+        ),
+      },
+      {
+        q: "Can I publish host-dependent or bundled packages to the marketplace?",
+        a: (
+          <>
+            No. Public marketplace publishing is <strong>resolved-only</strong>.
+            The backend accepts only <C>resolution.mode = "resolved"</C> and
+            verifies that each declared dependency points to a registered
+            ExtenSilica artifact. If any dependency is missing, publish fails.
           </>
         ),
       },
@@ -482,6 +500,10 @@ const GROUPS: FaqGroup[] = [
               At install time the CLI re-downloads the archive, recomputes the archive
               checksum, and recomputes the payload checksum from the extracted files.
               Any mismatch causes an immediate abort.
+            </p>
+            <p className="mt-3">
+              For <C>resolved</C> dependencies, each tool artifact is also
+              downloaded, SHA-256-verified, and cached before execution.
             </p>
           </>
         ),
