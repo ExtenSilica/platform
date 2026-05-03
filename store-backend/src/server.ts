@@ -136,7 +136,7 @@ app.use('/api/users', userRoutes);
 app.use('/admin', platformAdminRoutes);
 app.use('/api/admin', platformAdminRoutes);
 
-// ── Tool artifacts (resolved-mode dependencies) ─────────────────────────────
+// ── Tool artifacts (optional uploads + resolve API for resolved manifests) ──
 app.use('/artifacts', artifactRoutes);
 app.use('/api/artifacts', artifactRoutes);
 

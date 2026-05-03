@@ -171,10 +171,11 @@ const GROUPS: FaqGroup[] = [
                 </pre>
               </li>
               <li>
-                For marketplace publishing, set{" "}
-                <C>resolution.mode = "resolved"</C> and ensure every tool dependency
-                is registered in ExtenSilica artifacts (same <C>sha256</C>, version,
-                and platform).
+                Set <C>resolution.mode</C> to <C>bundled</C>, <C>resolved</C>, or{" "}
+                <C>host-dependent</C> per your reproducibility story. If you use{" "}
+                <C>resolved</C> with <C>dependencies.tools</C>, you can upload matching
+                binaries to ExtenSilica artifacts so installs resolve with auth; it is
+                optional for other modes.
               </li>
               <li>
                 Publish when ready:
@@ -186,8 +187,9 @@ const GROUPS: FaqGroup[] = [
             <p className="mt-3">
               The CLI validates your manifest, computes SHA-256 checksums, packs the
               directory into a <C>.xsil</C> archive, and uploads it to the registry.
-              Packages that are not <C>resolved</C> or have missing tool artifacts
-              are rejected by the backend.
+              The backend stores your declared <C>resolution.mode</C> and dependencies;
+              strict artifact linkage is applied only when every declared resolved tool
+              matches a registered ExtenSilica artifact.
             </p>
           </>
         ),
@@ -196,10 +198,11 @@ const GROUPS: FaqGroup[] = [
         q: "Can I publish host-dependent or bundled packages to the marketplace?",
         a: (
           <>
-            No. Public marketplace publishing is <strong>resolved-only</strong>.
-            The backend accepts only <C>resolution.mode = "resolved"</C> and
-            verifies that each declared dependency points to a registered
-            ExtenSilica artifact. If any dependency is missing, publish fails.
+            Yes. <C>bundled</C>, <C>resolved</C>, and <C>host-dependent</C> manifests
+            can be published. When you use <C>resolved</C> with{" "}
+            <C>dependencies.tools</C> pointing at ExtenSilica artifact URLs, the
+            registry can record artifact linkage for installs; otherwise the manifest
+            JSON alone is kept and users follow your docs for host prerequisites.
           </>
         ),
       },
@@ -502,8 +505,9 @@ const GROUPS: FaqGroup[] = [
               Any mismatch causes an immediate abort.
             </p>
             <p className="mt-3">
-              For <C>resolved</C> dependencies, each tool artifact is also
-              downloaded, SHA-256-verified, and cached before execution.
+              For <C>resolved</C> mode with <C>dependencies.tools</C>, the CLI may
+              download each declared tool archive, verify SHA-256, and cache it before
+              execution. <C>bundled</C> and <C>host-dependent</C> flows skip those downloads.
             </p>
           </>
         ),

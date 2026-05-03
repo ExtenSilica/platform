@@ -589,81 +589,60 @@ export const publishVersion = async (req: Request, res: Response) => {
         ? String((mf.resolution as Record<string, unknown>).mode)
         : null;
     const normalizedResolution = (mfResolution ?? '').trim().toLowerCase();
-    if (normalizedResolution !== 'resolved') {
-      await storage.delete(key).catch(() => {});
-      res.status(400).json({
-        error: 'Only resolution.mode="resolved" packages are accepted by this registry.',
-      });
-      return;
-    }
-
     const declaredDeps = extractDeclaredToolDependencies(mf as Record<string, unknown>);
-    if (declaredDeps.length === 0) {
-      await storage.delete(key).catch(() => {});
-      res.status(400).json({
-        error: 'resolved packages must declare dependencies.tools[] with platform artifacts.',
-      });
-      return;
-    }
 
-    const invalidDep = declaredDeps.find((d) => {
-      if (!isValidSha256(normalizeSha256(d.sha256))) return true;
-      if (!isExtensilicaArtifactUrl(d.url, baseUrl)) return true;
-      const shaInUrl = d.url.split('/').pop()?.trim().toLowerCase() ?? '';
-      return shaInUrl !== normalizeSha256(d.sha256);
-    });
-    if (invalidDep) {
-      await storage.delete(key).catch(() => {});
-      res.status(400).json({
-        error:
-          `Invalid dependency declaration for ${invalidDep.toolName}@${invalidDep.toolVersion} (${invalidDep.platform}). ` +
-          'Tool URLs must be ExtenSilica artifact URLs and sha256 must match the URL suffix.',
-      });
-      return;
-    }
+    // Optional linkage to ToolArtifact rows: only when manifest is resolved and every
+    // declared tool matches a registered artifact. Otherwise publish still succeeds
+    // (bundled / host-dependent / manual URLs) — manifest.dependencies JSON is always stored.
+    let dependencyRows: {
+      toolArtifactId: number;
+      toolName: string;
+      toolVersion: string;
+      platform: string;
+      declaredUrl: string;
+      declaredSha256: string;
+    }[] = [];
 
-    const depOrFilters = declaredDeps.map((d) => ({
-      sha256: normalizeSha256(d.sha256),
-      name: d.toolName,
-      version: d.toolVersion,
-      platform: d.platform,
-    }));
-    const knownArtifacts = await prisma.toolArtifact.findMany({
-      where: { OR: depOrFilters },
-    });
-    const artifactMap = new Map(
-      knownArtifacts.map((a) => [`${a.sha256}:${a.name}:${a.version}:${a.platform}`, a])
-    );
-    const missingDeps = declaredDeps.filter((d) => {
-      const k = `${normalizeSha256(d.sha256)}:${d.toolName}:${d.toolVersion}:${d.platform}`;
-      return !artifactMap.has(k);
-    });
-    if (missingDeps.length > 0) {
-      await storage.delete(key).catch(() => {});
-      res.status(400).json({
-        error: 'One or more tool dependencies are not registered in ExtenSilica artifacts.',
-        missing: missingDeps.map((d) => ({
+    if (normalizedResolution === 'resolved' && declaredDeps.length > 0) {
+      const invalidDep = declaredDeps.find((d) => {
+        if (!isValidSha256(normalizeSha256(d.sha256))) return true;
+        if (!isExtensilicaArtifactUrl(d.url, baseUrl)) return true;
+        const shaInUrl = d.url.split('/').pop()?.trim().toLowerCase() ?? '';
+        return shaInUrl !== normalizeSha256(d.sha256);
+      });
+      if (!invalidDep) {
+        const depOrFilters = declaredDeps.map((d) => ({
+          sha256: normalizeSha256(d.sha256),
           name: d.toolName,
           version: d.toolVersion,
           platform: d.platform,
-          sha256: normalizeSha256(d.sha256),
-        })),
-      });
-      return;
+        }));
+        const knownArtifacts = await prisma.toolArtifact.findMany({
+          where: { OR: depOrFilters },
+        });
+        const artifactMap = new Map(
+          knownArtifacts.map((a) => [`${a.sha256}:${a.name}:${a.version}:${a.platform}`, a])
+        );
+        const missingDeps = declaredDeps.filter((d) => {
+          const k = `${normalizeSha256(d.sha256)}:${d.toolName}:${d.toolVersion}:${d.platform}`;
+          return !artifactMap.has(k);
+        });
+        if (missingDeps.length === 0) {
+          dependencyRows = declaredDeps.map((d) => {
+            const mapKey = `${normalizeSha256(d.sha256)}:${d.toolName}:${d.toolVersion}:${d.platform}`;
+            const artifact = artifactMap.get(mapKey)!;
+            return {
+              toolArtifactId: artifact.id,
+              toolName: d.toolName,
+              toolVersion: d.toolVersion,
+              platform: d.platform,
+              declaredUrl: d.url,
+              declaredSha256: normalizeSha256(d.sha256),
+            };
+          });
+        }
+      }
     }
-
-    const dependencyRows = declaredDeps.map((d) => {
-      const mapKey = `${normalizeSha256(d.sha256)}:${d.toolName}:${d.toolVersion}:${d.platform}`;
-      const artifact = artifactMap.get(mapKey)!;
-      return {
-        toolArtifactId: artifact.id,
-        toolName: d.toolName,
-        toolVersion: d.toolVersion,
-        platform: d.platform,
-        declaredUrl: d.url,
-        declaredSha256: normalizeSha256(d.sha256),
-      };
-    });
 
     let newVersion;
     try {
@@ -693,9 +672,9 @@ export const publishVersion = async (req: Request, res: Response) => {
           capabilities: JSON.stringify(readiness.capabilities),
           evidence: validated.evidenceJson,
           size: file.size,
-          toolDependencies: {
-            create: dependencyRows,
-          },
+          ...(dependencyRows.length > 0
+            ? { toolDependencies: { create: dependencyRows } }
+            : {}),
         },
       });
     } catch (dbError) {

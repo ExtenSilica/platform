@@ -181,12 +181,12 @@ export default function PackageSettingsPage() {
         </p>
       </div>
 
-      <Alert className="mb-6 border-amber-500/30 bg-amber-500/10">
-        <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-        <AlertDescription className="text-amber-800 dark:text-amber-300">
-          Marketplace policy: publishing new versions is allowed only for{" "}
-          <code className="mx-1 rounded bg-amber-500/20 px-1 py-0.5 font-mono text-xs">resolution.mode=resolved</code>
-          packages with all declared tool dependencies verified in ExtenSilica artifacts.
+      <Alert className="mb-6 border-muted bg-muted/30">
+        <AlertCircle className="h-4 w-4 text-muted-foreground" />
+        <AlertDescription className="text-muted-foreground">
+          New versions accept any supported{" "}
+          <code className="mx-1 rounded bg-muted px-1 py-0.5 font-mono text-xs">resolution.mode</code>.
+          Resolved tool lines can be checked against registry artifacts before publish; that check is optional and does not block bundled or host-dependent packages.
         </AlertDescription>
       </Alert>
 

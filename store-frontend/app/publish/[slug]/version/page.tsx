@@ -163,6 +163,14 @@ export default function PublishVersionPage() {
     }
   }, []);
 
+  const needsArtifactResolveCheck = useCallback((m: XsilManifest | null) => {
+    if (!m) return false;
+    const mode = String((m.resolution as { mode?: unknown } | undefined)?.mode ?? "")
+      .trim()
+      .toLowerCase();
+    return mode === "resolved" && extractDeclaredDependencies(m).length > 0;
+  }, []);
+
   const verifyDependencies = useCallback(async () => {
     if (!token) return;
     if (!manifest) {
@@ -170,25 +178,15 @@ export default function PublishVersionPage() {
       setDepCheckError("Manifest not loaded from .xsil.");
       return;
     }
-    const mode = String((manifest.resolution as { mode?: unknown } | undefined)?.mode ?? "")
-      .trim()
-      .toLowerCase();
-    if (mode !== "resolved") {
-      setDepReady(false);
+    if (!needsArtifactResolveCheck(manifest)) {
+      setDepReady(true);
       setResolvedDeps([]);
       setMissingDeps([]);
-      setDepCheckError('Only resolution.mode="resolved" is accepted.');
-      return;
-    }
-    const deps = extractDeclaredDependencies(manifest);
-    if (deps.length === 0) {
-      setDepReady(false);
-      setResolvedDeps([]);
-      setMissingDeps([]);
-      setDepCheckError("resolved package must declare dependencies.tools[].");
+      setDepCheckError("");
       return;
     }
 
+    const deps = extractDeclaredDependencies(manifest);
     setDepCheckBusy(true);
     setDepCheckError("");
     try {
@@ -204,7 +202,7 @@ export default function PublishVersionPage() {
       if (response.missing.length > 0 || unresolvedDeclared.length > 0) {
         setDepReady(false);
         setDepCheckError(
-          "Some dependencies are not registered in ExtenSilica artifacts yet."
+          "Some tools are not registered as ExtenSilica artifacts yet. You can still publish; xsil install/run may need manual deps or a matching registry upload."
         );
       } else {
         setDepReady(true);
@@ -217,15 +215,22 @@ export default function PublishVersionPage() {
     } finally {
       setDepCheckBusy(false);
     }
-  }, [token, manifest]);
+  }, [token, manifest, needsArtifactResolveCheck]);
 
   useEffect(() => {
     if (!manifest || !token) {
       setDepReady(false);
       return;
     }
-    verifyDependencies();
-  }, [manifest, token, verifyDependencies]);
+    if (!needsArtifactResolveCheck(manifest)) {
+      setDepReady(true);
+      setResolvedDeps([]);
+      setMissingDeps([]);
+      setDepCheckError("");
+      return;
+    }
+    void verifyDependencies();
+  }, [manifest, token, verifyDependencies, needsArtifactResolveCheck]);
 
   function handleFileDrop(e: React.DragEvent) {
     e.preventDefault();
@@ -242,10 +247,6 @@ export default function PublishVersionPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !file) return;
-    if (!depReady) {
-      setApiError("Dependencies are not fully verified in ExtenSilica yet.");
-      return;
-    }
     setApiError("");
     setSubmitting(true);
 
@@ -308,12 +309,16 @@ export default function PublishVersionPage() {
         </p>
       </div>
 
-      <Alert className="mb-6 border-amber-500/30 bg-amber-500/10">
-        <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-        <AlertDescription className="text-amber-800 dark:text-amber-300">
-          Marketplace policy: publish is allowed only for{" "}
-          <code className="mx-1 rounded bg-amber-500/20 px-1 py-0.5 font-mono text-xs">resolution.mode=resolved</code>
-          packages with all declared tool dependencies verified in ExtenSilica artifacts.
+      <Alert className="mb-6 border-muted bg-muted/30">
+        <AlertCircle className="h-4 w-4 text-muted-foreground" />
+        <AlertDescription className="text-muted-foreground">
+          Any <code className="mx-1 rounded bg-muted px-1 py-0.5 font-mono text-xs">resolution.mode</code>{" "}
+          (<code className="font-mono text-xs">bundled</code>,{" "}
+          <code className="font-mono text-xs">resolved</code>,{" "}
+          <code className="font-mono text-xs">host-dependent</code>) can be published.
+          For <code className="font-mono text-xs">resolved</code> with{" "}
+          <code className="font-mono text-xs">dependencies.tools</code>, use the check below
+          to confirm registry artifacts — optional but helps catch missing uploads before users install.
         </AlertDescription>
       </Alert>
 
@@ -499,7 +504,7 @@ export default function PublishVersionPage() {
           {/* ── Resolved dependency verification ── */}
           <section className="rounded-xl border bg-background p-6 space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-semibold">3. Dependency verification</h2>
+              <h2 className="font-semibold">3. Registry artifact check (optional)</h2>
               <Button
                 type="button"
                 variant="outline"
@@ -511,7 +516,9 @@ export default function PublishVersionPage() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Publish is enabled only when all declared tools are verified in ExtenSilica artifacts.
+              Shown when <code className="font-mono">resolution.mode=resolved</code> and{" "}
+              <code className="font-mono">dependencies.tools</code> are present. Publish is not blocked
+              if verification fails — authors using bundled or host-provided toolchains are not required to mirror tools here.
             </p>
 
             {!manifest && (
@@ -534,7 +541,16 @@ export default function PublishVersionPage() {
                 </div>
 
                 {depCheckError && (
-                  <Alert variant="destructive">
+                  <Alert
+                    variant={
+                      depCheckError.includes("You can still publish") ? "default" : "destructive"
+                    }
+                    className={
+                      depCheckError.includes("You can still publish")
+                        ? "border-amber-500/40 bg-amber-500/5"
+                        : undefined
+                    }
+                  >
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{depCheckError}</AlertDescription>
                   </Alert>
@@ -575,7 +591,7 @@ export default function PublishVersionPage() {
                 Cancel
               </Button>
             </Link>
-            <Button type="submit" disabled={submitting || !file || !version.trim() || !depReady || depCheckBusy}>
+            <Button type="submit" disabled={submitting || !file || !version.trim() || depCheckBusy}>
               {submitting ? "Publishing…" : "Publish version"}
             </Button>
           </div>

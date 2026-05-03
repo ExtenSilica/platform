@@ -50,9 +50,9 @@ const FEATURES = [
   },
   {
     icon: Shield,
-    title: "Resolved-only in marketplace",
+    title: "Flexible reproducibility",
     description:
-      "Marketplace publishing accepts only resolution.mode=resolved. All declared tool dependencies must be verified in ExtenSilica artifacts before publish is allowed.",
+      "Publish with bundled, resolved, or host-dependent resolution modes. Optional registry checks help when you mirror tool artifacts on ExtenSilica; host-provided toolchains stay in your README.",
   },
   {
     icon: Terminal,
