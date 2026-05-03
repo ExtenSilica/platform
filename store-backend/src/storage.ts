@@ -73,6 +73,7 @@ class LocalStorageProvider implements StorageProvider {
 
   async put(key: string, tmpPath: string): Promise<void> {
     const dest = this.resolve(key);
+    await fs.promises.mkdir(path.dirname(dest), { recursive: true });
     // Prefer rename (atomic, same fs); fall back to copy+delete (cross-device).
     try {
       await fs.promises.rename(tmpPath, dest);

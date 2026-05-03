@@ -14,6 +14,11 @@ import {
   XsilValidationError,
 } from '../lib/xsilPublishValidate';
 import { storage } from '../storage';
+import {
+  extractDeclaredToolDependencies,
+  isValidSha256,
+  normalizeSha256,
+} from '../lib/toolDependencies';
 
 export type ExtensionWithVersions = Extension & {
   versions: Version[];
@@ -93,6 +98,17 @@ function firstFormString(body: Record<string, unknown>, key: string): string | u
     return typeof x === 'string' ? x : undefined;
   }
   return typeof v === 'string' ? v : undefined;
+}
+
+function isExtensilicaArtifactUrl(urlRaw: string, baseUrl: string): boolean {
+  try {
+    const url = new URL(urlRaw);
+    const base = new URL(baseUrl);
+    if (url.origin !== base.origin) return false;
+    return url.pathname.startsWith('/api/artifacts/tools/') || url.pathname.startsWith('/artifacts/tools/');
+  } catch {
+    return false;
+  }
 }
 
 function mapVersion(v: Version) {
@@ -572,6 +588,82 @@ export const publishVersion = async (req: Request, res: Response) => {
       mf.resolution && typeof mf.resolution === 'object' && (mf.resolution as Record<string, unknown>).mode
         ? String((mf.resolution as Record<string, unknown>).mode)
         : null;
+    const normalizedResolution = (mfResolution ?? '').trim().toLowerCase();
+    if (normalizedResolution !== 'resolved') {
+      await storage.delete(key).catch(() => {});
+      res.status(400).json({
+        error: 'Only resolution.mode="resolved" packages are accepted by this registry.',
+      });
+      return;
+    }
+
+    const declaredDeps = extractDeclaredToolDependencies(mf as Record<string, unknown>);
+    if (declaredDeps.length === 0) {
+      await storage.delete(key).catch(() => {});
+      res.status(400).json({
+        error: 'resolved packages must declare dependencies.tools[] with platform artifacts.',
+      });
+      return;
+    }
+
+    const invalidDep = declaredDeps.find((d) => {
+      if (!isValidSha256(normalizeSha256(d.sha256))) return true;
+      if (!isExtensilicaArtifactUrl(d.url, baseUrl)) return true;
+      const shaInUrl = d.url.split('/').pop()?.trim().toLowerCase() ?? '';
+      return shaInUrl !== normalizeSha256(d.sha256);
+    });
+    if (invalidDep) {
+      await storage.delete(key).catch(() => {});
+      res.status(400).json({
+        error:
+          `Invalid dependency declaration for ${invalidDep.toolName}@${invalidDep.toolVersion} (${invalidDep.platform}). ` +
+          'Tool URLs must be ExtenSilica artifact URLs and sha256 must match the URL suffix.',
+      });
+      return;
+    }
+
+    const depOrFilters = declaredDeps.map((d) => ({
+      sha256: normalizeSha256(d.sha256),
+      name: d.toolName,
+      version: d.toolVersion,
+      platform: d.platform,
+    }));
+    const knownArtifacts = await prisma.toolArtifact.findMany({
+      where: { OR: depOrFilters },
+    });
+    const artifactMap = new Map(
+      knownArtifacts.map((a) => [`${a.sha256}:${a.name}:${a.version}:${a.platform}`, a])
+    );
+    const missingDeps = declaredDeps.filter((d) => {
+      const k = `${normalizeSha256(d.sha256)}:${d.toolName}:${d.toolVersion}:${d.platform}`;
+      return !artifactMap.has(k);
+    });
+    if (missingDeps.length > 0) {
+      await storage.delete(key).catch(() => {});
+      res.status(400).json({
+        error: 'One or more tool dependencies are not registered in ExtenSilica artifacts.',
+        missing: missingDeps.map((d) => ({
+          name: d.toolName,
+          version: d.toolVersion,
+          platform: d.platform,
+          sha256: normalizeSha256(d.sha256),
+        })),
+      });
+      return;
+    }
+
+    const dependencyRows = declaredDeps.map((d) => {
+      const mapKey = `${normalizeSha256(d.sha256)}:${d.toolName}:${d.toolVersion}:${d.platform}`;
+      const artifact = artifactMap.get(mapKey)!;
+      return {
+        toolArtifactId: artifact.id,
+        toolName: d.toolName,
+        toolVersion: d.toolVersion,
+        platform: d.platform,
+        declaredUrl: d.url,
+        declaredSha256: normalizeSha256(d.sha256),
+      };
+    });
 
     let newVersion;
     try {
@@ -601,6 +693,9 @@ export const publishVersion = async (req: Request, res: Response) => {
           capabilities: JSON.stringify(readiness.capabilities),
           evidence: validated.evidenceJson,
           size: file.size,
+          toolDependencies: {
+            create: dependencyRows,
+          },
         },
       });
     } catch (dbError) {

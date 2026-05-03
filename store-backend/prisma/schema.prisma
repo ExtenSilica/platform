@@ -33,6 +33,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   orgMemberships      OrgMember[]
   oauthAccounts       OAuthAccount[]
+  toolArtifacts       ToolArtifact[]
 }
 
 /// External identity from GitHub or Google OAuth (see docs/oauth-data-model.md).
@@ -170,8 +171,47 @@ model Version {
   publishedAt     DateTime  @default(now())
 
   downloadEvents  DownloadEvent[]
+  toolDependencies VersionToolDependency[]
 
   @@unique([extensionId, version])
+}
+
+model ToolArtifact {
+  id          Int      @id @default(autoincrement())
+  name        String
+  version     String
+  platform    String
+  sha256      String   @unique
+  size        Int
+  storageKey  String   @unique
+  sourceUrl   String?
+  createdById Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy    User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  dependencies VersionToolDependency[]
+
+  @@unique([name, version, platform, sha256])
+  @@index([name, version, platform])
+}
+
+model VersionToolDependency {
+  id            Int      @id @default(autoincrement())
+  versionId     Int
+  toolArtifactId Int
+  toolName      String
+  toolVersion   String
+  platform      String
+  declaredUrl   String
+  declaredSha256 String
+  createdAt     DateTime @default(now())
+
+  version      Version      @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  toolArtifact ToolArtifact @relation(fields: [toolArtifactId], references: [id], onDelete: Restrict)
+
+  @@unique([versionId, toolName, toolVersion, platform])
+  @@index([toolArtifactId])
 }
 
 // ── Download analytics ────────────────────────────────────────
