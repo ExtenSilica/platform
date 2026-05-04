@@ -38,6 +38,14 @@ const port = process.env.PORT || 3001;
   }
 }
 
+// One-line proof on boot (grep extensilica-api-out.log if rate-limit still complains).
+console.log(
+  '[server] trust proxy:',
+  (app as express.Application & { settings?: Record<string, unknown> }).settings?.['trust proxy'],
+  'TRUST_PROXY env:',
+  JSON.stringify(process.env.TRUST_PROXY ?? null),
+);
+
 // Ensure uploads directories exist (used by local driver and avatar storage).
 const uploadsDir = path.join(__dirname, '../uploads');
 const avatarsDir = path.join(uploadsDir, 'avatars');
