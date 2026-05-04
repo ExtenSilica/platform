@@ -162,6 +162,8 @@ cat > /opt/extensilica/store-backend/.env << 'EOF'
 DATABASE_URL="postgresql://extensilica:DB_PASSWORD@localhost:5432/extensilica?schema=public"
 PORT=3001
 BASE_URL=https://api.extensilica.com
+# Required behind Caddy/nginx (default in code is 1 if unset). Omit only if Node has no reverse proxy.
+TRUST_PROXY=1
 SITE_URL=https://extensilica.com
 
 # Blobs: start with local disk on the VPS (simplest). Switch to S3/R2 later (see store-backend/.env comments).
