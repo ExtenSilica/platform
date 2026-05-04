@@ -24,14 +24,17 @@ const port = process.env.PORT || 3001;
 
 // Behind Caddy / nginx / Cloudflare, the proxy sets X-Forwarded-For. Without trust proxy,
 // express-rate-limit throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR. Default: one hop (typical VPS).
-// Set TRUST_PROXY=0 if the app is reached directly with no proxy (rare).
+// Set TRUST_PROXY=0 (or false/off) only when Node is reached directly with no proxy.
 {
-  const raw = (process.env.TRUST_PROXY ?? '1').trim().toLowerCase();
-  if (raw === '0' || raw === 'false' || raw === 'off') {
+  const trimmed = process.env.TRUST_PROXY?.trim() ?? '';
+  const lower = trimmed.toLowerCase();
+  if (trimmed === '' || lower === '1' || lower === 'true' || lower === 'on') {
+    app.set('trust proxy', 1);
+  } else if (lower === '0' || lower === 'false' || lower === 'off') {
     app.set('trust proxy', false);
   } else {
-    const n = Number(raw);
-    app.set('trust proxy', Number.isFinite(n) && n >= 0 ? n : 1);
+    const n = Number(trimmed);
+    app.set('trust proxy', Number.isFinite(n) && n > 0 ? n : 1);
   }
 }
 
