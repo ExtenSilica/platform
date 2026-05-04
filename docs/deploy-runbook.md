@@ -1,6 +1,6 @@
 # Deployment Runbook — ExtenSilica Production Launch
 
-**Last updated:** April 2026  
+**Last updated:** May 2026  
 **Target:** `extensilica.com` (Next.js) + `api.extensilica.com` (Express API)  
 **Primary path below:** **one VPS** (e.g. Hostinger KVM, Ubuntu 24.04), both apps on the same machine, **Caddy** for HTTPS reverse proxy.
 
@@ -356,7 +356,17 @@ curl -sS -X POST 'https://api.extensilica.com/api/auth/forgot-password' \
 
 ## 11 — Update deploy (later pushes)
 
-On the **server**:
+**Prerequisite:** your laptop has **pushed** `main` (or the branch you deploy) to the remote the server clones from.
+
+On the **server**, either run the bundled script (same steps as below):
+
+```bash
+cd /opt/extensilica
+chmod +x scripts/update-server.sh   # once, if needed
+GIT_BRANCH=main ./scripts/update-server.sh
+```
+
+Or manually:
 
 ```bash
 cd /opt/extensilica
@@ -378,6 +388,8 @@ npm ci
 npm run build
 pm2 restart extensilica-web
 ```
+
+Optional: clone lives elsewhere — `EXTENSILICA_ROOT=/path/to/ExtenSilica GIT_BRANCH=main ./scripts/update-server.sh`.
 
 ---
 
