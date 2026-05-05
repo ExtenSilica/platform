@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db';
 import { packageReadinessSummary } from '../lib/packageReadinessSummary';
+import { isPlatformAdminUser } from '../lib/platformAdmin';
 
 // ── Slug validation ───────────────────────────────────────────────────────────
 
@@ -31,13 +32,13 @@ function validateLinkedinUrl(raw: string | undefined | null): string | null {
   }
 }
 
-function validateOrgSlug(slug: string): string | null {
+function validateOrgSlug(slug: string, opts?: { skipReserved?: boolean }): string | null {
   if (slug.length < 2) return 'Organization name is too short (minimum 2 characters).';
   if (slug.length > 64) return 'Organization name is too long (maximum 64 characters).';
   if (!ORG_SLUG_RE.test(slug)) {
     return 'Organization name may only contain lowercase letters, digits, and hyphens.';
   }
-  if (RESERVED_ORG_SLUGS.has(slug)) {
+  if (!opts?.skipReserved && RESERVED_ORG_SLUGS.has(slug)) {
     return `"${slug}" is a reserved name and cannot be used for an organization.`;
   }
   return null;
@@ -81,7 +82,9 @@ export const createOrg = async (req: Request, res: Response): Promise<void> => {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
 
-  const slugError = validateOrgSlug(slug);
+  const slugError = validateOrgSlug(slug, {
+    skipReserved: isPlatformAdminUser({ id: user.id, email: user.email }),
+  });
   if (slugError) { res.status(400).json({ error: slugError }); return; }
 
   if (websiteUrl && !/^https?:\/\/.+/.test(websiteUrl)) {
