@@ -11,6 +11,7 @@ import {
   apiUploadAvatar,
   apiGetMyOrgs,
   apiCreateOrg,
+  apiUpdateOrg,
   apiAddOrgMember,
   apiRemoveOrgMember,
   apiDeleteAccount,
@@ -118,6 +119,7 @@ export default function DashboardPage() {
   const [newOrgDisplayName, setNewOrgDisplayName] = useState("");
   const [newOrgDesc, setNewOrgDesc] = useState("");
   const [newOrgLinkedin, setNewOrgLinkedin] = useState("");
+  const [newOrgAvatarUrl, setNewOrgAvatarUrl] = useState("");
   const [newOrgCreating, setNewOrgCreating] = useState(false);
   const [newOrgError, setNewOrgError] = useState("");
   const [newOrgSuccess, setNewOrgSuccess] = useState("");
@@ -125,6 +127,10 @@ export default function DashboardPage() {
   const [addMemberInputs, setAddMemberInputs] = useState<
     Record<string, { username: string; busy: boolean; error: string }>
   >({});
+  /** Draft icon URL per org slug (owner/admin edit). Undefined = use server value only in UI. */
+  const [orgIconDraftBySlug, setOrgIconDraftBySlug] = useState<Record<string, string>>({});
+  const [orgIconSavingSlug, setOrgIconSavingSlug] = useState<string | null>(null);
+  const [orgIconErrorBySlug, setOrgIconErrorBySlug] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (user) {
@@ -170,6 +176,7 @@ export default function DashboardPage() {
         name: newOrgName.trim(),
         displayName: newOrgDisplayName.trim(),
         description: newOrgDesc.trim() || undefined,
+        avatarUrl: newOrgAvatarUrl.trim() || undefined,
         linkedinUrl: newOrgLinkedin.trim() || undefined,
       });
       setOrgs((prev) => [
@@ -180,12 +187,47 @@ export default function DashboardPage() {
       setNewOrgDisplayName("");
       setNewOrgDesc("");
       setNewOrgLinkedin("");
+      setNewOrgAvatarUrl("");
       setNewOrgSuccess(`Organization @${org.slug} created.`);
       setTimeout(() => setNewOrgSuccess(""), 3000);
     } catch (err) {
       setNewOrgError(err instanceof ApiError ? err.message : "Failed to create organization.");
     } finally {
       setNewOrgCreating(false);
+    }
+  }
+
+  async function handleSaveOrgIcon(org: MyOrg) {
+    if (!token) return;
+    const draft = orgIconDraftBySlug[org.slug];
+    const raw = (draft !== undefined ? draft : org.avatarUrl ?? "").trim();
+    const payload = raw === "" ? null : raw;
+    if (payload && !/^https?:\/\//i.test(payload)) {
+      setOrgIconErrorBySlug((prev) => ({
+        ...prev,
+        [org.slug]: "Icon URL must start with http:// or https://",
+      }));
+      return;
+    }
+    setOrgIconErrorBySlug((prev) => ({ ...prev, [org.slug]: "" }));
+    setOrgIconSavingSlug(org.slug);
+    try {
+      await apiUpdateOrg(token, org.slug, { avatarUrl: payload });
+      const updated = await apiGetMyOrgs(token);
+      setOrgs(updated);
+      setOrgIconDraftBySlug((prev) => {
+        const next = { ...prev };
+        delete next[org.slug];
+        return next;
+      });
+    } catch (err) {
+      setOrgIconErrorBySlug((prev) => ({
+        ...prev,
+        [org.slug]:
+          err instanceof ApiError ? err.message : "Failed to update organization icon.",
+      }));
+    } finally {
+      setOrgIconSavingSlug(null);
     }
   }
 
@@ -963,6 +1005,46 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
+                {/* Org icon URL (owners & admins) */}
+                {(org.role === "owner" || org.role === "admin") && (
+                  <div className="space-y-1.5 pt-1 border-t border-border/50">
+                    <Label htmlFor={`org-icon-${org.slug}`} className="text-xs text-muted-foreground">
+                      Organization icon URL
+                    </Label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        id={`org-icon-${org.slug}`}
+                        type="url"
+                        placeholder="https://…"
+                        className="h-8 text-sm max-w-md flex-1 min-w-[12rem]"
+                        value={orgIconDraftBySlug[org.slug] ?? org.avatarUrl ?? ""}
+                        onChange={(e) =>
+                          setOrgIconDraftBySlug((prev) => ({
+                            ...prev,
+                            [org.slug]: e.target.value,
+                          }))
+                        }
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={orgIconSavingSlug === org.slug}
+                        onClick={() => handleSaveOrgIcon(org)}
+                      >
+                        {orgIconSavingSlug === org.slug ? "Saving…" : "Save icon"}
+                      </Button>
+                    </div>
+                    {orgIconErrorBySlug[org.slug] ? (
+                      <p className="text-xs text-destructive">{orgIconErrorBySlug[org.slug]}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        HTTPS image URL for the logo on the public org page.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Add member (owners & admins only) */}
                 {(org.role === "owner" || org.role === "admin") && (
                   <div className="flex items-center gap-2 pt-1">
@@ -1040,6 +1122,19 @@ export default function DashboardPage() {
                 onChange={(e) => setNewOrgDisplayName(e.target.value)}
                 required
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="orgAvatarUrl">Organization icon URL (optional)</Label>
+              <Input
+                id="orgAvatarUrl"
+                type="url"
+                placeholder="https://example.com/logo.png"
+                value={newOrgAvatarUrl}
+                onChange={(e) => setNewOrgAvatarUrl(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                HTTPS link to a square logo; shown on your public organization page.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="orgDesc">Description (optional)</Label>

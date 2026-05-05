@@ -67,13 +67,19 @@ export const createOrg = async (req: Request, res: Response): Promise<void> => {
   const user = req.user;
   if (!user) { res.status(401).json({ error: 'Authentication required.' }); return; }
 
-  const { name, displayName, description, websiteUrl, linkedinUrl } = req.body as Record<
+  const { name, displayName, description, websiteUrl, linkedinUrl, avatarUrl } = req.body as Record<
     string,
     string | undefined
   >;
 
   if (!name?.trim()) { res.status(400).json({ error: 'Organization name is required.' }); return; }
   if (!displayName?.trim()) { res.status(400).json({ error: 'Display name is required.' }); return; }
+
+  const avatarTrim = avatarUrl?.trim();
+  if (avatarTrim && !/^https?:\/\/.+/.test(avatarTrim)) {
+    res.status(400).json({ error: 'avatarUrl must be a valid http/https URL.' });
+    return;
+  }
 
   const slug = name.trim().toLowerCase()
     .replace(/\s+/g, '-')
@@ -110,6 +116,7 @@ export const createOrg = async (req: Request, res: Response): Promise<void> => {
         slug,
         displayName: displayName.trim(),
         description: description?.trim() || null,
+        avatarUrl: avatarTrim || null,
         websiteUrl: websiteUrl?.trim() || null,
         linkedinUrl: linkedinUrl?.trim() || null,
         members: {

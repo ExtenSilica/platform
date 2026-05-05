@@ -705,6 +705,7 @@ export async function apiCreateOrg(
     name: string;
     displayName: string;
     description?: string;
+    avatarUrl?: string | null;
     websiteUrl?: string;
     linkedinUrl?: string;
   }
