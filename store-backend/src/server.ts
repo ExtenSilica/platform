@@ -1,7 +1,10 @@
-import 'dotenv/config';
+import path from 'path';
+import dotenv from 'dotenv';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import path from 'path';
+
+// Load `.env` from the store-backend root regardless of PM2/systemd cwd (fixes missing PLATFORM_ADMIN_* etc.).
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 import fs from 'fs';
 import swaggerUi from 'swagger-ui-express';
 import { authenticate } from './middleware/auth';

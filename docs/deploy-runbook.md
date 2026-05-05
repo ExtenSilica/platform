@@ -220,12 +220,14 @@ python3 -c "import urllib.parse; print(urllib.parse.quote('YOUR_RAW_PASSWORD', s
 
 Paste the output as the password segment in `DATABASE_URL`, or set a DB password that uses only letters and digits to avoid encoding.
 
-Start API with PM2:
+Start API with PM2 (use **`--cwd`** so `dotenv` and relative paths resolve from the backend tree; same pattern as the frontend):
 
 ```bash
-pm2 start /opt/extensilica/store-backend/dist/server.js --name extensilica-api
+pm2 start dist/server.js --name extensilica-api --cwd /opt/extensilica/store-backend
 pm2 save
 ```
+
+If the process was already created without `--cwd`, either delete and recreate it with the line above, or rely on the server loading `/opt/extensilica/store-backend/.env` via `path.join(__dirname, '..', '.env')` after you deploy a recent `store-backend` build.
 
 Do **not** seed demo packages here if you plan to follow **§9** (`publish-rvx-demo.sh`): seeding must run **after** the first admin user exists (**§8**), otherwise packages have no `ownerId` and `rvx-demo@1.0.0` cannot be published. See **§8 — Seed demo catalog** below.
 
