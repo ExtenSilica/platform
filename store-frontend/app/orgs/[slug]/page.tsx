@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { Organization } from "@/lib/types";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
+import { OrgManageSettingsLink } from "@/components/org-manage-settings-link";
 
 export async function generateMetadata({
   params,
@@ -67,14 +68,17 @@ export default async function OrgPage({
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-10">
-      {/* Back */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Registry
-      </Link>
+      {/* Back + manage (owners/admins only; client) */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Registry
+        </Link>
+        <OrgManageSettingsLink orgSlug={params.slug} />
+      </div>
 
       {/* Org header */}
       <div className="flex items-start gap-5">

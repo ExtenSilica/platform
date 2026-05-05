@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import {
   fetchMyPackages,
@@ -62,16 +62,24 @@ function isDashboardTab(v: string | null): v is DashboardTab {
   return v !== null && (DASHBOARD_TABS as readonly string[]).includes(v);
 }
 
+/** Must render under `<Suspense>` (Next.js requirement for `useSearchParams`). */
+function DashboardTabQuerySync({
+  setTab,
+}: {
+  setTab: React.Dispatch<React.SetStateAction<DashboardTab>>;
+}) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const q = searchParams.get("tab");
+    if (isDashboardTab(q)) setTab(q);
+  }, [searchParams, setTab]);
+  return null;
+}
+
 export default function DashboardPage() {
   const { user, token, isLoading, updateUser, login, logout } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<DashboardTab>("stats");
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const q = new URLSearchParams(window.location.search).get("tab");
-    if (isDashboardTab(q)) setTab(q);
-  }, []);
 
   function goTab(next: DashboardTab) {
     setTab(next);
@@ -422,6 +430,9 @@ export default function DashboardPage() {
 
   return (
     <div className="container max-w-5xl px-4 py-10">
+      <Suspense fallback={null}>
+        <DashboardTabQuerySync setTab={setTab} />
+      </Suspense>
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
