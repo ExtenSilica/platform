@@ -63,11 +63,18 @@ const FEATURES = [
   },
 ];
 
-const EXAMPLE_COMMANDS = [
+type ExampleCommand = {
+  label: string;
+  cmd: string;
+  comment?: string;
+  kind?: "setup" | "usage";
+};
+
+const EXAMPLE_COMMANDS: ExampleCommand[] = [
+  { label: "setup", cmd: "cargo install xsil", comment: "one-time", kind: "setup" },
   { label: "install", cmd: "xsil install rvv-demo" },
   { label: "run", cmd: "xsil run rvv-demo" },
   { label: "publish", cmd: "xsil publish ./my-extension/" },
-  { label: "search", cmd: "xsil search risc-v vector" },
 ];
 
 export function HomeIndex() {
@@ -246,17 +253,42 @@ export function HomeIndex() {
               </div>
               {/* terminal body */}
               <div className="bg-[hsl(222_32%_7%)] px-5 py-5 text-[#e8edf5] shadow-[inset_0_1px_0_rgb(255_255_255_/_0.04)] dark:bg-[hsl(222_38%_5%)] dark:text-[#eef2f8] sm:px-6 sm:py-6">
-              {EXAMPLE_COMMANDS.map(({ cmd }) => (
-                <p key={cmd} className="leading-8 tracking-tight sm:leading-9">
-                  <span className="select-none font-medium text-emerald-400/95">$ </span>
-                  <span className="text-[#f1f5f9]">{cmd}</span>
-                </p>
-              ))}
+              {EXAMPLE_COMMANDS.map(({ cmd, comment, kind }, idx) => {
+                const isSetup = kind === "setup";
+                const nextIsUsage =
+                  isSetup && EXAMPLE_COMMANDS[idx + 1]?.kind !== "setup";
+                return (
+                  <div key={cmd}>
+                    <p className="leading-8 tracking-tight sm:leading-9">
+                      <span className="select-none font-medium text-emerald-400/95">$ </span>
+                      <span className={isSetup ? "text-amber-200/95" : "text-[#f1f5f9]"}>
+                        {cmd}
+                      </span>
+                      {comment ? (
+                        <span className="ml-3 select-none text-[#9aa6b8]"># {comment}</span>
+                      ) : null}
+                    </p>
+                    {nextIsUsage ? (
+                      <div className="my-1.5 h-px bg-white/5" aria-hidden />
+                    ) : null}
+                  </div>
+                );
+              })}
               </div>
             </div>
             </div>
             <p className="mt-3 text-sm text-muted-foreground">
-              Resolved dependencies are fetched, hash-verified, and cached by the CLI.
+              The{" "}
+              <a
+                href="https://crates.io/crates/xsil"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-riscv-accent underline-offset-4 hover:underline"
+              >
+                xsil
+              </a>{" "}
+              CLI is published on crates.io. Resolved dependencies are fetched,
+              hash-verified, and cached locally.
             </p>
           </div>
         </div>
@@ -401,9 +433,16 @@ export function HomeIndex() {
             </code>
             . Publish is gated until every declared dependency is verified.
           </p>
-          <div className="inline-flex items-center gap-3 rounded-lg border border-border/80 bg-[hsl(222_30%_8%)] px-5 py-3 font-mono text-sm text-gray-200 shadow-lg dark:bg-[hsl(222_40%_6%)]">
-            <span className="text-green-400/70">$</span>
-            <span>xsil login &amp;&amp; xsil publish ./my-pkg/</span>
+          <div className="inline-flex flex-col gap-1.5 rounded-lg border border-border/80 bg-[hsl(222_30%_8%)] px-5 py-3 text-left font-mono text-sm text-gray-200 shadow-lg dark:bg-[hsl(222_40%_6%)]">
+            <p>
+              <span className="select-none text-green-400/70">$ </span>
+              <span className="text-amber-200/95">cargo install xsil</span>
+              <span className="ml-3 select-none text-gray-400"># one-time</span>
+            </p>
+            <p>
+              <span className="select-none text-green-400/70">$ </span>
+              <span>xsil login &amp;&amp; xsil publish ./my-pkg/</span>
+            </p>
           </div>
         </div>
       </section>
