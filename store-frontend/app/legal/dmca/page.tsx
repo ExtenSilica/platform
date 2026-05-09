@@ -13,7 +13,7 @@ export default function DmcaPage() {
     <LegalPage
       title="DMCA / Takedown Request"
       subtitle="If you believe content published on ExtenSilica infringes your intellectual property rights, use this page to submit a formal takedown request."
-      updated="March 2026"
+      updated="May 2026"
       current="/legal/dmca"
     >
       <div className="space-y-10">

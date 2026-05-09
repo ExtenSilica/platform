@@ -108,6 +108,38 @@ const GROUPS: FaqGroup[] = [
           </>
         ),
       },
+      {
+        q: "What is the fastest way to scaffold a new package?",
+        a: (
+          <>
+            <p>
+              Use the Extension Wizard. Either fill the web form at{" "}
+              <Link href="/wizard" className="text-primary underline">
+                extensilica.com/wizard
+              </Link>{" "}
+              and download a ready-to-edit <C>.xsil</C>, or run the CLI:
+            </p>
+            <pre className="mt-2 overflow-x-auto rounded-md border bg-muted/50 p-3 font-mono text-sm">
+              xsil new my-extension
+            </pre>
+            <p className="mt-3">
+              Both paths produce the same skeleton: <C>manifest.json</C>,{" "}
+              <C>opcodes.json</C>, an <C>opcodes.h</C> header with{" "}
+              <C>__asm__ .insn</C> macros for each declared instruction, a Spike{" "}
+              <C>extension_t</C> stub under <C>sim/spike-extension/</C> with
+              <C>Makefile</C>, runnable per-instruction examples in{" "}
+              <C>examples/</C>, an SPDX <C>LICENSE</C>, a Keep-a-Changelog{" "}
+              <C>CHANGELOG.md</C>, and standard <C>tests/</C>, <C>docs/</C>, and{" "}
+              <C>toolchain/</C> placeholders. The wizard requires a repository URL
+              (use the future GitHub URL if the repo does not exist yet).
+            </p>
+            <p className="mt-3">
+              The wizard never publishes for you — the output is a local archive you
+              can edit, version, and ship with <C>xsil publish</C> when ready.
+            </p>
+          </>
+        ),
+      },
     ],
   },
 
@@ -120,28 +152,65 @@ const GROUPS: FaqGroup[] = [
         a: (
           <>
             A <C>.xsil</C> file is a gzip-compressed tar archive. It must contain a{" "}
-            <C>manifest.json</C> at its root that declares:
+            <C>manifest.json</C> at its root that declares at minimum:
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>
-                <C>name</C>, <C>version</C>, <C>description</C>, <C>author</C>
+                <C>name</C>, <C>version</C>, <C>description</C>, <C>author</C>,{" "}
+                <C>license</C>
               </li>
               <li>
-                <C>isa</C> — RISC-V ISA string (e.g. <C>rv64imac</C>)
+                <C>isa</C> — RISC-V ISA string (e.g. <C>rv64gc</C>,{" "}
+                <C>rv64imafc</C>)
               </li>
               <li>
-                <C>targets</C> — supported execution platforms
+                <C>targets</C> — declared execution platforms (typically{" "}
+                <C>spike</C>, optionally <C>qemu</C>, <C>binutils</C>, <C>llvm</C>,{" "}
+                <C>fpga</C>)
               </li>
               <li>
-                <C>entry</C> — primary execution entry point
+                <C>entry</C> / <C>testEntry</C> — primary run / test entry points
               </li>
               <li>
-                <C>checksums</C> — SHA-256 of the payload for integrity verification
+                <C>checksums.payload</C> — SHA-256 of the non-manifest payload for
+                integrity verification
+              </li>
+              <li>
+                <C>repository</C> — http(s) URL to the source (required for
+                wizard-generated packages)
               </li>
             </ul>
             <p className="mt-3">
-              Optional directories include <C>sim/</C>, <C>toolchain/</C>,{" "}
-              <C>tests/</C>, <C>docs/</C>, and <C>bitstream/</C> (FPGA).
+              Common companion files (all optional but produced by{" "}
+              <C>xsil new</C> and the web wizard):
             </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                <C>opcodes.json</C> — schema-versioned descriptor of custom
+                instructions (mnemonic, format, opcode, funct3/funct7, operands,
+                summary)
+              </li>
+              <li>
+                <C>opcodes.h</C> — C header with <C>__asm__</C> macros that emit
+                the custom instructions via GAS <C>.insn</C>, no toolchain patch
+                required
+              </li>
+              <li>
+                <C>sim/spike-extension/</C> — Spike <C>extension_t</C> C++ stub
+                plus <C>Makefile</C> for building <C>lib&lt;slug&gt;_spike.so</C>
+              </li>
+              <li>
+                <C>examples/</C>, <C>tests/</C>, <C>docs/</C>, <C>toolchain/</C> —
+                runnable examples, expected-output tests, prose docs, and a
+                placeholder for any bundled toolchain
+              </li>
+              <li>
+                <C>README.md</C>, <C>CHANGELOG.md</C>, <C>LICENSE</C>,{" "}
+                <C>.xsilignore</C> — standard surface metadata
+              </li>
+              <li>
+                <C>bitstream/</C> — optional FPGA artifacts when applicable
+              </li>
+            </ul>
           </>
         ),
       },
@@ -212,17 +281,29 @@ const GROUPS: FaqGroup[] = [
           <>
             Package names must:
             <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>Start with a lowercase letter (<C>a–z</C>)</li>
               <li>
-                Contain only lowercase letters, digits, hyphens (<C>-</C>), and
-                underscores (<C>_</C>)
+                Contain only lowercase letters (<C>a–z</C>), digits (<C>0–9</C>),
+                and hyphens (<C>-</C>) — <strong>no underscores</strong>
+              </li>
+              <li>
+                Start and end with a letter or digit (no leading or trailing
+                hyphen)
               </li>
               <li>Be between 2 and 64 characters</li>
               <li>Be unique across the entire registry</li>
+              <li>
+                Not match a reserved name (e.g. <C>extensilica</C>, <C>admin</C>,{" "}
+                <C>api</C>, <C>system</C>) — the full list is enforced server-side
+              </li>
             </ul>
             <p className="mt-3">
               Pattern:{" "}
-              <C>{"^[a-z][a-z0-9_-]{1,63}$"}</C>
+              <C>{"^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$|^[a-z0-9]{1,2}$"}</C>
+            </p>
+            <p className="mt-3">
+              Organizations and scoped slugs use the form{" "}
+              <C>@&lt;org&gt;/&lt;package&gt;</C>; both segments follow the same
+              rules above.
             </p>
             <p className="mt-3">
               Names that impersonate popular projects, contain offensive language, or
@@ -634,7 +715,7 @@ export default function FaqPage() {
     <LegalPage
       title="Frequently Asked Questions"
       subtitle="Everything you need to know about ExtenSilica, .xsil packages, publishing, versioning, security, and your account."
-      updated="March 2026"
+      updated="May 2026"
       current="/faq"
     >
       {/* Group nav */}

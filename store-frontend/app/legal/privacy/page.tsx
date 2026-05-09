@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy Policy"
       subtitle="We collect the minimum amount of data necessary to operate the registry. We do not sell your data, serve advertising, or use third-party analytics."
-      updated="March 2026"
+      updated="May 2026"
       current="/legal/privacy"
     >
       <div className="space-y-10">
@@ -93,6 +93,32 @@ export default function PrivacyPage() {
             When you submit a package review we store your user ID, the package ID,
             your rating (1–5), and your optional comment. Reviews are public and
             attributed to your username.
+          </p>
+
+          <p className="pt-2"><Strong>1.6  Organizations</Strong></p>
+          <p>
+            When you create or join an organization we store the organization
+            slug, display name, optional description, optional avatar URL, and
+            membership records (which user belongs to which organization, in what
+            role — <Strong>owner</Strong>, <Strong>admin</Strong>, or{" "}
+            <Strong>member</Strong>). Organization names, slugs, descriptions,
+            avatars, and the public list of members are visible on the
+            organization profile at <C>/orgs/&lt;slug&gt;</C>. Email addresses of
+            members are never exposed through the organization page. Packages
+            published under a scoped slug (<C>@org/pkg</C>) are attributed to the
+            organization in the registry index.
+          </p>
+
+          <p className="pt-2"><Strong>1.7  Wizard generation</Strong></p>
+          <p>
+            The Extension Wizard (<C>POST /wizard/generate</C> and{" "}
+            <C>xsil new</C>) builds a <C>.xsil</C> skeleton on demand. The web
+            endpoint does not persist your wizard input; the request body is used
+            in-memory to assemble the archive that is streamed back to your
+            browser, then discarded. Standard server access logs (see 1.4) record
+            the request URL, status, and timestamp without the body. The CLI
+            variant runs entirely on your machine — no input or output leaves
+            your host.
           </p>
 
         </Section>

@@ -12,7 +12,7 @@ export default function TermsPage() {
     <LegalPage
       title="Terms of Service"
       subtitle="Please read these terms carefully before using the ExtenSilica registry."
-      updated="March 2026"
+      updated="May 2026"
       current="/legal/terms"
     >
       <div className="space-y-10">
@@ -37,6 +37,15 @@ export default function TermsPage() {
             RISC-V simulation assets, toolchains, test suites, documentation, and
             optional FPGA artifacts. The Service allows registered users to publish
             packages and permits anyone to discover, browse, and download them.
+          </p>
+          <p>
+            The Service additionally offers an <Strong>Extension Wizard</Strong>{" "}
+            (web form at <C>/wizard</C> and CLI command <C>xsil new</C>) that
+            scaffolds a <C>.xsil</C> skeleton — manifest, opcode header, Spike
+            extension stub, examples, tests, license, and changelog — without
+            requiring an account. The wizard generates files locally (CLI) or
+            streams them in-memory to your browser (web); it does not publish on
+            your behalf.
           </p>
           <p>
             The Service is provided free of charge. We reserve the right to
