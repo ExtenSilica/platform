@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, LayoutDashboard, LogOut, User, Plus, ChevronDown } from "lucide-react";
+import { Search, LayoutDashboard, LogOut, User, Plus, ChevronDown, Wand2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -70,6 +70,13 @@ export function Navbar() {
         <div className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
           <Link href="/search" className="transition-colors hover:text-riscv-accent">
             Registry
+          </Link>
+          <Link
+            href="/wizard"
+            className="inline-flex items-center gap-1 transition-colors hover:text-riscv-accent"
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+            Wizard
           </Link>
           <Link href="/faq" className="transition-colors hover:text-riscv-accent">
             FAQ

@@ -601,6 +601,75 @@ export async function apiPublishVersion(
   return payload as RegistryVersion;
 }
 
+// ── Extension wizard ──────────────────────────────────────────────────────────
+
+export type WizardInstructionFormat = "R" | "I" | "S" | "B" | "U" | "J";
+
+export interface WizardInstruction {
+  mnemonic: string;
+  format: WizardInstructionFormat;
+  opcode?: string;
+  funct3?: string;
+  funct7?: string;
+  operands?: string[];
+  summary?: string;
+}
+
+export interface WizardInput {
+  name: string;
+  version?: string;
+  description: string;
+  author?: string;
+  license?: string;
+  isa?: string;
+  /** Required source URL (http or https). */
+  repository: string;
+  homepage?: string;
+  instructions?: WizardInstruction[];
+  targets?: { spike?: boolean; qemu?: boolean; binutils?: boolean; llvm?: boolean };
+}
+
+/**
+ * Calls `POST /wizard/generate` and resolves with a downloadable `.xsil` blob.
+ * On error the server responds with JSON, which is surfaced as `ApiError`.
+ */
+export async function apiGenerateXsil(input: WizardInput): Promise<{
+  blob: Blob;
+  filename: string;
+  slug: string;
+  version: string;
+  payloadChecksum: string;
+}> {
+  const res = await fetch(`${API_BASE}/wizard/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/gzip, application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok) {
+    let message: string = res.statusText;
+    try {
+      const payload = await res.json() as { error?: string };
+      if (typeof payload?.error === "string" && payload.error.length > 0) {
+        message = payload.error;
+      }
+    } catch {
+      // body wasn't JSON; keep statusText
+    }
+    throw new ApiError(message, res.status);
+  }
+
+  const blob = await res.blob();
+  const slug = res.headers.get("X-Xsil-Slug") ?? input.name;
+  const version = res.headers.get("X-Xsil-Version") ?? input.version ?? "0.1.0";
+  const payloadChecksum = res.headers.get("X-Xsil-Payload-Checksum") ?? "";
+  const dispo = res.headers.get("Content-Disposition") ?? "";
+  const m = /filename="?([^";]+)"?/.exec(dispo);
+  const filename = m?.[1] ?? `${slug}-${version}.xsil`;
+
+  return { blob, filename, slug, version, payloadChecksum };
+}
+
 export async function apiResolveArtifacts(
   token: string,
   dependencies: unknown

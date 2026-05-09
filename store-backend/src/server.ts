@@ -16,6 +16,7 @@ import legalRoutes from './routes/legal';
 import userRoutes from './routes/users';
 import platformAdminRoutes from './routes/platformAdmin';
 import artifactRoutes from './routes/artifacts';
+import wizardRoutes from './routes/wizard';
 import { initStorage, storage } from './storage';
 import { specs } from './swagger';
 import { prisma } from './db';
@@ -166,6 +167,11 @@ app.use('/api/admin', platformAdminRoutes);
 // ── Tool artifacts (optional uploads + resolve API for resolved manifests) ──
 app.use('/artifacts', artifactRoutes);
 app.use('/api/artifacts', artifactRoutes);
+
+// ── Extension wizard ────────────────────────────────────────────
+// POST /wizard/generate — public; returns a `.xsil` skeleton (gzip tar).
+app.use('/wizard', wizardRoutes);
+app.use('/api/wizard', wizardRoutes);
 
 // ── Legal submissions ───────────────────────────────────────────
 // POST /legal/dmca — DMCA / IP takedown request (rate-limited)

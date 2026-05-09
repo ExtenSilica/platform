@@ -21,6 +21,7 @@ import {
   Zap,
   Lock,
   CircuitBoard,
+  Wand2,
 } from "lucide-react";
 import { CircuitBackground, PipelineBackground, HexOverlay, ChipDie } from "@/components/circuit-bg";
 import { HowItWorks } from "@/components/how-it-works";
@@ -203,6 +204,18 @@ export function HomeIndex() {
               Search
             </button>
           </form>
+
+          {/* Wizard CTA */}
+          <p className="mt-4 text-sm text-muted-foreground">
+            <span className="opacity-70">or</span>{" "}
+            <Link
+              href="/wizard"
+              className="inline-flex items-center gap-1.5 font-medium text-riscv-accent underline-offset-4 hover:underline"
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+              build a runnable .xsil skeleton in the wizard
+            </Link>
+          </p>
 
           {/* Example commands — focal terminal */}
           <div className="mx-auto mt-10 max-w-lg scale-[1.08] sm:scale-100 sm:max-w-xl">
