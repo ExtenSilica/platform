@@ -43,6 +43,8 @@ Where:
 
 Both `Standard` and `Authority` are mandatory and propagate into the generated `manifest.json` at the top level (`standardStatus`, `authority`). The registry rejects publishes with unknown `standardStatus` values, and the homepage groups packages by this field — never label something `ratified` unless RISC-V International has actually frozen the spec.
 
+**Provenance is separate (and server-set).** ExtenSilica also tracks a `portStatus` per package (`seeded` | `community_port` | `claimed` | `official` | `archived`). This describes who put the package on the platform and is independent of `standardStatus`. **Never set `portStatus` in the manifest** — the registry assigns it automatically: catalog-seed bot publishes → `seeded`, regular human publishes → unset, ownership claim approval → `claimed`. Admins can later promote to `official` after verifying upstream identity.
+
 Example (the row used for `riscv-zbkb`):
 
 ```

@@ -13,7 +13,7 @@ export default function DmcaPage() {
     <LegalPage
       title="DMCA / Takedown Request"
       subtitle="If you believe content published on ExtenSilica infringes your intellectual property rights, use this page to submit a formal takedown request."
-      updated="May 2026"
+      updated="May 9, 2026"
       current="/legal/dmca"
     >
       <div className="space-y-10">
@@ -40,6 +40,49 @@ export default function DmcaPage() {
               Many issues can be resolved quickly through communication.
             </li>
           </Ul>
+        </Section>
+
+        <Section id="seeded-packages" title="If You Are the Upstream Maintainer of a Seeded Package">
+          <p>
+            ExtenSilica auto-publishes a subset of packages using a designated
+            catalog-seed bot account, sourcing metadata and content from public
+            upstream repositories. These packages are badged{" "}
+            <Strong>&ldquo;Seeded&rdquo;</Strong> on the package page so visitors
+            can see they have not (yet) been blessed by the upstream maintainer.
+            See{" "}
+            <a href="/legal/terms#catalog-labels" className="text-primary underline">
+              Terms § 3 — Catalog Labels and Catalog-Seeded Packages
+            </a>{" "}
+            for the full description.
+          </p>
+          <p>
+            If you are the upstream maintainer of such an extension and you want
+            it taken down or moved under your control, the fastest path is{" "}
+            <Strong>usually not</Strong> a DMCA notice. Instead, go to the
+            package page and use the{" "}
+            <Strong>&ldquo;Request authorship&rdquo;</Strong> flow:
+          </p>
+          <Ul>
+            <li>
+              You become the owner of the package. Its <Strong>portStatus</Strong>{" "}
+              flips to <Strong>&ldquo;Claimed&rdquo;</Strong> automatically.
+            </li>
+            <li>
+              You can immediately yank versions, edit metadata, publish updates,
+              or — if you prefer — ask us to delete the package entirely.
+            </li>
+            <li>
+              You keep the original install history and identifiers, which is
+              important if anyone is already depending on the package.
+            </li>
+          </Ul>
+          <p>
+            A DMCA notice is still appropriate when the package contains content
+            you did <Strong>not</Strong> publish openly upstream (private source,
+            proprietary binaries, etc.), when our seed agent misattributed
+            authorship, or when claim-by-request is not workable for any reason.
+            In those cases please use the form at the bottom of this page.
+          </p>
         </Section>
 
         <Section id="process" title="Our Process">

@@ -6,7 +6,10 @@ import {
   RegistryPackage,
   STANDARD_STATUS_INFO,
   STANDARD_STATUS_VALUES,
+  PORT_STATUS_INFO,
+  PORT_STATUS_VALUES,
   type StandardStatus,
+  type PortStatus,
 } from "@/lib/types";
 import { fetchPackages } from "@/lib/api";
 import { PackageCard } from "@/components/package-card";
@@ -27,6 +30,16 @@ function parseStatuses(raw: string): StandardStatus[] {
     );
 }
 
+function parsePortStatuses(raw: string): PortStatus[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase().replace(/-/g, "_"))
+    .filter((s): s is PortStatus =>
+      (PORT_STATUS_VALUES as string[]).includes(s),
+    );
+}
+
 function CardSkeleton() {
   return <div className="h-44 animate-pulse rounded-lg border bg-muted/40" />;
 }
@@ -42,12 +55,17 @@ export function SearchResults() {
   const org = searchParams.get("org") ?? "";
   const level = searchParams.get("level") ?? "";
   const standardStatusRaw = searchParams.get("standardStatus") ?? "";
+  const portStatusRaw = searchParams.get("portStatus") ?? "";
   const sort = searchParams.get("sort") ?? "created";
   const order = searchParams.get("order") ?? "desc";
 
   const activeStatuses = useMemo(
     () => parseStatuses(standardStatusRaw),
     [standardStatusRaw],
+  );
+  const activePortStatuses = useMemo(
+    () => parsePortStatuses(portStatusRaw),
+    [portStatusRaw],
   );
 
   const [packages, setPackages] = useState<RegistryPackage[]>([]);
@@ -64,6 +82,7 @@ export function SearchResults() {
         org: org || undefined,
         level: level || undefined,
         standardStatus: activeStatuses.length ? activeStatuses : undefined,
+        portStatus: activePortStatuses.length ? activePortStatuses : undefined,
         sort: sort === "downloads" ? "downloads" : "created",
         order: order === "asc" ? "asc" : "desc",
       });
@@ -74,7 +93,7 @@ export function SearchResults() {
     } finally {
       setLoading(false);
     }
-  }, [query, author, org, level, activeStatuses, sort, order]);
+  }, [query, author, org, level, activeStatuses, activePortStatuses, sort, order]);
 
   useEffect(() => {
     load();
@@ -98,6 +117,9 @@ export function SearchResults() {
     if (activeStatuses.length) {
       params.set("standardStatus", activeStatuses.join(","));
     }
+    if (activePortStatuses.length) {
+      params.set("portStatus", activePortStatuses.join(","));
+    }
     if (st === "downloads" || st === "created") params.set("sort", st);
     if (ord === "asc" || ord === "desc") params.set("order", ord);
 
@@ -115,8 +137,19 @@ export function SearchResults() {
     router.replace(`/search${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
+  function togglePortStatus(s: PortStatus) {
+    const next = activePortStatuses.includes(s)
+      ? activePortStatuses.filter((x) => x !== s)
+      : [...activePortStatuses, s];
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (next.length) params.set("portStatus", next.join(","));
+    else params.delete("portStatus");
+    router.replace(`/search${params.toString() ? `?${params.toString()}` : ""}`);
+  }
+
   const hasStructuredFilters = Boolean(
-    author || org || level || activeStatuses.length,
+    author || org || level || activeStatuses.length || activePortStatuses.length,
   );
 
   return (
@@ -150,6 +183,43 @@ export function SearchResults() {
             onClick={() => {
               const params = new URLSearchParams(searchParams.toString());
               params.delete("standardStatus");
+              router.replace(`/search${params.toString() ? `?${params.toString()}` : ""}`);
+            }}
+            className="ml-1 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+          >
+            clear
+          </button>
+        )}
+      </div>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground">
+          Provenance:
+        </span>
+        {PORT_STATUS_VALUES.map((s) => {
+          const active = activePortStatuses.includes(s);
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => togglePortStatus(s)}
+              title={PORT_STATUS_INFO[s].description}
+              className={cn(
+                "rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors",
+                active
+                  ? "border-foreground/40 bg-foreground/10 text-foreground"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted/40",
+              )}
+            >
+              {PORT_STATUS_INFO[s].short}
+            </button>
+          );
+        })}
+        {activePortStatuses.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.delete("portStatus");
               router.replace(`/search${params.toString() ? `?${params.toString()}` : ""}`);
             }}
             className="ml-1 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
@@ -294,6 +364,8 @@ export function SearchResults() {
                     level && `RL${level}`,
                     activeStatuses.length &&
                       `Status: ${activeStatuses.map((s) => STANDARD_STATUS_INFO[s].label).join(", ")}`,
+                    activePortStatuses.length &&
+                      `Provenance: ${activePortStatuses.map((s) => PORT_STATUS_INFO[s].short).join(", ")}`,
                   ]
                     .filter(Boolean)
                     .join(" · ")}

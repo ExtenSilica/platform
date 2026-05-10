@@ -12,6 +12,7 @@ import type {
   OwnershipEligibility,
   StandardStatus,
   CatalogStats,
+  PortStatus,
 } from "@/lib/types";
 import type { AuthUser } from "@/lib/auth";
 
@@ -286,6 +287,8 @@ export type ListPackagesQuery = {
   level?: string | number;
   /** Honest classification — comma-separated when filtering by multiple. */
   standardStatus?: StandardStatus | StandardStatus[] | string;
+  /** Provenance filter (server-set portStatus). CSV-friendly for multi-select. */
+  portStatus?: PortStatus | PortStatus[] | string;
   sort?: "created" | "downloads";
   order?: "asc" | "desc";
   limit?: number;
@@ -317,6 +320,12 @@ export async function fetchPackages(
       ? opts.standardStatus.join(",")
       : String(opts.standardStatus);
     if (v.trim()) qs.set("standardStatus", v.trim());
+  }
+  if (opts.portStatus) {
+    const v = Array.isArray(opts.portStatus)
+      ? opts.portStatus.join(",")
+      : String(opts.portStatus);
+    if (v.trim()) qs.set("portStatus", v.trim());
   }
   if (opts.sort === "downloads") qs.set("sort", "downloads");
   else if (opts.sort === "created") qs.set("sort", "created");
@@ -913,6 +922,9 @@ export interface AdminPackageRow {
   /** @deprecated Same integer as readinessLevel; kept for older API clients. */
   maturityLevel: number;
   capabilityBadges: string[];
+  standardStatus?: StandardStatus | null;
+  authority?: string | null;
+  portStatus?: PortStatus | null;
   owner: { id: number; username: string; email: string } | null;
   org: { id: number; slug: string; displayName: string } | null;
   createdAt: string;
@@ -1051,6 +1063,9 @@ export async function apiAdminUpdatePackage(
     deprecationMessage?: string | null;
     ownerUsername?: string | null;
     orgSlug?: string | null;
+    standardStatus?: StandardStatus | null;
+    authority?: string | null;
+    portStatus?: PortStatus | null;
   }
 ): Promise<{ package: AdminPackageDetail }> {
   return apiWrite("PATCH", `/admin/packages/${slug}`, token, patch);

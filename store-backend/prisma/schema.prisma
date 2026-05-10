@@ -77,6 +77,31 @@ enum StandardStatus {
   custom
 }
 
+/// Provenance of the package on ExtenSilica — orthogonal to StandardStatus.
+/// Always server-set, never read from the manifest, so publishers cannot
+/// pretend a stub is "official". Transitions:
+///   - Catalog-seed bot publishes      → `seeded`
+///   - Non-upstream user publishes new → `community_port`
+///   - OwnershipRequest approved on a `seeded` / `community_port` package
+///     where the new owner credibly represents the upstream maintainer
+///                                     → `claimed`
+///   - Platform admin verifies identity → `official`
+///   - Current owner / admin freezes   → `archived`
+enum PortStatus {
+  /// Auto-published by the catalog-seed agent. Owner is the platform bot.
+  /// The original maintainer has NOT (yet) claimed or blessed this entry.
+  seeded
+  /// Ported by a non-upstream user; not vetted as official.
+  community_port
+  /// Original maintainer (or their org) has claimed authorship via the
+  /// Request authorship flow.
+  claimed
+  /// Platform admin has verified the publisher's identity/affiliation.
+  official
+  /// Upstream is dead or the package has been intentionally frozen.
+  archived
+}
+
 // ── Organisations ─────────────────────────────────────────────
 
 model Organization {
@@ -139,6 +164,9 @@ model Extension {
   /// Free-text spec authority (e.g. "RISC-V International", "T-Head / XuanTie",
   /// "Qualcomm"). Rendered alongside the StandardStatus badge.
   authority            String?
+  /// Provenance on ExtenSilica. SERVER-SET ONLY — never copied from the
+  /// uploaded manifest. Null for legacy packages predating this field.
+  portStatus           PortStatus?
   versions             Version[]
   maintainers          Maintainer[]
   reviews              Review[]
@@ -152,6 +180,7 @@ model Extension {
 
   @@index([latestReadinessLevel])
   @@index([standardStatus])
+  @@index([portStatus])
 }
 
 model Maintainer {

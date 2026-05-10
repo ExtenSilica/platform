@@ -19,6 +19,8 @@ import { StarRating } from "@/components/star-rating";
 import { ReviewsSection } from "@/components/reviews-section";
 import { ClaimOwnershipCard } from "@/components/claim-ownership-card";
 import { StandardStatusBadge } from "@/components/standard-status-badge";
+import { PortStatusBadge } from "@/components/port-status-badge";
+import { PORT_STATUS_INFO } from "@/lib/types";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -398,6 +400,23 @@ export default async function PackagePage({
                         {pkg.authority && (
                           <p className="text-xs text-muted-foreground">{pkg.authority}</p>
                         )}
+                      </div>
+                    }
+                  />
+                )}
+                {pkg.portStatus && (
+                  <Row
+                    icon={<BadgeCheck className="h-3.5 w-3.5" />}
+                    label="Provenance"
+                    value={
+                      <div className="space-y-1">
+                        <PortStatusBadge
+                          status={pkg.portStatus}
+                          variant="full"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {PORT_STATUS_INFO[pkg.portStatus].description}
+                        </p>
                       </div>
                     }
                   />

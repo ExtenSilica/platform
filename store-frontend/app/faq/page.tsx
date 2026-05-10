@@ -188,6 +188,53 @@ const GROUPS: FaqGroup[] = [
           </>
         ),
       },
+      {
+        q: "What is \"port status\" / provenance on a package?",
+        a: (
+          <>
+            <p>
+              <C>portStatus</C> is orthogonal to <C>standardStatus</C>:
+              the latter describes the SPEC, the former describes who put the
+              package on ExtenSilica and whether the upstream maintainer has
+              blessed it. It is <strong>always server-set</strong> — we never
+              read it from the uploaded manifest, so publishers cannot lie
+              about being the official maintainer. Five values exist:
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                <C>seeded</C> — auto-published by the ExtenSilica catalog-seed
+                agent from public sources. The upstream maintainer has not
+                (yet) claimed authorship.
+              </li>
+              <li>
+                <C>community_port</C> — ported by a non-upstream community
+                member. Useful, but not vetted as official.
+              </li>
+              <li>
+                <C>claimed</C> — the current owner went through the{" "}
+                <em>Request authorship</em> flow and was approved by a platform
+                admin.
+              </li>
+              <li>
+                <C>official</C> — a platform admin verified the publisher's
+                identity / affiliation with the upstream project.
+              </li>
+              <li>
+                <C>archived</C> — upstream is dead or the package has been
+                intentionally frozen. Still installable; no further updates
+                expected.
+              </li>
+            </ul>
+            <p className="mt-3">
+              Packages published directly by a user are unmarked
+              (&quot;self-published&quot;) until either an ownership claim or
+              an admin verification flips them. Approving an ownership request
+              on a <C>seeded</C> or <C>community_port</C> package automatically
+              promotes it to <C>claimed</C>.
+            </p>
+          </>
+        ),
+      },
     ],
   },
 

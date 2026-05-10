@@ -5,6 +5,15 @@ import { packageReadinessSummary } from '../lib/packageReadinessSummary';
 import { storage } from '../storage';
 import { isPlatformAdminConfigured } from '../lib/platformAdmin';
 import { passwordPolicyError } from '../passwordPolicy';
+import {
+  normalizeAuthority,
+  normalizeStandardStatus,
+  STANDARD_STATUS_VALUES,
+} from '../lib/standardStatus';
+import {
+  normalizePortStatus,
+  PORT_STATUS_VALUES,
+} from '../lib/portStatus';
 
 const MAX_PAGE = 200;
 const BCRYPT_ROUNDS = 12;
@@ -162,6 +171,9 @@ export async function listAdminPackages(req: Request, res: Response): Promise<vo
         readinessLevel: maturityLevel,
         maturityLevel,
         capabilityBadges,
+        standardStatus: p.standardStatus ?? null,
+        authority: p.authority ?? null,
+        portStatus: p.portStatus ?? null,
         owner: p.owner
           ? { id: p.owner.id, username: p.owner.username, email: p.owner.email }
           : null,
@@ -596,6 +608,9 @@ export async function patchAdminPackageBySlug(req: Request, res: Response): Prom
     deprecationMessage,
     ownerUsername,
     orgSlug,
+    standardStatus: standardStatusRaw,
+    authority: authorityRaw,
+    portStatus: portStatusRaw,
   } = req.body ?? {};
 
   const patch: Record<string, unknown> = {};
@@ -664,6 +679,39 @@ export async function patchAdminPackageBySlug(req: Request, res: Response): Prom
     }
   }
 
+  // Honest classification + provenance — admins may set/clear both freely.
+  if ('standardStatus' in (req.body ?? {})) {
+    if (standardStatusRaw === null || standardStatusRaw === '') {
+      patch.standardStatus = null;
+    } else {
+      const normalized = normalizeStandardStatus(standardStatusRaw);
+      if (normalized === null) {
+        res.status(400).json({
+          error: `standardStatus must be one of: ${STANDARD_STATUS_VALUES.join(', ')}.`,
+        });
+        return;
+      }
+      patch.standardStatus = normalized;
+    }
+  }
+  if ('authority' in (req.body ?? {})) {
+    patch.authority = normalizeAuthority(authorityRaw);
+  }
+  if ('portStatus' in (req.body ?? {})) {
+    if (portStatusRaw === null || portStatusRaw === '') {
+      patch.portStatus = null;
+    } else {
+      const normalized = normalizePortStatus(portStatusRaw);
+      if (normalized === null) {
+        res.status(400).json({
+          error: `portStatus must be one of: ${PORT_STATUS_VALUES.join(', ')}.`,
+        });
+        return;
+      }
+      patch.portStatus = normalized;
+    }
+  }
+
   if (Object.keys(patch).length === 0) {
     res.status(400).json({ error: 'Nothing to update.' });
     return;
@@ -700,6 +748,9 @@ export async function patchAdminPackageBySlug(req: Request, res: Response): Prom
       homepageUrl: updated.homepageUrl ?? null,
       isDeprecated: updated.isDeprecated,
       deprecationMessage: updated.deprecationMessage ?? null,
+      standardStatus: updated.standardStatus ?? null,
+      authority: updated.authority ?? null,
+      portStatus: updated.portStatus ?? null,
       latestVersion: updated.latestVersion ?? null,
       totalDownloads: updated.totalDownloads,
       weeklyDownloads: updated.weeklyDownloads,

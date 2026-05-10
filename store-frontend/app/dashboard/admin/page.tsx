@@ -24,10 +24,14 @@ import {
   type AdminUserRow,
   type AdminPackageRow,
 } from "@/lib/api";
-import type {
-  OwnershipRequest,
-  OwnershipRequestStatus,
+import {
+  PORT_STATUS_INFO,
+  PORT_STATUS_VALUES,
+  type OwnershipRequest,
+  type OwnershipRequestStatus,
+  type PortStatus,
 } from "@/lib/types";
+import { PortStatusBadge } from "@/components/port-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -108,6 +112,7 @@ export default function PlatformAdminPage() {
   const [editPkgOrg, setEditPkgOrg] = useState("");
   const [editPkgDeprecated, setEditPkgDeprecated] = useState(false);
   const [editPkgDeprecationMessage, setEditPkgDeprecationMessage] = useState("");
+  const [editPkgPortStatus, setEditPkgPortStatus] = useState<PortStatus | "">("");
 
   // Ownership-request review queue
   const [reqStatusFilter, setReqStatusFilter] =
@@ -369,6 +374,7 @@ export default function PlatformAdminPage() {
     setEditPkgOrg(p.org?.slug ?? "");
     setEditPkgDeprecated(p.isDeprecated);
     setEditPkgDeprecationMessage("");
+    setEditPkgPortStatus(p.portStatus ?? "");
   }
 
   async function savePackageEdits() {
@@ -385,6 +391,7 @@ export default function PlatformAdminPage() {
         orgSlug: editPkgOrg.trim() === "" ? null : editPkgOrg.trim(),
         isDeprecated: editPkgDeprecated,
         deprecationMessage: editPkgDeprecationMessage.trim() === "" ? null : editPkgDeprecationMessage,
+        portStatus: editPkgPortStatus === "" ? null : editPkgPortStatus,
       });
       setActionMsg(`Package ${editPkgSlug} updated.`);
       setEditPkgSlug(null);
@@ -900,6 +907,7 @@ export default function PlatformAdminPage() {
                   <th className="p-3">Slug</th>
                   <th className="p-3">Name</th>
                   <th className="min-w-[140px] p-3">Readiness</th>
+                  <th className="p-3">Provenance</th>
                   <th className="p-3">Owner</th>
                   <th className="p-3">Org</th>
                   <th className="p-3">Deprecated</th>
@@ -917,6 +925,9 @@ export default function PlatformAdminPage() {
                         badges={p.capabilityBadges}
                         maxBadges={4}
                       />
+                    </td>
+                    <td className="p-3 align-top">
+                      <PortStatusBadge status={p.portStatus ?? null} variant="compact" />
                     </td>
                     <td className="p-3 text-xs">{p.owner ? <span className="font-mono">{p.owner.username}</span> : "—"}</td>
                     <td className="p-3 text-xs">{p.org ? <span className="font-mono">{p.org.slug}</span> : "—"}</td>
@@ -977,6 +988,27 @@ export default function PlatformAdminPage() {
                   <div className="space-y-2">
                     <Label>Org slug</Label>
                     <Input className="font-mono" value={editPkgOrg} onChange={(e) => setEditPkgOrg(e.target.value)} placeholder="empty to clear" />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="pkg-port-status">Port status (provenance)</Label>
+                    <select
+                      id="pkg-port-status"
+                      value={editPkgPortStatus}
+                      onChange={(e) => setEditPkgPortStatus(e.target.value as PortStatus | "")}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="">— (unset / self-published)</option>
+                      {PORT_STATUS_VALUES.map((s) => (
+                        <option key={s} value={s}>
+                          {PORT_STATUS_INFO[s].label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      Server-set provenance. Use <code>official</code> only after identity / domain verification.
+                      Approving an ownership request automatically promotes <code>seeded</code> /{" "}
+                      <code>community_port</code> → <code>claimed</code>.
+                    </p>
                   </div>
                   <div className="flex items-center gap-2 md:col-span-2">
                     <Checkbox

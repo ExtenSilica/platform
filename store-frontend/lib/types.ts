@@ -80,6 +80,61 @@ export interface CatalogStats {
   statusOrder: StandardStatus[];
 }
 
+/**
+ * Provenance of a package on ExtenSilica — orthogonal to StandardStatus.
+ * Always server-set; never carried by the .xsil manifest.
+ */
+export type PortStatus =
+  | "seeded"
+  | "community_port"
+  | "claimed"
+  | "official"
+  | "archived";
+
+export const PORT_STATUS_VALUES: PortStatus[] = [
+  "seeded",
+  "community_port",
+  "claimed",
+  "official",
+  "archived",
+];
+
+export const PORT_STATUS_INFO: Record<
+  PortStatus,
+  { label: string; short: string; description: string }
+> = {
+  seeded: {
+    label: "Seeded · unverified",
+    short: "Seeded",
+    description:
+      "Auto-published from upstream by the ExtenSilica catalog-seed agent. The original maintainer has not (yet) claimed authorship.",
+  },
+  community_port: {
+    label: "Community port",
+    short: "Community",
+    description:
+      "Ported by a non-upstream community member. Useful, but not vetted as official.",
+  },
+  claimed: {
+    label: "Maintainer claimed",
+    short: "Claimed",
+    description:
+      "The current owner went through the Request authorship flow and was approved by a platform admin.",
+  },
+  official: {
+    label: "Official",
+    short: "Official",
+    description:
+      "Platform admin has verified the publisher's identity / affiliation with the upstream project.",
+  },
+  archived: {
+    label: "Archived",
+    short: "Archived",
+    description:
+      "Upstream is dead or the package has been intentionally frozen. Still installable; no further updates expected.",
+  },
+};
+
 export interface RegistryPackage {
   id: number;
   slug: string;
@@ -99,6 +154,8 @@ export interface RegistryPackage {
   standardStatus?: StandardStatus | null;
   /** Free-text spec authority, e.g. "RISC-V International", "T-Head / XuanTie". */
   authority?: string | null;
+  /** Provenance on ExtenSilica (server-set; never from the manifest). */
+  portStatus?: PortStatus | null;
   latestVersion?: string | null;
   version?: string;
   totalDownloads: number;

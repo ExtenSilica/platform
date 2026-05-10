@@ -15,6 +15,7 @@ import {
 } from "@/lib/xsil-parser";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
 import { StandardStatusBadge } from "@/components/standard-status-badge";
+import { PortStatusBadge } from "@/components/port-status-badge";
 
 const ISA_KEYWORDS: Record<string, string> = {
   rvv: "RVV",
@@ -86,6 +87,11 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
               status={pkg.standardStatus ?? null}
               authority={pkg.authority ?? null}
               variant="compact"
+            />
+            <PortStatusBadge
+              status={pkg.portStatus ?? null}
+              variant="compact"
+              hideWhenUnset
             />
             {hasSpecificIsa && (
               <span className="inline-flex w-fit items-center gap-1 rounded-full border border-riscv/20 bg-riscv/[0.06] px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-riscv">

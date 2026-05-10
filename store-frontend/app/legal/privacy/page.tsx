@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy Policy"
       subtitle="We collect the minimum amount of data necessary to operate the registry. We do not sell your data, serve advertising, or use third-party analytics."
-      updated="May 2026"
+      updated="May 9, 2026"
       current="/legal/privacy"
     >
       <div className="space-y-10">
@@ -63,13 +63,44 @@ export default function PrivacyPage() {
               Package metadata: name, slug, description, version, ISA, targets,
               toolchain, license, keywords, README, repository URL, changelog.
             </li>
+            <li>
+              Honest-classification fields you set on the package:{" "}
+              <C>standardStatus</C> (ratified / draft / vendor / research /
+              custom) and <C>authority</C> (free-text spec authority). These
+              are public and rendered on the package page.
+            </li>
             <li>The <C>.xsil</C> archive file, stored in blob storage.</li>
             <li>
               SHA-256 checksums of the archive and its non-manifest payload
               (computed client-side by the CLI and verified on the server).
             </li>
             <li>Publish timestamp and the authoring account ID.</li>
+            <li>
+              A server-set <C>portStatus</C> recording how the package was put on
+              the platform (<C>seeded</C> for catalog-seed bot publishes,{" "}
+              <C>claimed</C> after an approved ownership request,{" "}
+              <C>official</C> after admin identity verification, etc.). This
+              field is never read from the manifest you upload.
+            </li>
           </Ul>
+
+          <p className="pt-2">
+            <Strong>1.2.1  Catalog-seeded packages.</Strong> A subset of packages
+            on ExtenSilica are auto-published by us using a designated
+            catalog-seed bot account sourcing content from public upstream
+            repositories. The bot account is operated by ExtenSilica staff; no
+            third-party account data is involved. Packages it publishes carry
+            the upstream author&rsquo;s attribution (as visible in the upstream
+            repository) and are clearly badged <C>seeded</C> in the UI. See{" "}
+            <a href="/legal/terms#catalog-labels" className="text-primary underline">
+              Terms § 3
+            </a>{" "}
+            for the policy and{" "}
+            <a href="/legal/dmca#seeded-packages" className="text-primary underline">
+              DMCA § &ldquo;Seeded packages&rdquo;
+            </a>{" "}
+            for the upstream-maintainer claim flow.
+          </p>
 
           <p className="pt-2"><Strong>1.3  Download events</Strong></p>
           <p>
@@ -121,6 +152,22 @@ export default function PrivacyPage() {
             your host.
           </p>
 
+          <p className="pt-2"><Strong>1.8  Ownership requests</Strong></p>
+          <p>
+            When you file a <Strong>Request authorship</Strong> for a package we
+            store: the requesting user ID, the target package ID, the free-text
+            <Strong> reason</Strong> you provide, optional <Strong>evidence
+            URLs</Strong> (e.g., upstream repository, commit-signing GPG key,
+            domain proof), the request status (<C>pending</C>, <C>approved</C>,{" "}
+            <C>rejected</C>, <C>withdrawn</C>), and — once a decision is made —
+            the deciding admin&rsquo;s user ID, the decision timestamp, and an
+            optional decision note. The reason, evidence URLs, and decision note
+            are visible to ExtenSilica platform admins reviewing the request.
+            The summary of approved requests (who now owns which package) is
+            public, as it is reflected in package ownership; the underlying
+            reason, evidence URLs, and decision notes are not.
+          </p>
+
         </Section>
 
         <Section id="use" title="2. How We Use Your Data">
@@ -162,6 +209,13 @@ export default function PrivacyPage() {
               metadata, download counts, and README content.
             </li>
             <li>Reviews you have written, attributed to your username.</li>
+            <li>
+              Ownership transfers resulting from approved authorship requests
+              (the fact that user <em>X</em> is now the owner of package{" "}
+              <em>Y</em> is public). The textual reason and evidence URLs you
+              submitted in the request are <Strong>not</Strong> public — only
+              platform admins see them.
+            </li>
           </Ul>
           <p>
             Your <Strong>email address is never publicly exposed</Strong>. It is not
@@ -217,6 +271,13 @@ export default function PrivacyPage() {
             <li>
               <Strong>Download event buckets</Strong> are retained indefinitely as
               aggregate counters (no personal data is stored in them).
+            </li>
+            <li>
+              <Strong>Ownership request records</Strong> (reason, evidence URLs,
+              decision notes) are retained for audit purposes as long as the
+              associated package exists. If you close your account they remain
+              associated with the (now-anonymous) user ID; you may request their
+              removal at the time you close your account.
             </li>
           </Ul>
         </Section>

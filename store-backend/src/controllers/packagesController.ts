@@ -25,6 +25,13 @@ import {
   STANDARD_STATUS_VALUES,
   type StandardStatus,
 } from '../lib/standardStatus';
+import {
+  normalizePortStatus,
+  PORT_STATUS_VALUES,
+  portStatusAfterOwnershipClaim,
+  type PortStatus,
+} from '../lib/portStatus';
+import { isCatalogBotUser, isPlatformAdminUser } from '../lib/platformAdmin';
 
 export type ExtensionWithVersions = Extension & {
   versions: Version[];
@@ -173,6 +180,7 @@ export function mapPackage(
     homepageUrl: ext.homepageUrl,
     standardStatus: ext.standardStatus ?? null,
     authority: ext.authority ?? null,
+    portStatus: (ext as Extension & { portStatus?: PortStatus | null }).portStatus ?? null,
     latestVersion: ext.latestVersion ?? latest?.version ?? null,
     totalDownloads: ext.totalDownloads,
     weeklyDownloads: ext.weeklyDownloads,
@@ -258,6 +266,21 @@ export const listPackages = async (req: Request, res: Response) => {
       .filter((s): s is StandardStatus => s != null);
     if (wanted.length > 0) {
       where.standardStatus = { in: wanted };
+    }
+  }
+
+  // Optional ?portStatus=seeded|community_port|claimed|official|archived (CSV-friendly).
+  // Accepts hyphenated `community-port` as an alias.
+  const portStatusRaw = typeof req.query.portStatus === 'string' ? req.query.portStatus : '';
+  if (portStatusRaw) {
+    const wanted = portStatusRaw
+      .split(',')
+      .map((s) => normalizePortStatus(s))
+      .filter((s): s is PortStatus => s != null);
+    if (wanted.length > 0) {
+      (where as Prisma.ExtensionWhereInput & { portStatus?: { in: PortStatus[] } }).portStatus = {
+        in: wanted,
+      };
     }
   }
 
@@ -530,6 +553,10 @@ export const createPackage = async (req: Request, res: Response) => {
         iconUrl: iconUrl?.trim() || null,
         standardStatus: standardStatus ?? null,
         authority,
+        // SERVER-SET provenance: only the catalog-seed bot gets `seeded`
+        // automatically. Regular publishers leave the field null so the
+        // detail page does not falsely advertise an unverified port.
+        portStatus: isCatalogBotUser(user) ? 'seeded' : null,
       },
       include: { versions: true },
     });
@@ -809,6 +836,7 @@ export const updatePackage = async (req: Request, res: Response) => {
       description, shortDescription, longDescription, keywords,
       license, repositoryUrl, homepageUrl, iconUrl, isDeprecated, deprecationMessage,
       standardStatus: standardStatusRaw, authority: authorityRaw,
+      portStatus: portStatusRaw,
     } = req.body as Record<string, string | boolean | undefined>;
 
     // Validate deprecationMessage length
@@ -838,6 +866,37 @@ export const updatePackage = async (req: Request, res: Response) => {
         ? null
         : { authority: normalizeAuthority(authorityRaw) };
 
+    // Port status is SERVER-SIDE provenance — only platform admins may set it
+    // directly (e.g. flipping a hand-vetted package to `official`). Owners may
+    // additionally archive their own package via `portStatus: "archived"`.
+    let portStatusUpdate: { portStatus: PortStatus | null } | null = null;
+    if (portStatusRaw !== undefined) {
+      const admin = isPlatformAdminUser(user);
+      if (portStatusRaw === null || portStatusRaw === '') {
+        if (!admin) {
+          res.status(403).json({ error: 'Only platform admins may clear portStatus.' });
+          return;
+        }
+        portStatusUpdate = { portStatus: null };
+      } else {
+        const normalized = normalizePortStatus(portStatusRaw);
+        if (normalized === null) {
+          res.status(400).json({
+            error: `portStatus must be one of: ${PORT_STATUS_VALUES.join(', ')}.`,
+          });
+          return;
+        }
+        // Owners (without admin) can only archive their own package.
+        if (!admin && normalized !== 'archived') {
+          res.status(403).json({
+            error: 'Only platform admins may change portStatus (except `archived`, which the owner may set).',
+          });
+          return;
+        }
+        portStatusUpdate = { portStatus: normalized };
+      }
+    }
+
     const updated = await prisma.extension.update({
       where: { slug: name },
       data: {
@@ -861,6 +920,7 @@ export const updatePackage = async (req: Request, res: Response) => {
         }),
         ...(standardStatusUpdate ?? {}),
         ...(authorityUpdate ?? {}),
+        ...(portStatusUpdate ?? {}),
       },
       include: { versions: { orderBy: { publishedAt: 'desc' } } },
     });

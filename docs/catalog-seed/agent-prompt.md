@@ -249,12 +249,13 @@ NOTES:      <one paragraph; especially: any Support claim that was downgraded,
 1. **Never invent encodings.** Omit anything you cannot read directly from upstream.
 2. **Never claim RL > 1** in a catalog-seed run.
 3. **Never lie about `standardStatus`.** Never label a draft / vendor extension as `ratified`. The catalog row is the source of truth — copy it, don't improvise.
-4. **Never publish without a passing `xsil publish --dry-run`.**
-5. **Never publish a slug that already exists** unless authorship is yours.
-6. **Never skip the “What this package is (and is not)” block in the README.**
-7. **Never re-login per row** — `xsil login` is once per campaign.
-8. **Always pin upstream by commit SHA, never by branch.**
-9. **Always update `catalog.md`** in the same git commit that records the result of the row.
+4. **Never set `portStatus` in the manifest.** It is **server-set**: the registry stamps every catalog-seed publish as `portStatus = "seeded"` automatically (because the publisher account is in `PLATFORM_CATALOG_BOT_EMAILS`). Do **not** add a `portStatus` field to `manifest.json` — it will be ignored anyway. The package will later be promoted to `claimed` / `official` by an admin once the upstream maintainer claims authorship.
+5. **Never publish without a passing `xsil publish --dry-run`.**
+6. **Never publish a slug that already exists** unless authorship is yours.
+7. **Never skip the “What this package is (and is not)” block in the README.**
+8. **Never re-login per row** — `xsil login` is once per campaign.
+9. **Always pin upstream by commit SHA, never by branch.**
+10. **Always update `catalog.md`** in the same git commit that records the result of the row.
 
 ---
 

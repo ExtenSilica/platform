@@ -8,6 +8,7 @@ import {
   evaluateEligibility,
   type OwnershipRequestStatus,
 } from '../lib/ownershipRequest';
+import { portStatusAfterOwnershipClaim } from '../lib/portStatus';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -499,9 +500,18 @@ export async function adminApproveRequest(
       },
     });
 
+    // Flip provenance on the package: seeded / community_port collapse to
+    // `claimed`; `official` / `archived` survive because they are stronger
+    // statements than a fresh maintainer claim. See lib/portStatus.ts.
+    const currentPkg = await tx.extension.findUnique({
+      where: { id: existing.packageId },
+      select: { portStatus: true },
+    });
+    const nextPortStatus = portStatusAfterOwnershipClaim(currentPkg?.portStatus ?? null);
+
     await tx.extension.update({
       where: { id: existing.packageId },
-      data: { ownerId: existing.userId },
+      data: { ownerId: existing.userId, portStatus: nextPortStatus },
     });
 
     await tx.maintainer.upsert({

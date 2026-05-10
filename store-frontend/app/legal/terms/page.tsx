@@ -12,7 +12,7 @@ export default function TermsPage() {
     <LegalPage
       title="Terms of Service"
       subtitle="Please read these terms carefully before using the ExtenSilica registry."
-      updated="May 2026"
+      updated="May 9, 2026"
       current="/legal/terms"
     >
       <div className="space-y-10">
@@ -54,7 +54,87 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="accounts" title="3. Accounts and Registration">
+        <Section id="catalog-labels" title="3. Catalog Labels and Catalog-Seeded Packages">
+          <p>
+            <Strong>Honest classification (<C>standardStatus</C>).</Strong> Every
+            package on ExtenSilica is labeled with one of five values describing
+            its relationship to the RISC-V standard: <C>ratified</C>,{" "}
+            <C>draft</C>, <C>vendor</C>, <C>research</C>, or <C>custom</C>. The
+            label is set by the publisher (or, for catalog-seeded packages, by
+            ExtenSilica based on public upstream sources) and is informational
+            only. ExtenSilica does not warrant the accuracy of any label and is
+            not a substitute for the canonical specification published by{" "}
+            <Strong>RISC-V International</Strong> or any other standards body.
+            References to RISC-V International, vendor names, or research groups
+            in catalog labels and metadata are descriptive and do not imply
+            endorsement, sponsorship, or affiliation.
+          </p>
+          <p>
+            <Strong>Provenance (<C>portStatus</C>).</Strong> ExtenSilica
+            additionally tracks how a package was put on the platform:{" "}
+            <C>seeded</C> (auto-published by our catalog-seed agent from public
+            upstream sources), <C>community_port</C> (ported by a non-upstream
+            community member), <C>claimed</C> (the current owner went through
+            the ownership-claim flow), <C>official</C> (an ExtenSilica admin
+            verified the publisher&rsquo;s identity / affiliation), or{" "}
+            <C>archived</C>. This field is set by the Service, never by the
+            publisher, and is shown as a badge on the package page.
+          </p>
+          <p>
+            <Strong>Catalog-seeded packages.</Strong> A subset of packages on
+            ExtenSilica are auto-published by us using a designated bot account
+            (a &ldquo;<Strong>catalog-seed agent</Strong>&rdquo;) sourcing
+            metadata and content from public upstream repositories. These
+            packages:
+          </p>
+          <Ul>
+            <li>
+              Are clearly badged as <C>seeded</C> in the UI so visitors can see
+              they have not (yet) been blessed by the upstream maintainer.
+            </li>
+            <li>
+              Are distributed under the same license declared by the upstream
+              project. ExtenSilica does not relicense upstream content.
+            </li>
+            <li>
+              Do not imply that the upstream maintainer endorses, sponsors, or
+              is affiliated with ExtenSilica.
+            </li>
+            <li>
+              May be claimed by the upstream maintainer at any time via the{" "}
+              <Strong>Request authorship</Strong> flow described in Section 4
+              below, or removed on request (see Section 8).
+            </li>
+          </Ul>
+        </Section>
+
+        <Section id="ownership-claims" title="4. Ownership and Authorship Claims">
+          <p>
+            <Strong>Authors retain ownership.</Strong> ExtenSilica does not claim
+            any intellectual property rights over packages — whether published by
+            their authors or ported by the catalog-seed agent. Each package is
+            distributed under the license declared in its manifest.
+          </p>
+          <p>
+            <Strong>Request authorship.</Strong> If you are the upstream
+            maintainer of an extension that appears on ExtenSilica under another
+            account (typically a catalog-seed bot account, or a community
+            porter), you may file an <Strong>ownership request</Strong> from the
+            package page. ExtenSilica administrators review each request and, on
+            approval, transfer the package ownership to your account and flip
+            its <C>portStatus</C> to <C>claimed</C>. Approval is at our
+            discretion; we may require evidence of upstream affiliation
+            (commit-signing GPG keys, domain control, official repository
+            membership, etc.).
+          </p>
+          <p>
+            Filing a knowingly false ownership request, or one made in bad
+            faith, may result in account suspension and counts as a violation of
+            these Terms.
+          </p>
+        </Section>
+
+        <Section id="accounts" title="5. Accounts and Registration">
           <p>
             Publishing packages requires a registered account. When you create an
             account you agree to:
@@ -83,14 +163,14 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="content" title="4. Published Content and Package Author Responsibility">
+        <Section id="content" title="6. Published Content and Package Author Responsibility">
           <p>
-            <Strong>Authors retain ownership.</Strong> ExtenSilica does not claim any
-            intellectual property rights over packages you publish. By publishing a
-            package you grant ExtenSilica and its users a worldwide, royalty-free,
-            non-exclusive license to store, distribute, display, and access the package
-            under the license you declare in the package manifest. This license is
-            necessary to operate the registry.
+            <Strong>License grant.</Strong> By publishing a package you grant
+            ExtenSilica and its users a worldwide, royalty-free, non-exclusive
+            license to store, distribute, display, and access the package under
+            the license you declare in the package manifest. This license is
+            necessary to operate the registry. (See Section 4 above for our
+            ownership / authorship rules.)
           </p>
           <p>
             <Strong>Authors are responsible for their content.</Strong> By publishing a
@@ -131,7 +211,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="intellectual-property" title="5. Intellectual Property of the Service">
+        <Section id="intellectual-property" title="7. Intellectual Property of the Service">
           <p>
             The ExtenSilica website, registry infrastructure, and <C>xsil</C> CLI are
             open-source software. The name &ldquo;ExtenSilica&rdquo; and associated
@@ -141,7 +221,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="prohibited" title="6. Prohibited Conduct">
+        <Section id="prohibited" title="8. Prohibited Conduct">
           <p>You may not use the Service to:</p>
           <Ul>
             <li>
@@ -165,10 +245,18 @@ export default function TermsPage() {
               mislead (e.g., typosquatting popular packages).
             </li>
             <li>
-              Impersonate another person, organization, or official project.
+              Impersonate another person, organization, or official project, or
+              file an ownership request claiming to represent a project you do
+              not actually maintain.
             </li>
             <li>
               Upload content that infringes the intellectual property rights of others.
+            </li>
+            <li>
+              Mislabel a package&rsquo;s <C>standardStatus</C> — in particular,
+              labeling a non-frozen extension as <C>ratified</C>. The registry
+              audits these labels periodically; repeated misrepresentation may
+              result in package removal and account suspension.
             </li>
             <li>
               Use the Service in any manner inconsistent with applicable laws or
@@ -177,7 +265,7 @@ export default function TermsPage() {
           </Ul>
         </Section>
 
-        <Section id="moderation" title="7. Content Moderation and Removal">
+        <Section id="moderation" title="9. Content Moderation and Removal">
           <p>
             ExtenSilica reserves the right — but not the obligation — to review,
             moderate, and remove content that violates these Terms or that we
@@ -203,6 +291,17 @@ export default function TermsPage() {
             depending on the completeness of the request and the nature of the claim.
           </p>
           <p>
+            <Strong>Seeded packages — preferred remedy.</Strong> If you are the
+            upstream maintainer of a package that ExtenSilica has auto-published
+            under our catalog-seed bot account (badged <C>seeded</C>), the fastest
+            remedy in most cases is to <Strong>claim authorship</Strong> via the
+            ownership-request flow described in Section 4. Once approved you
+            become the owner of the package and can yank, update, or have it
+            removed at your discretion. A DMCA or takedown request is also
+            available, but claiming the package is usually faster and lets you
+            keep its install history and identifiers intact.
+          </p>
+          <p>
             <Strong>Yanking vs. deletion.</Strong> Because published versions are
             immutable by design, most enforcement actions result in a version being{" "}
             <em>yanked</em> — marked as unsafe and excluded from normal resolution —
@@ -211,7 +310,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="immutability" title="8. Version Immutability">
+        <Section id="immutability" title="10. Version Immutability">
           <p>
             Once a package version is successfully published it cannot be overwritten.
             You may publish a new version to supersede an older one, or yank a version
@@ -221,7 +320,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="termination" title="9. Account Suspension and Termination">
+        <Section id="termination" title="11. Account Suspension and Termination">
           <p>
             We reserve the right to suspend or terminate accounts that violate these
             Terms, engage in abusive behavior, or that have been inactive for an
@@ -238,7 +337,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="disclaimer" title="10. Disclaimer of Warranties">
+        <Section id="disclaimer" title="12. Disclaimer of Warranties">
           <p>
             The Service is provided <Strong>&ldquo;as is&rdquo;</Strong> and{" "}
             <Strong>&ldquo;as available&rdquo;</Strong> without warranty of any kind,
@@ -253,9 +352,19 @@ export default function TermsPage() {
             accept any responsibility for the accuracy, completeness, or safety of
             third-party packages published on the registry.
           </p>
+          <p>
+            <Strong>Catalog labels are informational.</Strong> The{" "}
+            <C>standardStatus</C>, <C>authority</C>, and <C>portStatus</C>{" "}
+            fields displayed on package pages are best-effort metadata. They do
+            not constitute legal advice, technical certification, an
+            endorsement, or a representation of conformance with any
+            specification or standard. Always consult the canonical
+            specification and the upstream maintainer before relying on a
+            package for production use.
+          </p>
         </Section>
 
-        <Section id="liability" title="11. Limitation of Liability">
+        <Section id="liability" title="13. Limitation of Liability">
           <p>
             To the maximum extent permitted by applicable law, ExtenSilica and its
             contributors, maintainers, and operators shall not be liable for any
@@ -274,7 +383,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="indemnification" title="12. Indemnification">
+        <Section id="indemnification" title="14. Indemnification">
           <p>
             You agree to indemnify, defend, and hold harmless ExtenSilica and its
             contributors from and against any claims, damages, obligations, losses,
@@ -284,7 +393,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="changes" title="13. Changes to These Terms">
+        <Section id="changes" title="15. Changes to These Terms">
           <p>
             We may update these Terms from time to time. When we make material changes
             we will update the &ldquo;Last updated&rdquo; date at the top of this page
@@ -294,7 +403,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="governing-law" title="14. Governing Law">
+        <Section id="governing-law" title="16. Governing Law">
           <p>
             These Terms shall be governed by and construed in accordance with
             applicable law. Any disputes arising under these Terms shall be resolved
@@ -303,7 +412,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="contact" title="15. Contact">
+        <Section id="contact" title="17. Contact">
           <p>
             Questions, abuse reports, and takedown requests can be sent to{" "}
             <a
