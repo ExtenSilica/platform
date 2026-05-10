@@ -7,6 +7,9 @@ import type {
   Organization,
   MyOrg,
   OrgMember,
+  OwnershipRequest,
+  OwnershipRequestStatus,
+  OwnershipEligibility,
 } from "@/lib/types";
 import type { AuthUser } from "@/lib/auth";
 
@@ -1033,4 +1036,88 @@ export async function apiAdminUpdatePackage(
 
 export async function apiAdminDeletePackage(token: string, slug: string): Promise<void> {
   return apiWrite<void>("DELETE", `/admin/packages/${slug}`, token);
+}
+
+/* ─── Ownership requests ────────────────────────────────────────────────── */
+
+/**
+ * Public + auth-aware. Returns `eligible:true` only when the signed-in user
+ * can open a fresh ownership request for this package. Anonymous callers
+ * always get `eligible:false, requiresAuth:true`.
+ */
+export async function apiOwnershipEligibility(
+  slug: string,
+  token: string | null,
+): Promise<OwnershipEligibility> {
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(
+    `${API_BASE}/packages/${slug}/ownership-requests/eligibility`,
+    { cache: "no-store", headers },
+  );
+  if (!res.ok) {
+    const payload = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new ApiError(payload.error ?? res.statusText, res.status);
+  }
+  return res.json() as Promise<OwnershipEligibility>;
+}
+
+export async function apiCreateOwnershipRequest(
+  token: string,
+  slug: string,
+  input: { reason: string; evidenceUrl?: string | null },
+): Promise<{ request: OwnershipRequest }> {
+  return apiWrite("POST", `/packages/${slug}/ownership-requests`, token, input);
+}
+
+export async function apiListMyOwnershipRequests(
+  token: string,
+  status?: OwnershipRequestStatus | "all",
+): Promise<{ requests: OwnershipRequest[] }> {
+  const qs =
+    status && status !== "all" ? `?status=${encodeURIComponent(status)}` : "";
+  return apiFetch(`/me/ownership-requests${qs}`, token);
+}
+
+export async function apiWithdrawOwnershipRequest(
+  token: string,
+  id: number,
+): Promise<{ request: OwnershipRequest }> {
+  return apiWrite("POST", `/me/ownership-requests/${id}/withdraw`, token);
+}
+
+/* ─── Admin: ownership-request review queue ─────────────────────────────── */
+
+export async function apiAdminListOwnershipRequests(
+  token: string,
+  status: OwnershipRequestStatus | "all" = "pending",
+): Promise<{ requests: OwnershipRequest[] }> {
+  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiFetch(`/admin/ownership-requests${qs}`, token);
+}
+
+export async function apiAdminApproveOwnershipRequest(
+  token: string,
+  id: number,
+  decisionNote?: string | null,
+): Promise<{ request: OwnershipRequest }> {
+  return apiWrite(
+    "POST",
+    `/admin/ownership-requests/${id}/approve`,
+    token,
+    decisionNote != null ? { decisionNote } : {},
+  );
+}
+
+export async function apiAdminRejectOwnershipRequest(
+  token: string,
+  id: number,
+  decisionNote?: string | null,
+): Promise<{ request: OwnershipRequest }> {
+  return apiWrite(
+    "POST",
+    `/admin/ownership-requests/${id}/reject`,
+    token,
+    decisionNote != null ? { decisionNote } : {},
+  );
 }

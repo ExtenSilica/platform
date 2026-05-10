@@ -15,10 +15,12 @@ import {
   apiAddOrgMember,
   apiRemoveOrgMember,
   apiDeleteAccount,
+  apiListMyOwnershipRequests,
+  apiWithdrawOwnershipRequest,
   ApiError,
 } from "@/lib/api";
 import { passwordPolicyError } from "@/lib/passwordPolicy";
-import type { RegistryPackage, MyOrg } from "@/lib/types";
+import type { RegistryPackage, MyOrg, OwnershipRequest } from "@/lib/types";
 import {
   computeCapabilityBadges,
   displayReadinessLevel,
@@ -47,6 +49,11 @@ import {
   Trash2,
   Linkedin,
   Shield,
+  ShieldQuestion,
+  Clock3,
+  CheckCircle,
+  XCircle,
+  Undo2,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
@@ -55,7 +62,13 @@ function fmtNum(n: number) {
   return n.toLocaleString();
 }
 
-const DASHBOARD_TABS = ["stats", "packages", "account", "orgs"] as const;
+const DASHBOARD_TABS = [
+  "stats",
+  "packages",
+  "requests",
+  "account",
+  "orgs",
+] as const;
 type DashboardTab = (typeof DASHBOARD_TABS)[number];
 
 function isDashboardTab(v: string | null): v is DashboardTab {
@@ -140,6 +153,12 @@ export default function DashboardPage() {
   const [orgIconSavingSlug, setOrgIconSavingSlug] = useState<string | null>(null);
   const [orgIconErrorBySlug, setOrgIconErrorBySlug] = useState<Record<string, string>>({});
 
+  // Ownership requests submitted by the current user.
+  const [ownershipRequests, setOwnershipRequests] = useState<OwnershipRequest[]>([]);
+  const [ownershipLoading, setOwnershipLoading] = useState(false);
+  const [ownershipError, setOwnershipError] = useState("");
+  const [ownershipBusyId, setOwnershipBusyId] = useState<number | null>(null);
+
   useEffect(() => {
     if (user) {
       setBio(user.bio ?? "");
@@ -172,6 +191,38 @@ export default function DashboardPage() {
       )
       .finally(() => setOrgsLoading(false));
   }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    setOwnershipLoading(true);
+    setOwnershipError("");
+    apiListMyOwnershipRequests(token)
+      .then(({ requests }) => setOwnershipRequests(requests))
+      .catch((e) =>
+        setOwnershipError(
+          e instanceof ApiError ? e.message : "Failed to load ownership requests."
+        )
+      )
+      .finally(() => setOwnershipLoading(false));
+  }, [token]);
+
+  async function handleWithdrawRequest(id: number) {
+    if (!token) return;
+    setOwnershipBusyId(id);
+    setOwnershipError("");
+    try {
+      const { request } = await apiWithdrawOwnershipRequest(token, id);
+      setOwnershipRequests((prev) =>
+        prev.map((r) => (r.id === id ? request : r))
+      );
+    } catch (e) {
+      setOwnershipError(
+        e instanceof ApiError ? e.message : "Failed to withdraw the request."
+      );
+    } finally {
+      setOwnershipBusyId(null);
+    }
+  }
 
   async function handleCreateOrg(e: React.FormEvent) {
     e.preventDefault();
@@ -424,6 +475,7 @@ export default function DashboardPage() {
   const tabNav: { id: DashboardTab; label: string; icon: typeof BarChart3 }[] = [
     { id: "stats", label: "Stats", icon: BarChart3 },
     { id: "packages", label: "Packages", icon: Package },
+    { id: "requests", label: "Ownership requests", icon: ShieldQuestion },
     { id: "account", label: "Account", icon: UserCircle },
     { id: "orgs", label: "Organizations", icon: Building2 },
   ];
@@ -654,6 +706,167 @@ export default function DashboardPage() {
               );
             })}
           </div>
+        )}
+      </div>
+      )}
+
+      {tab === "requests" && (
+      <div className="mb-2">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Ownership requests
+          </h2>
+        </div>
+
+        {ownershipError && (
+          <Alert variant="destructive" className="mb-4">
+            <WifiOff className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{ownershipError}</AlertDescription>
+          </Alert>
+        )}
+
+        {ownershipLoading ? (
+          <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center text-sm text-muted-foreground">
+            Loading…
+          </div>
+        ) : ownershipRequests.length === 0 ? (
+          <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center">
+            <ShieldQuestion className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">
+              You haven&apos;t requested ownership of any package yet.
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Visit the page of a package you authored and use{" "}
+              <span className="font-medium text-foreground">Request ownership</span>.
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {ownershipRequests.map((r) => {
+              const statusMeta = (() => {
+                switch (r.status) {
+                  case "pending":
+                    return {
+                      Icon: Clock3,
+                      label: "Pending review",
+                      className:
+                        "text-amber-600 bg-amber-500/10 border-amber-500/30",
+                    };
+                  case "approved":
+                    return {
+                      Icon: CheckCircle,
+                      label: "Approved",
+                      className:
+                        "text-emerald-700 bg-emerald-500/10 border-emerald-500/30",
+                    };
+                  case "rejected":
+                    return {
+                      Icon: XCircle,
+                      label: "Rejected",
+                      className:
+                        "text-destructive bg-destructive/10 border-destructive/30",
+                    };
+                  case "withdrawn":
+                    return {
+                      Icon: Undo2,
+                      label: "Withdrawn",
+                      className:
+                        "text-muted-foreground bg-muted/40 border-border",
+                    };
+                }
+              })();
+              const StatusIcon = statusMeta.Icon;
+              return (
+                <li
+                  key={r.id}
+                  className="rounded-lg border bg-background p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          href={
+                            r.package
+                              ? `/package/${encodeURIComponent(r.package.slug)}`
+                              : "#"
+                          }
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          {r.package?.name ?? `Package #${r.packageId}`}
+                        </Link>
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                            statusMeta.className,
+                          )}
+                        >
+                          <StatusIcon className="h-3 w-3" />
+                          {statusMeta.label}
+                        </span>
+                      </div>
+                      {r.package?.slug && (
+                        <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                          {r.package.slug}
+                        </p>
+                      )}
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
+                        {r.reason}
+                      </p>
+                      {r.evidenceUrl && (
+                        <p className="mt-2 truncate text-xs">
+                          Evidence:{" "}
+                          <a
+                            href={r.evidenceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline-offset-4 hover:underline"
+                          >
+                            {r.evidenceUrl}
+                          </a>
+                        </p>
+                      )}
+                      {r.decisionNote && (
+                        <div className="mt-3 rounded-md border bg-muted/40 p-3 text-xs">
+                          <p className="font-semibold text-foreground">
+                            Reviewer note
+                          </p>
+                          <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                            {r.decisionNote}
+                          </p>
+                        </div>
+                      )}
+                      <p className="mt-3 text-[11px] text-muted-foreground">
+                        Submitted {new Date(r.createdAt).toLocaleString()}
+                        {r.decidedAt && (
+                          <>
+                            {" · "}
+                            {r.status === "approved"
+                              ? "Approved"
+                              : r.status === "rejected"
+                                ? "Rejected"
+                                : "Closed"}{" "}
+                            {new Date(r.decidedAt).toLocaleString()}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    {r.status === "pending" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={ownershipBusyId === r.id}
+                        onClick={() => handleWithdrawRequest(r.id)}
+                      >
+                        {ownershipBusyId === r.id ? "Withdrawing…" : "Withdraw"}
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
       )}

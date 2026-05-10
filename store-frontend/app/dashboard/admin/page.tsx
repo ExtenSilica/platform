@@ -16,11 +16,18 @@ import {
   apiAdminCreatePackage,
   apiAdminUpdatePackage,
   apiAdminDeletePackage,
+  apiAdminListOwnershipRequests,
+  apiAdminApproveOwnershipRequest,
+  apiAdminRejectOwnershipRequest,
   ApiError,
   type AdminHealthResponse,
   type AdminUserRow,
   type AdminPackageRow,
 } from "@/lib/api";
+import type {
+  OwnershipRequest,
+  OwnershipRequestStatus,
+} from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,12 +50,16 @@ import {
   Pencil,
   KeyRound,
   CheckCircle2,
+  ShieldQuestion,
+  Clock3,
+  XCircle,
+  Undo2,
 } from "lucide-react";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
 
 const PAGE_SIZE = 50;
 
-type AdminTab = "health" | "users" | "packages";
+type AdminTab = "health" | "users" | "packages" | "requests";
 
 export default function PlatformAdminPage() {
   const { user, token, isLoading } = useAuth();
@@ -98,6 +109,75 @@ export default function PlatformAdminPage() {
   const [editPkgDeprecated, setEditPkgDeprecated] = useState(false);
   const [editPkgDeprecationMessage, setEditPkgDeprecationMessage] = useState("");
 
+  // Ownership-request review queue
+  const [reqStatusFilter, setReqStatusFilter] =
+    useState<OwnershipRequestStatus | "all">("pending");
+  const [reqRows, setReqRows] = useState<OwnershipRequest[]>([]);
+  const [reqLoading, setReqLoading] = useState(false);
+  const [reqBusyId, setReqBusyId] = useState<number | null>(null);
+  const [reqDecisionNote, setReqDecisionNote] = useState<Record<number, string>>(
+    {},
+  );
+
+  const loadOwnershipRequests = useCallback(async () => {
+    if (!token) return;
+    setReqLoading(true);
+    setError("");
+    try {
+      const { requests } = await apiAdminListOwnershipRequests(
+        token,
+        reqStatusFilter,
+      );
+      setReqRows(requests);
+    } catch (e) {
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : "Failed to load ownership requests.",
+      );
+    } finally {
+      setReqLoading(false);
+    }
+  }, [token, reqStatusFilter]);
+
+  async function handleApproveRequest(id: number) {
+    if (!token) return;
+    setReqBusyId(id);
+    setError("");
+    setActionMsg("");
+    try {
+      const note = reqDecisionNote[id]?.trim() || null;
+      await apiAdminApproveOwnershipRequest(token, id, note);
+      setActionMsg(`Approved request #${id}.`);
+      await loadOwnershipRequests();
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Approve failed.",
+      );
+    } finally {
+      setReqBusyId(null);
+    }
+  }
+
+  async function handleRejectRequest(id: number) {
+    if (!token) return;
+    setReqBusyId(id);
+    setError("");
+    setActionMsg("");
+    try {
+      const note = reqDecisionNote[id]?.trim() || null;
+      await apiAdminRejectOwnershipRequest(token, id, note);
+      setActionMsg(`Rejected request #${id}.`);
+      await loadOwnershipRequests();
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Reject failed.",
+      );
+    } finally {
+      setReqBusyId(null);
+    }
+  }
+
   const loadAll = useCallback(async () => {
     if (!token) return;
     setBusy(true);
@@ -133,6 +213,10 @@ export default function PlatformAdminPage() {
     }
     void loadAll();
   }, [isLoading, user, router, loadAll]);
+
+  useEffect(() => {
+    if (tab === "requests") void loadOwnershipRequests();
+  }, [tab, loadOwnershipRequests]);
 
   async function verifyUser(id: number) {
     if (!token) return;
@@ -386,6 +470,7 @@ export default function PlatformAdminPage() {
             { id: "health", label: "Health", icon: Activity },
             { id: "users", label: "Users", icon: Users },
             { id: "packages", label: "Packages", icon: Package },
+            { id: "requests", label: "Ownership requests", icon: ShieldQuestion },
           ] as const
         ).map(({ id, label, icon: Icon }) => (
           <Button
@@ -919,6 +1004,220 @@ export default function PlatformAdminPage() {
                 </div>
               </CardContent>
             </Card>
+          )}
+        </section>
+      )}
+
+      {tab === "requests" && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Ownership-request review</h2>
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="req-status-filter"
+                className="text-xs text-muted-foreground"
+              >
+                Filter
+              </Label>
+              <select
+                id="req-status-filter"
+                value={reqStatusFilter}
+                onChange={(e) =>
+                  setReqStatusFilter(
+                    e.target.value as OwnershipRequestStatus | "all",
+                  )
+                }
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+              >
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="withdrawn">Withdrawn</option>
+                <option value="all">All</option>
+              </select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={reqLoading}
+                onClick={() => void loadOwnershipRequests()}
+                className="gap-2"
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {reqLoading ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center text-sm text-muted-foreground">
+              Loading…
+            </div>
+          ) : reqRows.length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center">
+              <ShieldQuestion className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">
+                No requests with status “{reqStatusFilter}”.
+              </p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {reqRows.map((r) => {
+                const StatusIcon =
+                  r.status === "pending"
+                    ? Clock3
+                    : r.status === "approved"
+                      ? CheckCircle2
+                      : r.status === "rejected"
+                        ? XCircle
+                        : Undo2;
+                const isPending = r.status === "pending";
+                return (
+                  <Card key={r.id}>
+                    <CardContent className="space-y-3 pt-6">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                              href={
+                                r.package
+                                  ? `/package/${encodeURIComponent(r.package.slug)}`
+                                  : "#"
+                              }
+                              className="font-semibold hover:underline"
+                            >
+                              {r.package?.name ?? `Package #${r.packageId}`}
+                            </Link>
+                            <Badge variant="secondary" className="font-mono text-[10px]">
+                              {r.package?.slug ?? `#${r.packageId}`}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className="gap-1 text-[10px]"
+                            >
+                              <StatusIcon className="h-3 w-3" />
+                              {r.status}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            From{" "}
+                            {r.user ? (
+                              <Link
+                                href={`/users/${encodeURIComponent(r.user.username)}`}
+                                className="font-medium text-foreground hover:underline"
+                              >
+                                @{r.user.username}
+                              </Link>
+                            ) : (
+                              `user #${r.userId}`
+                            )}
+                            {r.user?.email && ` · ${r.user.email}`}
+                            {" · "}
+                            submitted {new Date(r.createdAt).toLocaleString()}
+                          </p>
+                          {r.package && (
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              Current owner:{" "}
+                              {r.package.ownerId
+                                ? `user #${r.package.ownerId}`
+                                : "(unowned)"}
+                              {r.package.org && (
+                                <>
+                                  {" · "}
+                                  Org: @{r.package.org.slug}
+                                </>
+                              )}
+                              {r.package.author && (
+                                <>
+                                  {" · "}
+                                  manifest.author: {r.package.author}
+                                </>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          Reason
+                        </p>
+                        <p className="mt-1 whitespace-pre-wrap">{r.reason}</p>
+                      </div>
+
+                      {r.evidenceUrl && (
+                        <p className="text-sm">
+                          Evidence:{" "}
+                          <a
+                            href={r.evidenceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline-offset-4 hover:underline"
+                          >
+                            {r.evidenceUrl}
+                          </a>
+                        </p>
+                      )}
+
+                      {r.decisionNote && (
+                        <div className="rounded-md border bg-muted/30 p-3 text-xs">
+                          <p className="font-semibold text-muted-foreground">
+                            Decision note
+                            {r.decidedBy && ` · by @${r.decidedBy.username}`}
+                          </p>
+                          <p className="mt-1 whitespace-pre-wrap">
+                            {r.decisionNote}
+                          </p>
+                        </div>
+                      )}
+
+                      {isPending && (
+                        <div className="space-y-2 pt-2">
+                          <Label htmlFor={`note-${r.id}`} className="text-xs">
+                            Decision note (optional, shown to requester)
+                          </Label>
+                          <Textarea
+                            id={`note-${r.id}`}
+                            rows={2}
+                            value={reqDecisionNote[r.id] ?? ""}
+                            onChange={(e) =>
+                              setReqDecisionNote((prev) => ({
+                                ...prev,
+                                [r.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="Verified via GitHub commit history. — or — Not enough evidence; please share a maintainer email or commit you authored."
+                          />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="gap-1.5"
+                              disabled={reqBusyId === r.id}
+                              onClick={() => void handleApproveRequest(r.id)}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              {reqBusyId === r.id ? "Approving…" : "Approve"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5"
+                              disabled={reqBusyId === r.id}
+                              onClick={() => void handleRejectRequest(r.id)}
+                            >
+                              <XCircle className="h-4 w-4" />
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </ul>
           )}
         </section>
       )}

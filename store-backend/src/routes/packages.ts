@@ -17,6 +17,10 @@ import {
   getMyPackages,
 } from '../controllers/packagesController';
 import { getReviews, upsertReview, deleteMyReview } from '../controllers/reviewsController';
+import {
+  getEligibility,
+  createRequest,
+} from '../controllers/ownershipRequestsController';
 import { requireAuth } from '../middleware/auth';
 
 /* ─── multer ─────────────────────────────────────────────────────────────── */
@@ -129,5 +133,31 @@ router.post('/@:scope/:name/reviews', requireAuth, normalizePkgName, upsertRevie
 router.get('/:name/reviews', getReviews);
 router.post('/:name/reviews', requireAuth, upsertReview);
 router.delete('/:name/reviews/me', requireAuth, deleteMyReview);
+
+/* ─── Ownership requests ─────────────────────────────────────────────────────
+ * GET  /packages/:name/ownership-requests/eligibility — public; the endpoint
+ *      itself examines the optional Bearer session. Lets the UI hide the
+ *      "Request ownership" CTA for owners / maintainers / org members /
+ *      anonymous users.
+ * POST /packages/:name/ownership-requests — auth required; opens a pending
+ *      request (one per user per package).
+ */
+
+// Scoped
+router.get(
+  '/@:scope/:name/ownership-requests/eligibility',
+  normalizePkgName,
+  getEligibility,
+);
+router.post(
+  '/@:scope/:name/ownership-requests',
+  requireAuth,
+  normalizePkgName,
+  createRequest,
+);
+
+// Unscoped
+router.get('/:name/ownership-requests/eligibility', getEligibility);
+router.post('/:name/ownership-requests', requireAuth, createRequest);
 
 export default router;

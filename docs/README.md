@@ -46,6 +46,7 @@ Package summaries returned by **GET `/orgs/:slug`**, **GET `/users/:username`** 
 - **[deploy-runbook.md](./deploy-runbook.md)** — **Production deploy:** target host setup (DB, TLS, DNS, env vars), backend + frontend rollout, post-deploy checks. Pair with **[launch-checklist-v3.md](./launch-checklist-v3.md)** §12.
 - **[architecture-v2.md](./architecture-v2.md)** — XSIL standard architecture: format, CLI, registry, execution / developer / user flows.
 - **[publishing.md](./publishing.md)** — Minimal publishing workflow: `xsil build`, `xsil publish`; package structure, required files, `entry`, simulator vs FPGA targets.
+- **[agent-publish-extension.md](./agent-publish-extension.md)** — Canonical playbook for an autonomous coding agent (Claude / Codex / Cursor) to take one row from the catalog and produce a reproducible `.xsil`. Updated for `cargo install xsil`, the `xsil new` wizard, and native `xsil publish --dry-run`. Successor to the ad-hoc prompt used for `riscv-zbkb v1.0.0`.
 - **[reproducibility.md](./reproducibility.md)** — Why many RISC-V extension artifacts are not reproducible today; how XSIL + `xsil run` establish a reproducibility foundation; example *paper → xsil → xsil run*.
 - **[execution-model.md](./execution-model.md)** — How `xsil run` selects simulator (default) vs FPGA (optional); automatic target selection.
 - **[pivot-v2.md](./pivot-v2.md)** — Pivot v2: previous vs new model; what is removed (marketplace, licensing, monetization, Web3); what remains (xsil, CLI, registry).

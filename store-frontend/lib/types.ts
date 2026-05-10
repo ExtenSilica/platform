@@ -107,6 +107,57 @@ export interface OrgMember {
   };
 }
 
+export type OwnershipRequestStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'withdrawn';
+
+export interface OwnershipRequestUserSummary {
+  id: number;
+  username: string;
+  email: string;
+  avatarUrl?: string | null;
+}
+
+export interface OwnershipRequestPackageSummary {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  iconUrl?: string | null;
+  ownerId?: number | null;
+  orgId?: number | null;
+  author?: string | null;
+  org?: { id: number; slug: string; displayName: string } | null;
+}
+
+export interface OwnershipRequest {
+  id: number;
+  packageId: number;
+  userId: number;
+  reason: string;
+  evidenceUrl?: string | null;
+  status: OwnershipRequestStatus;
+  decisionNote?: string | null;
+  decidedById?: number | null;
+  decidedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  package?: OwnershipRequestPackageSummary;
+  user?: OwnershipRequestUserSummary | null;
+  decidedBy?: OwnershipRequestUserSummary | null;
+}
+
+export type OwnershipEligibility =
+  | { eligible: true }
+  | {
+      eligible: false;
+      reason: string;
+      /** Set when the only blocker is "not signed in". */
+      requiresAuth?: boolean;
+    };
+
 export interface Organization {
   id: number;
   slug: string;

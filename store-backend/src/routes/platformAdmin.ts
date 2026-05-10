@@ -15,6 +15,11 @@ import {
   patchAdminPackageBySlug,
   deleteAdminPackage,
 } from '../controllers/platformAdminController';
+import {
+  adminListRequests,
+  adminApproveRequest,
+  adminRejectRequest,
+} from '../controllers/ownershipRequestsController';
 
 const router = Router();
 
@@ -30,5 +35,10 @@ router.post('/packages', requireAuth, requirePlatformAdmin, postAdminCreatePacka
 router.patch('/packages/:slug', requireAuth, requirePlatformAdmin, patchAdminPackageBySlug);
 router.delete('/packages/:slug', requireAuth, requirePlatformAdmin, deleteAdminPackage);
 router.post('/users/:id/verify-email', requireAuth, requirePlatformAdmin, postAdminVerifyUserEmail);
+
+// ── Ownership-request review queue ───────────────────────────────────────────
+router.get('/ownership-requests', requireAuth, requirePlatformAdmin, adminListRequests);
+router.post('/ownership-requests/:id/approve', requireAuth, requirePlatformAdmin, adminApproveRequest);
+router.post('/ownership-requests/:id/reject',  requireAuth, requirePlatformAdmin, adminRejectRequest);
 
 export default router;

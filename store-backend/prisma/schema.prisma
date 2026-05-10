@@ -12,20 +12,20 @@ datasource db {
 // ── Users ────────────────────────────────────────────────────
 
 model User {
-  id           Int       @id @default(autoincrement())
-  username     String    @unique
-  email        String    @unique
-  passwordHash String
-  apiToken     String?   @unique
+  id                         Int       @id @default(autoincrement())
+  username                   String    @unique
+  email                      String    @unique
+  passwordHash               String
+  apiToken                   String?   @unique
   /// Set when the user proves control of `email` (verify link or OAuth sign-up).
   emailVerifiedAt            DateTime?
   /// SHA-256 hex of the raw token emailed for verification; cleared after success.
   emailVerificationTokenHash String?   @unique
   emailVerificationExpires   DateTime?
-  bio          String?
-  avatarUrl    String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  bio                        String?
+  avatarUrl                  String?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
 
   ownedPackages       Extension[]          @relation("ExtensionOwner")
   maintainerships     Maintainer[]
@@ -34,19 +34,21 @@ model User {
   orgMemberships      OrgMember[]
   oauthAccounts       OAuthAccount[]
   toolArtifacts       ToolArtifact[]
+  ownershipRequests   OwnershipRequest[]   @relation("OwnershipRequester")
+  ownershipDecisions  OwnershipRequest[]   @relation("OwnershipDecider")
 }
 
 /// External identity from GitHub or Google OAuth (see docs/oauth-data-model.md).
 model OAuthAccount {
-  id                  Int             @id @default(autoincrement())
-  userId              Int
-  provider            OAuthProvider
-  providerAccountId   String
-  email               String?
-  username            String?
-  avatarUrl           String?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  id                Int           @id @default(autoincrement())
+  userId            Int
+  provider          OAuthProvider
+  providerAccountId String
+  email             String?
+  username          String?
+  avatarUrl         String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -62,16 +64,16 @@ enum OAuthProvider {
 // ── Organisations ─────────────────────────────────────────────
 
 model Organization {
-  id          Int       @id @default(autoincrement())
-  slug        String    @unique  // e.g. "risc-v-foundation"  (no @)
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique // e.g. "risc-v-foundation"  (no @)
   displayName String
   description String?
   avatarUrl   String?
   websiteUrl  String?
   /// Company LinkedIn profile URL (https://www.linkedin.com/company/…)
   linkedinUrl String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   members  OrgMember[]
   packages Extension[] @relation("ExtensionOrg")
@@ -93,36 +95,37 @@ model OrgMember {
 // ── Packages ─────────────────────────────────────────────────
 
 model Extension {
-  id               Int       @id @default(autoincrement())
-  slug             String    @unique  // bare "pkgname" or scoped "@org/pkgname"
-  name             String
-  description      String
-  shortDescription String?
-  longDescription  String?   // README / extended description (markdown)
-  iconUrl          String?
-  author           String
-  ownerId          Int?
-  orgId            Int?      // set when published under an org scope
-  keywords         String    @default("") // CSV
-  license          String?
-  repositoryUrl    String?
-  homepageUrl      String?
-  latestVersion       String?
+  id                   Int                @id @default(autoincrement())
+  slug                 String             @unique // bare "pkgname" or scoped "@org/pkgname"
+  name                 String
+  description          String
+  shortDescription     String?
+  longDescription      String? // README / extended description (markdown)
+  iconUrl              String?
+  author               String
+  ownerId              Int?
+  orgId                Int? // set when published under an org scope
+  keywords             String             @default("") // CSV
+  license              String?
+  repositoryUrl        String?
+  homepageUrl          String?
+  latestVersion        String?
   /// RL of semver-latest non-yanked version (denormalized; see syncExtensionLatestReadiness).
   latestReadinessLevel Int?
-  totalDownloads      Int       @default(0)
-  weeklyDownloads     Int       @default(0)
-  isDeprecated        Boolean   @default(false)
-  deprecationMessage  String?   // optional reason / migration hint shown in the banner
-  versions         Version[]
-  maintainers      Maintainer[]
-  reviews          Review[]
-  downloadEvents   DownloadEvent[]
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  totalDownloads       Int                @default(0)
+  weeklyDownloads      Int                @default(0)
+  isDeprecated         Boolean            @default(false)
+  deprecationMessage   String? // optional reason / migration hint shown in the banner
+  versions             Version[]
+  maintainers          Maintainer[]
+  reviews              Review[]
+  downloadEvents       DownloadEvent[]
+  ownershipRequests    OwnershipRequest[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
   owner User?         @relation("ExtensionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  org   Organization? @relation("ExtensionOrg",   fields: [orgId],   references: [id], onDelete: SetNull)
+  org   Organization? @relation("ExtensionOrg", fields: [orgId], references: [id], onDelete: SetNull)
 
   @@index([latestReadinessLevel])
 }
@@ -140,6 +143,37 @@ model Maintainer {
   @@unique([packageId, userId])
 }
 
+/// User-initiated request to be granted ownership of a package.
+/// Reviewed by platform admins; on approval, sets Extension.ownerId to the
+/// requester's userId and adds them as a Maintainer with role="owner".
+/// Only one pending request per (package, user) is allowed at a time.
+model OwnershipRequest {
+  id           Int       @id @default(autoincrement())
+  packageId    Int
+  userId       Int
+  /// Free-text justification supplied by the requester (50–2000 chars).
+  reason       String
+  /// Optional URL the user submits as evidence (e.g. GitHub commit, paper, email thread).
+  evidenceUrl  String?
+  /// "pending" | "approved" | "rejected" | "withdrawn"
+  status       String    @default("pending")
+  /// Admin-only message shown to the requester after approve/reject (optional).
+  decisionNote String?
+  /// Set by the platform admin who closed the request.
+  decidedById  Int?
+  decidedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  package   Extension @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  user      User      @relation("OwnershipRequester", fields: [userId], references: [id], onDelete: Cascade)
+  decidedBy User?     @relation("OwnershipDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@index([packageId, status])
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
 model Version {
   id              Int       @id @default(autoincrement())
   extensionId     Int
@@ -147,9 +181,9 @@ model Version {
   version         String
   changelog       String    @default("")
   xsilUrl         String
-  checksum        String?   // sha256 of the full .xsil archive
-  checksumPayload String?   // sha256 of non-manifest files (was payloadHash)
-  targets         String?   // JSON blob from manifest targets
+  checksum        String? // sha256 of the full .xsil archive
+  checksumPayload String? // sha256 of non-manifest files (was payloadHash)
+  targets         String? // JSON blob from manifest targets
   toolchain       String?
   isa             String?
   /// Execution metadata blob from manifest (e.g. { entry, testEntry, env }).
@@ -164,13 +198,13 @@ model Version {
   capabilities    String?
   /// Optional `manifest.evidence` echo: JSON array of { kind, url, label?, sha256? }.
   evidence        String?
-  size            Int?      // archive bytes
+  size            Int? // archive bytes
   downloadCount   Int       @default(0)
   isYanked        Boolean   @default(false)
   yankReason      String?
   publishedAt     DateTime  @default(now())
 
-  downloadEvents  DownloadEvent[]
+  downloadEvents   DownloadEvent[]
   toolDependencies VersionToolDependency[]
 
   @@unique([extensionId, version])
@@ -197,15 +231,15 @@ model ToolArtifact {
 }
 
 model VersionToolDependency {
-  id            Int      @id @default(autoincrement())
-  versionId     Int
+  id             Int      @id @default(autoincrement())
+  versionId      Int
   toolArtifactId Int
-  toolName      String
-  toolVersion   String
-  platform      String
-  declaredUrl   String
+  toolName       String
+  toolVersion    String
+  platform       String
+  declaredUrl    String
   declaredSha256 String
-  createdAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   version      Version      @relation(fields: [versionId], references: [id], onDelete: Cascade)
   toolArtifact ToolArtifact @relation(fields: [toolArtifactId], references: [id], onDelete: Restrict)
@@ -234,9 +268,9 @@ model DownloadEvent {
 model PasswordResetToken {
   id        Int       @id @default(autoincrement())
   userId    Int
-  tokenHash String    @unique  // SHA-256 of the raw token sent in the email
+  tokenHash String    @unique // SHA-256 of the raw token sent in the email
   expiresAt DateTime
-  usedAt    DateTime?           // set when redeemed; prevents replay
+  usedAt    DateTime? // set when redeemed; prevents replay
   createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -248,8 +282,8 @@ model Review {
   id        Int      @id @default(autoincrement())
   packageId Int
   userId    Int
-  rating    Int      // 1–5, validated at the application layer
-  comment   String?  // optional free-text
+  rating    Int // 1–5, validated at the application layer
+  comment   String? // optional free-text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

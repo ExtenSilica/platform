@@ -17,6 +17,7 @@ import userRoutes from './routes/users';
 import platformAdminRoutes from './routes/platformAdmin';
 import artifactRoutes from './routes/artifacts';
 import wizardRoutes from './routes/wizard';
+import meRoutes from './routes/me';
 import { initStorage, storage } from './storage';
 import { specs } from './swagger';
 import { prisma } from './db';
@@ -163,6 +164,11 @@ app.use('/api/users', userRoutes);
 // ── Platform admin (operators only; see PLATFORM_ADMIN_* env vars) ────────
 app.use('/admin', platformAdminRoutes);
 app.use('/api/admin', platformAdminRoutes);
+
+// ── Current user resources (auth required on every endpoint) ────────────────
+// /me/ownership-requests, /me/ownership-requests/:id/withdraw
+app.use('/me', meRoutes);
+app.use('/api/me', meRoutes);
 
 // ── Tool artifacts (optional uploads + resolve API for resolved manifests) ──
 app.use('/artifacts', artifactRoutes);
