@@ -3,8 +3,14 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { RegistryPackage } from "@/lib/types";
-import { fetchPackages } from "@/lib/api";
+import {
+  RegistryPackage,
+  STANDARD_STATUS_INFO,
+  STANDARD_STATUS_VALUES,
+  type CatalogStats,
+  type StandardStatus,
+} from "@/lib/types";
+import { fetchPackages, apiCatalogStats } from "@/lib/api";
 import { PackageCard } from "@/components/package-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -85,13 +91,18 @@ export function HomeIndex() {
   const [packages, setPackages] = useState<RegistryPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<CatalogStats | null>(null);
 
   const loadData = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const data = await fetchPackages({ limit: 6, sort: "downloads", order: "desc" });
+      const [data, statsData] = await Promise.all([
+        fetchPackages({ limit: 6, sort: "downloads", order: "desc" }),
+        apiCatalogStats().catch(() => null),
+      ]);
       setPackages(data);
+      setStats(statsData);
     } catch (err) {
       console.error(err);
       setError("Could not reach the registry. Is the backend running?");
@@ -223,6 +234,48 @@ export function HomeIndex() {
               build a runnable .xsil skeleton in the wizard
             </Link>
           </p>
+
+          {/* Honest catalog counts. Each chip filters /search by status. */}
+          {stats && stats.total > 0 && (
+            <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center gap-2">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">
+                  {stats.total.toLocaleString()}
+                </span>{" "}
+                RISC-V ISA extension package
+                {stats.total === 1 ? "" : "s"} tracked
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
+                {STANDARD_STATUS_VALUES.map((s) => {
+                  const count = stats.byStatus[s] ?? 0;
+                  if (!count) return null;
+                  return (
+                    <Link
+                      key={s}
+                      href={`/search?standardStatus=${s}`}
+                      title={STANDARD_STATUS_INFO[s as StandardStatus].description}
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 transition-colors hover:border-riscv-accent/40 hover:text-foreground"
+                    >
+                      <span className="font-semibold tabular-nums">{count}</span>
+                      <span>{STANDARD_STATUS_INFO[s as StandardStatus].label}</span>
+                    </Link>
+                  );
+                })}
+                {stats.unclassified > 0 && (
+                  <span
+                    title="Legacy packages published before the StandardStatus field existed."
+                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground/30 bg-muted/30 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                  >
+                    <span className="font-semibold tabular-nums">{stats.unclassified}</span>
+                    <span>Unclassified</span>
+                  </span>
+                )}
+              </div>
+              <p className="max-w-xl text-center text-[11px] leading-relaxed text-muted-foreground">
+                Honest labels: <em>ratified</em> = approved by RISC-V International, <em>draft</em> = working draft, <em>vendor</em> = shipped by a commercial vendor, <em>research</em> = academic / experimental, <em>custom</em> = bespoke or one-off.
+              </p>
+            </div>
+          )}
 
           {/* Example commands — focal terminal */}
           <div className="mx-auto mt-10 max-w-lg scale-[1.08] sm:scale-100 sm:max-w-xl">

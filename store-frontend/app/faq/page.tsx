@@ -140,6 +140,54 @@ const GROUPS: FaqGroup[] = [
           </>
         ),
       },
+      {
+        q: "What does \"standard status\" mean on a package?",
+        a: (
+          <>
+            <p>
+              Every package on ExtenSilica must declare its honest relationship
+              to the RISC-V standard. The label appears as a badge on the
+              package page and powers the homepage counts. Five values are
+              allowed:
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                <C>ratified</C> — frozen specification approved by RISC-V
+                International. The encoding is locked.
+              </li>
+              <li>
+                <C>draft</C> — working draft from RISC-V International or
+                another standards body. Not ratified yet — the encoding may
+                still change.
+              </li>
+              <li>
+                <C>vendor</C> — custom extension defined and shipped by a
+                commercial vendor (T-Head, SiFive, Qualcomm, Andes, Ventana,
+                …).
+              </li>
+              <li>
+                <C>research</C> — academic / experimental extension, often used
+                in research papers or pre-production prototypes.
+              </li>
+              <li>
+                <C>custom</C> — bespoke or one-off extension that does not fit
+                the categories above.
+              </li>
+            </ul>
+            <p className="mt-3">
+              The accompanying <C>authority</C> field is free text (2–200
+              characters) identifying who defines the spec — for example{" "}
+              <C>RISC-V International</C>, <C>T-Head / XuanTie</C>, or{" "}
+              <C>University of Michigan</C>. Both fields are stored at the top
+              of <C>manifest.json</C>, validated by the registry, and required
+              by both the web wizard and <C>xsil new</C>. Do not label a
+              package <C>ratified</C> unless RISC-V International has actually
+              frozen the spec — the registry checks this and we audit the
+              catalog regularly.
+            </p>
+          </>
+        ),
+      },
     ],
   },
 

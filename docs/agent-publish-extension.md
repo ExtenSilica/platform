@@ -32,15 +32,21 @@ When the agent finishes, it returns the deliverables enumerated under [§Deliver
 Single-row table; same columns the catalog uses everywhere else in the project:
 
 ```
-| # | Extension | Category | Description | Repository URL | Support |
+| # | Extension | Standard | Authority | Category | Description | Repository URL | Support |
 ```
 
-Where `Support` is a comma-separated list drawn from: `Spec`, `Simulator`, `Toolchain`, `Tests`, `RTL`, `FPGA`. Every asset listed in `Support` **must** end up represented in the package — either bundled in the archive or resolved by pinned URL + sha256.
+Where:
+
+- `Standard` is one of `ratified`, `draft`, `vendor`, `research`, `custom` (see `spec/xsil.md` §4.7).
+- `Authority` is the body that defines the extension (e.g. `RISC-V International`, `T-Head / XuanTie`, `University of Michigan`). 2–200 characters.
+- `Support` is a comma-separated list drawn from `Spec`, `Simulator`, `Toolchain`, `Tests`, `RTL`, `FPGA`. Every asset listed in `Support` **must** end up represented in the package — either bundled in the archive or resolved by pinned URL + sha256.
+
+Both `Standard` and `Authority` are mandatory and propagate into the generated `manifest.json` at the top level (`standardStatus`, `authority`). The registry rejects publishes with unknown `standardStatus` values, and the homepage groups packages by this field — never label something `ratified` unless RISC-V International has actually frozen the spec.
 
 Example (the row used for `riscv-zbkb`):
 
 ```
-| 1 | riscv-zbkb | Standard crypto extension | Basic bit-manipulation crypto helper extension | https://github.com/riscv/riscv-crypto | Spec, Simulator, Toolchain, Tests |
+| 1 | riscv-zbkb | ratified | RISC-V International | Standard crypto extension | Basic bit-manipulation crypto helper extension | https://github.com/riscv/riscv-crypto | Spec, Simulator, Toolchain, Tests |
 ```
 
 ---
@@ -57,8 +63,14 @@ verify, and report.
 ══════════════════════════════════════════════════════════════════════════════
 INPUT (row to process — single row table)
 ══════════════════════════════════════════════════════════════════════════════
-| # | Extension | Category | Description | Repository URL | Support |
-| 1 | <FILL>    | <FILL>   | <FILL>      | <FILL>         | <FILL>  |
+| # | Extension | Standard | Authority | Category | Description | Repository URL | Support |
+| 1 | <FILL>    | <FILL>   | <FILL>    | <FILL>   | <FILL>      | <FILL>         | <FILL>  |
+
+`Standard` is one of: ratified, draft, vendor, research, custom (xsil spec §4.7).
+`Authority` is free text (2–200 chars) identifying who defines the spec.
+Both fields MUST be copied verbatim into manifest.standardStatus / manifest.authority.
+Do NOT label the package `ratified` unless RISC-V International has frozen it;
+the registry validates this and the homepage groups packages by status.
 
 Every asset listed in `Support` MUST end up represented in the final package,
 either **bundled** in the archive or **resolved** by pinned URL + sha256.
@@ -107,12 +119,14 @@ WORKFLOW (do them in order; do not skip steps)
 STEP 0 — Bootstrap a skeleton
   Prefer `xsil new` over hand-rolling the directory. Run:
       xsil new <slug> --non-interactive \
-                       --description "<one-liner>" \
-                       --author      "<your-username>" \
-                       --version     "1.0.0" \
-                       --isa         "<ISA, e.g. RV64G_Zbkb>" \
-                       --license     "<SPDX, e.g. Apache-2.0>" \
-                       --repository  "<upstream URL>"
+                       --description     "<one-liner>" \
+                       --author          "<your-username>" \
+                       --version         "1.0.0" \
+                       --isa             "<ISA, e.g. RV64G_Zbkb>" \
+                       --license         "<SPDX, e.g. Apache-2.0>" \
+                       --repository      "<upstream URL>" \
+                       --standard-status "<ratified|draft|vendor|research|custom>" \
+                       --authority       "<Authority, e.g. RISC-V International>"
   This generates:
       manifest.json            (with all required fields per §4.1)
       opcodes.json             (machine-readable encoding table — empty list ok)

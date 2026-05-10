@@ -26,11 +26,12 @@ The agent is **not** porting the simulator, the toolchain, or the RTL. It is pro
 - Has `readinessLevel: 1`.
 - Carries the keyword `catalog-seed` (so the registry can filter / badge it).
 - Carries the keyword `spec-derived` if encodings were extracted from upstream.
+- Sets `standardStatus` and `authority` at the **top level of `manifest.json`**, taken verbatim from the catalog row's columns of the same name. Allowed `standardStatus` values: `ratified | draft | vendor | research | custom`.
 - Has a clearly worded `README.md` paragraph titled **“What this package is (and is not).”**
 - Has a `docs/UPSTREAM.md` with the **exact commit SHA**, the upstream license, and the file paths the encodings were extracted from.
 - Has a `sim/spike-extension/` skeleton where every handler body is exactly `// TODO(catalog-seed): semantics not yet implemented`.
 
-If you cannot satisfy any of these, you skip. You do not lie about readiness. The whole point of this campaign is that the catalog grows *with* trust, not against it.
+If you cannot satisfy any of these, you skip. You do not lie about readiness or about whether the extension is a RISC-V International ratified standard. The whole point of this campaign is that the catalog grows *with* trust, not against it.
 
 ---
 
@@ -108,6 +109,8 @@ The wizard generates a baseline manifest. Apply these **mandatory** edits before
   // ...wizard-generated fields...
   "version":        "1.0.0",
   "readinessLevel": 1,
+  "standardStatus": "<ratified | draft | vendor | research | custom>",
+  "authority":      "<verbatim from the catalog row's Authority column>",
   "keywords":       ["riscv", "<category-tag>", "catalog-seed", "spec-derived"],
   "metadata": {
     "catalogSeed": {
@@ -122,7 +125,7 @@ The wizard generates a baseline manifest. Apply these **mandatory** edits before
 }
 ```
 
-If `keywords` already contains `riscv` from the wizard, do not duplicate.
+`standardStatus` and `authority` MUST come straight from the catalog row — do not improvise. If the agent disagrees with the catalog (e.g. upstream was demoted from "draft" to "abandoned"), it stops and surfaces the discrepancy instead of silently overriding. If `keywords` already contains `riscv` from the wizard, do not duplicate.
 
 ### Step 5 — Author the “What this package is (and is not)” block
 
@@ -245,12 +248,13 @@ NOTES:      <one paragraph; especially: any Support claim that was downgraded,
 
 1. **Never invent encodings.** Omit anything you cannot read directly from upstream.
 2. **Never claim RL > 1** in a catalog-seed run.
-3. **Never publish without a passing `xsil publish --dry-run`.**
-4. **Never publish a slug that already exists** unless authorship is yours.
-5. **Never skip the “What this package is (and is not)” block in the README.**
-6. **Never re-login per row** — `xsil login` is once per campaign.
-7. **Always pin upstream by commit SHA, never by branch.**
-8. **Always update `catalog.md`** in the same git commit that records the result of the row.
+3. **Never lie about `standardStatus`.** Never label a draft / vendor extension as `ratified`. The catalog row is the source of truth — copy it, don't improvise.
+4. **Never publish without a passing `xsil publish --dry-run`.**
+5. **Never publish a slug that already exists** unless authorship is yours.
+6. **Never skip the “What this package is (and is not)” block in the README.**
+7. **Never re-login per row** — `xsil login` is once per campaign.
+8. **Always pin upstream by commit SHA, never by branch.**
+9. **Always update `catalog.md`** in the same git commit that records the result of the row.
 
 ---
 

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db';
 import { refreshWeeklyDownloads } from '../analytics';
+import { STANDARD_STATUS_VALUES, type StandardStatus } from '../lib/standardStatus';
 
 function dayOffset(days: number): string {
   const d = new Date(Date.now() - days * 86_400_000);
@@ -74,6 +75,44 @@ export const getPackageStats = async (req: Request, res: Response) => {
     last30Days: agg30._sum.count ?? 0,
     dailyHistory,
     byVersion,
+  });
+};
+
+// GET /stats/catalog
+//
+// Aggregated counts of published packages, grouped by their honest
+// `standardStatus` classification. Powers the homepage hero ("X ratified RISC-V
+// extensions, Y vendor / draft / research"). Public, cache-friendly.
+export const getCatalogStats = async (_req: Request, res: Response) => {
+  const grouped = await prisma.extension.groupBy({
+    by: ['standardStatus'],
+    _count: { _all: true },
+  });
+
+  const byStatus: Record<StandardStatus, number> = {
+    ratified: 0,
+    draft: 0,
+    vendor: 0,
+    research: 0,
+    custom: 0,
+  };
+  let unclassified = 0;
+  let total = 0;
+  for (const row of grouped) {
+    const n = row._count._all;
+    total += n;
+    if (row.standardStatus === null || row.standardStatus === undefined) {
+      unclassified += n;
+    } else {
+      byStatus[row.standardStatus as StandardStatus] += n;
+    }
+  }
+
+  res.json({
+    total,
+    byStatus,
+    unclassified,
+    statusOrder: STANDARD_STATUS_VALUES,
   });
 };
 

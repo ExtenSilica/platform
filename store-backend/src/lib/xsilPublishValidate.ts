@@ -120,6 +120,14 @@ export interface ManifestJson {
   resolution?: unknown;
   /** Optional evaluation evidence (URLs + optional content hashes). See docs/pre-silicon-bridge-readiness.md */
   evidence?: unknown;
+  /**
+   * Honest classification: ratified | draft | vendor | research | custom.
+   * Optional at validation time (legacy archives and bench-style packages
+   * may omit it); when present it must be one of the recognised values.
+   */
+  standardStatus?: string;
+  /** Free-text spec authority, e.g. "RISC-V International", "T-Head / XuanTie". */
+  authority?: string;
   payloadHash?: string;
   checksums?: { payload?: string; archive?: string };
 }

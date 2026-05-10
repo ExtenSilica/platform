@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/star-rating";
 import { ReviewsSection } from "@/components/reviews-section";
 import { ClaimOwnershipCard } from "@/components/claim-ownership-card";
+import { StandardStatusBadge } from "@/components/standard-status-badge";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -37,6 +38,7 @@ import {
   CheckCircle2,
   XCircle,
   Link2,
+  BadgeCheck,
 } from "lucide-react";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -380,6 +382,24 @@ export default async function PackagePage({
                     icon={<Tag className="h-3.5 w-3.5" />}
                     label="Latest"
                     value={<code className="font-mono">{pkg.latestVersion}</code>}
+                  />
+                )}
+                {(pkg.standardStatus || pkg.authority) && (
+                  <Row
+                    icon={<BadgeCheck className="h-3.5 w-3.5" />}
+                    label="Standard"
+                    value={
+                      <div className="space-y-1">
+                        <StandardStatusBadge
+                          status={pkg.standardStatus ?? null}
+                          authority={null}
+                          variant="compact"
+                        />
+                        {pkg.authority && (
+                          <p className="text-xs text-muted-foreground">{pkg.authority}</p>
+                        )}
+                      </div>
+                    }
                   />
                 )}
                 {latest?.isa && (

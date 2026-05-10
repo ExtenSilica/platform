@@ -14,6 +14,7 @@ import {
   executionIndicatesTests,
 } from "@/lib/xsil-parser";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
+import { StandardStatusBadge } from "@/components/standard-status-badge";
 
 const ISA_KEYWORDS: Record<string, string> = {
   rvv: "RVV",
@@ -81,9 +82,11 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
           )}
           <PackageCapabilityChips level={readinessLevel} badges={maturity.badges} />
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-md border border-border/50 bg-muted/45 px-2 py-0.5 font-mono text-[10px] text-muted-foreground/80">
-              RISC-V extension
-            </span>
+            <StandardStatusBadge
+              status={pkg.standardStatus ?? null}
+              authority={pkg.authority ?? null}
+              variant="compact"
+            />
             {hasSpecificIsa && (
               <span className="inline-flex w-fit items-center gap-1 rounded-full border border-riscv/20 bg-riscv/[0.06] px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-riscv">
                 <Cpu className="h-2.5 w-2.5" strokeWidth={2.25} />

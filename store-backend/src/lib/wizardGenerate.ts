@@ -18,6 +18,13 @@ import * as zlib from 'zlib';
 import * as tar from 'tar-stream';
 import ignore from 'ignore';
 import * as semver from 'semver';
+import {
+  normalizeStandardStatus,
+  STANDARD_STATUS_VALUES,
+  type StandardStatus,
+  AUTHORITY_MAX,
+  AUTHORITY_MIN,
+} from './standardStatus';
 
 /**
  * Same built-in ignore list as `xsilPublishValidate.ts` (`BUILTIN_IGNORE_BLOCK`)
@@ -71,6 +78,16 @@ export interface WizardInput {
   repository: string;
   /** Optional homepage URL (http or https). */
   homepage?: string;
+  /**
+   * Required honest classification: ratified | draft | vendor | research | custom.
+   * Surfaced as `manifest.standardStatus`. See docs/catalog-seed/catalog.md.
+   */
+  standardStatus: StandardStatus;
+  /**
+   * Required free-text spec authority (e.g. "RISC-V International", "T-Head /
+   * XuanTie", "Qualcomm"). Surfaced as `manifest.authority`.
+   */
+  authority: string;
   instructions?: WizardInstruction[];
   targets?: WizardTargetsInput;
 }
@@ -153,6 +170,8 @@ function normalizeWizardInput(raw: WizardInput): {
   isa: string;
   repository: string;
   homepage: string;
+  standardStatus: StandardStatus;
+  authority: string;
   instructions: WizardInstruction[];
   targets: Required<WizardTargetsInput>;
 } {
@@ -190,6 +209,21 @@ function normalizeWizardInput(raw: WizardInput): {
   }
   const repository = ensureHttpsOrEmpty('repository', repositoryRaw);
   const homepage = ensureHttpsOrEmpty('homepage', trim(raw.homepage, URL_MAX) || undefined);
+
+  // Honest classification — both fields are mandatory now.
+  const standardStatus = normalizeStandardStatus(raw.standardStatus);
+  if (standardStatus === null) {
+    throw new WizardInputError(
+      `standardStatus is required and must be one of: ${STANDARD_STATUS_VALUES.join(', ')}.`,
+    );
+  }
+  const authorityRaw = trim(raw.authority, AUTHORITY_MAX);
+  if (!authorityRaw) {
+    throw new WizardInputError('authority is required (e.g. "RISC-V International", "T-Head / XuanTie").');
+  }
+  if (authorityRaw.length < AUTHORITY_MIN) {
+    throw new WizardInputError(`authority must be at least ${AUTHORITY_MIN} character.`);
+  }
 
   const instructionsIn = Array.isArray(raw.instructions) ? raw.instructions : [];
   if (instructionsIn.length > MAX_INSTRUCTIONS) {
@@ -236,7 +270,20 @@ function normalizeWizardInput(raw: WizardInput): {
     llvm: !!targetsRaw.llvm,
   };
 
-  return { slug, version: versionRaw, description, author, license, isa: isaRaw, repository, homepage, instructions, targets };
+  return {
+    slug,
+    version: versionRaw,
+    description,
+    author,
+    license,
+    isa: isaRaw,
+    repository,
+    homepage,
+    standardStatus,
+    authority: authorityRaw,
+    instructions,
+    targets,
+  };
 }
 
 // ── Identifier / encoding helpers ─────────────────────────────────────────────
@@ -345,7 +392,14 @@ If/when you bundle a toolchain inside the package, set \`toolchain.external\` to
 \`false\` in \`manifest.json\` and unpack the toolchain into this directory.
 `;
 
-function readmeTemplate(slug: string, description: string, isa: string, instructions: WizardInstruction[]): string {
+function readmeTemplate(
+  slug: string,
+  description: string,
+  isa: string,
+  standardStatus: StandardStatus,
+  authority: string,
+  instructions: WizardInstruction[],
+): string {
   const insLines = instructions.length === 0
     ? '_No custom instructions declared yet._'
     : instructions
@@ -356,6 +410,8 @@ function readmeTemplate(slug: string, description: string, isa: string, instruct
 ${description}
 
 **ISA:** \`${isa}\`
+**Standard status:** \`${standardStatus}\`
+**Authority:** ${authority}
 
 ## Run
 
@@ -1152,6 +1208,8 @@ function buildManifestObject(input: ReturnType<typeof normalizeWizardInput>): Re
     author: input.author,
     license: input.license,
     isa: input.isa,
+    standardStatus: input.standardStatus,
+    authority: input.authority,
     entry: 'sh sim/run.sh',
     testEntry: 'sh tests/run.sh',
     readme: 'README.md',
@@ -1222,7 +1280,17 @@ export async function generateXsilSkeleton(rawInput: WizardInput): Promise<Gener
   // Build payload files (everything except the root manifest.json).
   const payload: PackageFile[] = [
     { path: '.xsilignore', content: XSILIGNORE },
-    { path: 'README.md', content: readmeTemplate(input.slug, input.description, input.isa, input.instructions) },
+    {
+      path: 'README.md',
+      content: readmeTemplate(
+        input.slug,
+        input.description,
+        input.isa,
+        input.standardStatus,
+        input.authority,
+        input.instructions,
+      ),
+    },
     { path: 'CHANGELOG.md', content: changelogTemplate(input.version) },
     { path: 'LICENSE', content: licenseTemplate(input.license, input.author) },
     { path: 'opcodes.json', content: opcodesJsonTemplate(input.instructions) },

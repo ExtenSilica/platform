@@ -61,6 +61,22 @@ enum OAuthProvider {
   google
 }
 
+/// Honest classification of a package's relationship to the RISC-V standard.
+/// Mirrored in `manifest.standardStatus` and rendered as a badge on the
+/// package detail page. See docs/catalog-seed/catalog.md for the full rubric.
+enum StandardStatus {
+  /// Frozen specification approved by RISC-V International.
+  ratified
+  /// Working draft published under RISC-V International or another standards body.
+  draft
+  /// Custom extension defined and shipped by a commercial vendor.
+  vendor
+  /// Academic / experimental extension.
+  research
+  /// Bespoke / one-off extension that does not fit the above.
+  custom
+}
+
 // ── Organisations ─────────────────────────────────────────────
 
 model Organization {
@@ -116,6 +132,13 @@ model Extension {
   weeklyDownloads      Int                @default(0)
   isDeprecated         Boolean            @default(false)
   deprecationMessage   String? // optional reason / migration hint shown in the banner
+  /// Honest classification: ratified | draft | vendor | research | custom.
+  /// Nullable for legacy packages published before this field existed; new
+  /// publishes (CLI / wizard / catalog-seed) MUST set it explicitly.
+  standardStatus       StandardStatus?
+  /// Free-text spec authority (e.g. "RISC-V International", "T-Head / XuanTie",
+  /// "Qualcomm"). Rendered alongside the StandardStatus badge.
+  authority            String?
   versions             Version[]
   maintainers          Maintainer[]
   reviews              Review[]
@@ -128,6 +151,7 @@ model Extension {
   org   Organization? @relation("ExtensionOrg", fields: [orgId], references: [id], onDelete: SetNull)
 
   @@index([latestReadinessLevel])
+  @@index([standardStatus])
 }
 
 model Maintainer {

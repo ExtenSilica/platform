@@ -22,6 +22,64 @@ export interface RegistryVersion {
   publishedAt: string;
 }
 
+/**
+ * Honest classification of a package's relationship to the RISC-V standard.
+ * Matches the Prisma `StandardStatus` enum and the CLI's `manifest.standardStatus`.
+ */
+export type StandardStatus =
+  | "ratified"
+  | "draft"
+  | "vendor"
+  | "research"
+  | "custom";
+
+export const STANDARD_STATUS_VALUES: StandardStatus[] = [
+  "ratified",
+  "draft",
+  "vendor",
+  "research",
+  "custom",
+];
+
+/** Display metadata for a `StandardStatus`, used in badges, filters, hero copy. */
+export const STANDARD_STATUS_INFO: Record<
+  StandardStatus,
+  { label: string; description: string }
+> = {
+  ratified: {
+    label: "Ratified",
+    description:
+      "Frozen specification approved by RISC-V International. The encoding is locked; future changes go into a separate extension.",
+  },
+  draft: {
+    label: "Draft",
+    description:
+      "Working draft from RISC-V International or another standards body. Not ratified yet — the encoding may still change.",
+  },
+  vendor: {
+    label: "Vendor",
+    description:
+      "Custom extension defined and shipped by a commercial vendor (T-Head, SiFive, Qualcomm, …).",
+  },
+  research: {
+    label: "Research",
+    description:
+      "Academic / experimental extension. Often used in research papers or pre-production prototypes.",
+  },
+  custom: {
+    label: "Custom",
+    description:
+      "Bespoke or one-off extension that does not fit the categories above.",
+  },
+};
+
+export interface CatalogStats {
+  total: number;
+  byStatus: Record<StandardStatus, number>;
+  unclassified: number;
+  statusOrder: StandardStatus[];
+}
+
 export interface RegistryPackage {
   id: number;
   slug: string;
@@ -37,6 +95,10 @@ export interface RegistryPackage {
   license?: string | null;
   repositoryUrl?: string | null;
   homepageUrl?: string | null;
+  /** Honest classification (see StandardStatus). Null for legacy packages. */
+  standardStatus?: StandardStatus | null;
+  /** Free-text spec authority, e.g. "RISC-V International", "T-Head / XuanTie". */
+  authority?: string | null;
   latestVersion?: string | null;
   version?: string;
   totalDownloads: number;

@@ -19,6 +19,12 @@ import {
   isValidSha256,
   normalizeSha256,
 } from '../lib/toolDependencies';
+import {
+  normalizeAuthority,
+  normalizeStandardStatus,
+  STANDARD_STATUS_VALUES,
+  type StandardStatus,
+} from '../lib/standardStatus';
 
 export type ExtensionWithVersions = Extension & {
   versions: Version[];
@@ -165,6 +171,8 @@ export function mapPackage(
     license: ext.license,
     repositoryUrl: ext.repositoryUrl,
     homepageUrl: ext.homepageUrl,
+    standardStatus: ext.standardStatus ?? null,
+    authority: ext.authority ?? null,
     latestVersion: ext.latestVersion ?? latest?.version ?? null,
     totalDownloads: ext.totalDownloads,
     weeklyDownloads: ext.weeklyDownloads,
@@ -238,6 +246,19 @@ export const listPackages = async (req: Request, res: Response) => {
 
   if (levelFilter !== null) {
     where.latestReadinessLevel = levelFilter;
+  }
+
+  // Optional ?standardStatus=ratified|draft|vendor|research|custom (CSV-friendly).
+  // Unknown values are silently ignored; an explicitly empty list still means "no filter".
+  const statusRaw = typeof req.query.standardStatus === 'string' ? req.query.standardStatus : '';
+  if (statusRaw) {
+    const wanted = statusRaw
+      .split(',')
+      .map((s) => normalizeStandardStatus(s))
+      .filter((s): s is StandardStatus => s != null);
+    if (wanted.length > 0) {
+      where.standardStatus = { in: wanted };
+    }
   }
 
   const order = orderRaw === 'asc' ? 'asc' : 'desc';
@@ -401,7 +422,20 @@ export const createPackage = async (req: Request, res: Response) => {
     return;
   }
 
-  const { name, scope, description, shortDescription, longDescription, keywords, license, repositoryUrl, homepageUrl, iconUrl } = req.body as Record<string, string | undefined>;
+  const {
+    name,
+    scope,
+    description,
+    shortDescription,
+    longDescription,
+    keywords,
+    license,
+    repositoryUrl,
+    homepageUrl,
+    iconUrl,
+    standardStatus: standardStatusRaw,
+    authority: authorityRaw,
+  } = req.body as Record<string, string | undefined>;
 
   if (!name?.trim()) {
     res.status(400).json({ error: 'Package name is required.' });
@@ -411,6 +445,18 @@ export const createPackage = async (req: Request, res: Response) => {
     res.status(400).json({ error: 'Package description is required.' });
     return;
   }
+
+  // Honest classification — required for new packages so the registry never
+  // grows opaque "RISC-V extensions" rows. The wizard / CLI / catalog-seed
+  // playbook all set this; only legacy clients will hit this path.
+  const standardStatus = normalizeStandardStatus(standardStatusRaw);
+  if (standardStatusRaw !== undefined && standardStatus === null) {
+    res.status(400).json({
+      error: `standardStatus must be one of: ${STANDARD_STATUS_VALUES.join(', ')}.`,
+    });
+    return;
+  }
+  const authority = normalizeAuthority(authorityRaw);
 
   // Normalise the package name part (no @ or org prefix)
   const pkgName = name
@@ -482,6 +528,8 @@ export const createPackage = async (req: Request, res: Response) => {
         repositoryUrl: repositoryUrl?.trim() || null,
         homepageUrl: homepageUrl?.trim() || null,
         iconUrl: iconUrl?.trim() || null,
+        standardStatus: standardStatus ?? null,
+        authority,
       },
       include: { versions: true },
     });
@@ -588,6 +636,17 @@ export const publishVersion = async (req: Request, res: Response) => {
       mf.resolution && typeof mf.resolution === 'object' && (mf.resolution as Record<string, unknown>).mode
         ? String((mf.resolution as Record<string, unknown>).mode)
         : null;
+
+    // Honest classification — pull from the manifest and reject malformed values.
+    const mfStandardStatus = normalizeStandardStatus(mf.standardStatus);
+    if (mf.standardStatus !== undefined && mfStandardStatus === null) {
+      fs.unlinkSync(file.path);
+      res.status(400).json({
+        error: `manifest.standardStatus must be one of: ${STANDARD_STATUS_VALUES.join(', ')}.`,
+      });
+      return;
+    }
+    const mfAuthority = normalizeAuthority(mf.authority);
     const normalizedResolution = (mfResolution ?? '').trim().toLowerCase();
     const declaredDeps = extractDeclaredToolDependencies(mf as Record<string, unknown>);
 
@@ -691,9 +750,19 @@ export const publishVersion = async (req: Request, res: Response) => {
     });
     const newLatest = computeLatestVersion(allVersions);
 
+    // We only overwrite Extension.standardStatus / .authority when the manifest
+    // carries a valid, non-empty value, so a maintainer's later edits via PATCH
+    // stick across re-publishes that omit the field.
+    const extensionUpdate: Prisma.ExtensionUpdateInput = { latestVersion: newLatest };
+    if (mfStandardStatus !== null) {
+      extensionUpdate.standardStatus = mfStandardStatus;
+    }
+    if (mfAuthority !== null) {
+      extensionUpdate.authority = mfAuthority;
+    }
     await prisma.extension.update({
       where: { id: pkg.id },
-      data: { latestVersion: newLatest },
+      data: extensionUpdate,
     });
 
     await syncExtensionLatestReadiness(pkg.id);
@@ -739,6 +808,7 @@ export const updatePackage = async (req: Request, res: Response) => {
     const {
       description, shortDescription, longDescription, keywords,
       license, repositoryUrl, homepageUrl, iconUrl, isDeprecated, deprecationMessage,
+      standardStatus: standardStatusRaw, authority: authorityRaw,
     } = req.body as Record<string, string | boolean | undefined>;
 
     // Validate deprecationMessage length
@@ -746,6 +816,27 @@ export const updatePackage = async (req: Request, res: Response) => {
       res.status(400).json({ error: 'Deprecation message must be 500 characters or fewer.' });
       return;
     }
+
+    // Honest classification — accept null/empty (clear) and recognised values only.
+    let standardStatusUpdate: { standardStatus: StandardStatus | null } | null = null;
+    if (standardStatusRaw !== undefined) {
+      if (standardStatusRaw === null || standardStatusRaw === '') {
+        standardStatusUpdate = { standardStatus: null };
+      } else {
+        const normalized = normalizeStandardStatus(standardStatusRaw);
+        if (normalized === null) {
+          res.status(400).json({
+            error: `standardStatus must be one of: ${STANDARD_STATUS_VALUES.join(', ')}.`,
+          });
+          return;
+        }
+        standardStatusUpdate = { standardStatus: normalized };
+      }
+    }
+    const authorityUpdate =
+      authorityRaw === undefined
+        ? null
+        : { authority: normalizeAuthority(authorityRaw) };
 
     const updated = await prisma.extension.update({
       where: { slug: name },
@@ -768,6 +859,8 @@ export const updatePackage = async (req: Request, res: Response) => {
             ? deprecationMessage.trim()
             : null,
         }),
+        ...(standardStatusUpdate ?? {}),
+        ...(authorityUpdate ?? {}),
       },
       include: { versions: { orderBy: { publishedAt: 'desc' } } },
     });

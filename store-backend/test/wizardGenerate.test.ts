@@ -22,6 +22,8 @@ function extractToTmp(buffer: Buffer): string {
 
 /** Minimum-viable input for the canonical wizard generator. */
 const REPO = 'https://github.com/tester/wizard-tests';
+const STATUS = 'custom' as const;
+const AUTHORITY = 'Wizard Test Authority';
 
 describe('generateXsilSkeleton', () => {
   it('produces a valid .xsil that passes the publish-time validator', async () => {
@@ -32,6 +34,8 @@ describe('generateXsilSkeleton', () => {
       isa: 'RV64GC',
       version: '0.1.0',
       repository: REPO,
+      standardStatus: STATUS,
+      authority: AUTHORITY,
       instructions: [
         {
           mnemonic: 'x.add',
@@ -61,6 +65,8 @@ describe('generateXsilSkeleton', () => {
       name: 'demo-ext',
       description: 'Hash-consistency check.',
       repository: REPO,
+      standardStatus: STATUS,
+      authority: AUTHORITY,
     });
 
     const dir = extractToTmp(r.buffer);
@@ -87,6 +93,8 @@ describe('generateXsilSkeleton', () => {
       name: 'tree-ext',
       description: 'Make sure every wizard file is present.',
       repository: REPO,
+      standardStatus: STATUS,
+      authority: AUTHORITY,
       instructions: [
         { mnemonic: 'x.add', format: 'R', opcode: 'custom-0', funct3: '0b000', funct7: '0b0000000', operands: ['rd', 'rs1', 'rs2'], summary: 'rd = rs1 + rs2' },
       ],
@@ -133,6 +141,8 @@ describe('generateXsilSkeleton', () => {
       name: 'macro-ext',
       description: 'Headers expose .insn-based macros.',
       repository: REPO,
+      standardStatus: STATUS,
+      authority: AUTHORITY,
       instructions: [
         { mnemonic: 'x.alpha', format: 'R', opcode: 'custom-0', funct3: '0b001', funct7: '0b0000010', operands: ['rd', 'rs1', 'rs2'] },
         { mnemonic: 'x.beta',  format: 'I', opcode: 'custom-1', funct3: '0b010' },
@@ -157,6 +167,8 @@ describe('generateXsilSkeleton', () => {
       name: 'spike-ext',
       description: 'Spike skeleton smoke check.',
       repository: REPO,
+      standardStatus: STATUS,
+      authority: AUTHORITY,
       instructions: [
         { mnemonic: 'x.add', format: 'R', opcode: 'custom-0', funct3: '0b000', funct7: '0b0000000', operands: ['rd', 'rs1', 'rs2'] },
       ],
@@ -185,6 +197,8 @@ describe('generateXsilSkeleton', () => {
       repository: REPO,
       license: 'MIT',
       author: 'Felipe Pedroni',
+      standardStatus: STATUS,
+      authority: AUTHORITY,
     });
     const dir = extractToTmp(r.buffer);
     try {
@@ -201,6 +215,8 @@ describe('generateXsilSkeleton', () => {
       name: 'op-ext',
       description: 'Instructions land in opcodes.json.',
       repository: REPO,
+      standardStatus: STATUS,
+      authority: AUTHORITY,
       instructions: [
         { mnemonic: 'x.alpha', format: 'I', operands: ['rd', 'rs1', 'imm'] },
         { mnemonic: 'x.beta', format: 'R' },
@@ -220,16 +236,16 @@ describe('generateXsilSkeleton', () => {
 
   it('rejects reserved slugs', async () => {
     await expect(
-      generateXsilSkeleton({ name: 'extensilica', description: 'should fail', repository: REPO }),
+      generateXsilSkeleton({ name: 'extensilica', description: 'should fail', repository: REPO, standardStatus: STATUS, authority: AUTHORITY }),
     ).rejects.toBeInstanceOf(WizardInputError);
     await expect(
-      generateXsilSkeleton({ name: 'admin', description: 'should fail', repository: REPO }),
+      generateXsilSkeleton({ name: 'admin', description: 'should fail', repository: REPO, standardStatus: STATUS, authority: AUTHORITY }),
     ).rejects.toBeInstanceOf(WizardInputError);
   });
 
   it('rejects invalid slug characters', async () => {
     await expect(
-      generateXsilSkeleton({ name: 'Bad Name!', description: 'no spaces', repository: REPO }),
+      generateXsilSkeleton({ name: 'Bad Name!', description: 'no spaces', repository: REPO, standardStatus: STATUS, authority: AUTHORITY }),
     ).rejects.toBeInstanceOf(WizardInputError);
   });
 
@@ -240,6 +256,8 @@ describe('generateXsilSkeleton', () => {
         description: 'd',
         version: 'one.two.three',
         repository: REPO,
+        standardStatus: STATUS,
+        authority: AUTHORITY,
       }),
     ).rejects.toBeInstanceOf(WizardInputError);
   });
@@ -250,6 +268,8 @@ describe('generateXsilSkeleton', () => {
         name: 'good-name',
         description: 'd',
         repository: REPO,
+        standardStatus: STATUS,
+        authority: AUTHORITY,
         instructions: [
           // @ts-expect-error intentionally invalid
           { mnemonic: 'x.bad', format: 'Z' },
@@ -260,6 +280,7 @@ describe('generateXsilSkeleton', () => {
 
   it('requires a repository URL', async () => {
     await expect(
+      // @ts-expect-error missing required fields on purpose
       generateXsilSkeleton({ name: 'good-name', description: 'no repo' }),
     ).rejects.toBeInstanceOf(WizardInputError);
   });
@@ -270,6 +291,8 @@ describe('generateXsilSkeleton', () => {
         name: 'good-name',
         description: 'bad scheme',
         repository: 'ftp://example.com/repo',
+        standardStatus: STATUS,
+        authority: AUTHORITY,
       }),
     ).rejects.toBeInstanceOf(WizardInputError);
   });
@@ -279,6 +302,8 @@ describe('generateXsilSkeleton', () => {
       name: 'with-repo',
       description: 'Has a repo url.',
       repository: 'https://gitlab.com/me/with-repo',
+      standardStatus: STATUS,
+      authority: AUTHORITY,
     });
     const dir = extractToTmp(r.buffer);
     try {
@@ -286,6 +311,64 @@ describe('generateXsilSkeleton', () => {
         fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'),
       );
       expect(manifest.repository).toBe('https://gitlab.com/me/with-repo');
+    } finally {
+      fs.rmSync(path.dirname(dir), { recursive: true, force: true });
+    }
+  });
+
+  it('requires standardStatus and authority', async () => {
+    await expect(
+      // @ts-expect-error missing standardStatus on purpose
+      generateXsilSkeleton({
+        name: 'good-name',
+        description: 'd',
+        repository: REPO,
+        authority: AUTHORITY,
+      }),
+    ).rejects.toBeInstanceOf(WizardInputError);
+    await expect(
+      // @ts-expect-error missing authority on purpose
+      generateXsilSkeleton({
+        name: 'good-name',
+        description: 'd',
+        repository: REPO,
+        standardStatus: STATUS,
+      }),
+    ).rejects.toBeInstanceOf(WizardInputError);
+  });
+
+  it('rejects unknown standardStatus values', async () => {
+    await expect(
+      generateXsilSkeleton({
+        name: 'good-name',
+        description: 'd',
+        repository: REPO,
+        // @ts-expect-error intentionally invalid status
+        standardStatus: 'official',
+        authority: AUTHORITY,
+      }),
+    ).rejects.toBeInstanceOf(WizardInputError);
+  });
+
+  it('persists standardStatus + authority in manifest.json', async () => {
+    const r = await generateXsilSkeleton({
+      name: 'classed-ext',
+      description: 'Honest classification surfaces in the manifest.',
+      repository: REPO,
+      standardStatus: 'ratified',
+      authority: 'RISC-V International',
+    });
+    const dir = extractToTmp(r.buffer);
+    try {
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'),
+      );
+      expect(manifest.standardStatus).toBe('ratified');
+      expect(manifest.authority).toBe('RISC-V International');
+
+      const readme = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
+      expect(readme).toContain('**Standard status:** `ratified`');
+      expect(readme).toContain('**Authority:** RISC-V International');
     } finally {
       fs.rmSync(path.dirname(dir), { recursive: true, force: true });
     }

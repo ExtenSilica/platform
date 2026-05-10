@@ -10,6 +10,8 @@ import type {
   OwnershipRequest,
   OwnershipRequestStatus,
   OwnershipEligibility,
+  StandardStatus,
+  CatalogStats,
 } from "@/lib/types";
 import type { AuthUser } from "@/lib/auth";
 
@@ -282,6 +284,8 @@ export type ListPackagesQuery = {
   org?: string;
   /** Readiness level 1–5 (matches package detail ladder). */
   level?: string | number;
+  /** Honest classification — comma-separated when filtering by multiple. */
+  standardStatus?: StandardStatus | StandardStatus[] | string;
   sort?: "created" | "downloads";
   order?: "asc" | "desc";
   limit?: number;
@@ -308,12 +312,23 @@ export async function fetchPackages(
   if (opts.level !== undefined && opts.level !== "" && opts.level !== null) {
     qs.set("level", String(opts.level).trim());
   }
+  if (opts.standardStatus) {
+    const v = Array.isArray(opts.standardStatus)
+      ? opts.standardStatus.join(",")
+      : String(opts.standardStatus);
+    if (v.trim()) qs.set("standardStatus", v.trim());
+  }
   if (opts.sort === "downloads") qs.set("sort", "downloads");
   else if (opts.sort === "created") qs.set("sort", "created");
   if (opts.order) qs.set("order", opts.order);
   if (opts.limit != null && opts.limit > 0) qs.set("limit", String(opts.limit));
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return apiFetch<RegistryPackage[]>(`/packages${suffix}`);
+}
+
+/** Aggregated counts for the homepage hero ("X ratified + Y vendor + …"). */
+export async function apiCatalogStats(): Promise<CatalogStats> {
+  return apiFetch<CatalogStats>(`/stats/catalog`);
 }
 
 export async function fetchPackage(
@@ -628,6 +643,13 @@ export interface WizardInput {
   /** Required source URL (http or https). */
   repository: string;
   homepage?: string;
+  /**
+   * Required honest classification: ratified | draft | vendor | research | custom.
+   * Mirrors `manifest.standardStatus` and the registry's StandardStatus enum.
+   */
+  standardStatus: StandardStatus;
+  /** Required free-text spec authority, e.g. "RISC-V International". */
+  authority: string;
   instructions?: WizardInstruction[];
   targets?: { spike?: boolean; qemu?: boolean; binutils?: boolean; llvm?: boolean };
 }

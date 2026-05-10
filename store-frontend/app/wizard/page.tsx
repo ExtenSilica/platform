@@ -10,6 +10,11 @@ import {
   type WizardInstructionFormat,
   type WizardInput,
 } from "@/lib/api";
+import {
+  STANDARD_STATUS_INFO,
+  STANDARD_STATUS_VALUES,
+  type StandardStatus,
+} from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -138,6 +143,8 @@ export default function WizardPage() {
   const [isa, setIsa] = useState("RV64GC");
   const [repository, setRepository] = useState("");
   const [homepage, setHomepage] = useState("");
+  const [standardStatus, setStandardStatus] = useState<StandardStatus>("custom");
+  const [authority, setAuthority] = useState("");
   const [instructions, setInstructions] = useState<InstructionDraft[]>([]);
   const [targetSpike] = useState(true); // always on, kept as constant
   const [targetQemu, setTargetQemu] = useState(false);
@@ -179,13 +186,17 @@ export default function WizardPage() {
         return false;
       }
     })();
+  const authorityTrimmed = authority.trim();
+  const authorityOk =
+    authorityTrimmed.length >= 2 && authorityTrimmed.length <= 200;
   const formValid =
     slugValid &&
     semverOk &&
     description.trim().length > 0 &&
     isa.length > 0 &&
     repositoryOk &&
-    homepageOk;
+    homepageOk &&
+    authorityOk;
 
   const manifestPreview = useMemo(() => {
     const targetsObj: Record<string, unknown> = {
@@ -221,6 +232,8 @@ export default function WizardPage() {
       targets: targetsObj,
       repository: repositoryTrimmed || `https://github.com/${author || user?.username || "you"}/${slug || "your-extension"}`,
       ...(homepageTrimmed ? { homepage: homepageTrimmed } : {}),
+      standardStatus,
+      authority: authorityTrimmed || "<set authority>",
     };
   }, [
     slug,
@@ -236,6 +249,8 @@ export default function WizardPage() {
     targetLlvm,
     repositoryTrimmed,
     homepageTrimmed,
+    standardStatus,
+    authorityTrimmed,
   ]);
 
   const fileTreePreview = useMemo(() => {
@@ -295,6 +310,8 @@ export default function WizardPage() {
         isa,
         repository: repositoryTrimmed,
         homepage: homepageTrimmed || undefined,
+        standardStatus,
+        authority: authorityTrimmed,
         instructions: instructions.map((ins) => ({
           mnemonic: ins.mnemonic.trim(),
           format: ins.format,
@@ -486,6 +503,71 @@ export default function WizardPage() {
                   placeholder="https://example.com"
                   value={homepage}
                   onChange={(e) => setHomepage(e.target.value)}
+                />
+              </Field>
+            </div>
+
+            <div className="rounded-md border border-amber-200/60 bg-amber-50/50 p-4 text-xs leading-relaxed text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <p className="font-semibold">Honest classification (required)</p>
+              <p className="mt-1 opacity-90">
+                Tell the registry where this extension stands relative to the
+                RISC-V standard. We display it on the package page and use it to
+                group the catalog. Don&apos;t mark something <em>ratified</em>{" "}
+                unless RISC-V International has actually frozen the spec.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field
+                label="Standard status"
+                htmlFor="wiz-status"
+                required
+                hint={STANDARD_STATUS_INFO[standardStatus].description}
+              >
+                <select
+                  id="wiz-status"
+                  value={standardStatus}
+                  onChange={(e) => {
+                    const next = e.target.value as StandardStatus;
+                    setStandardStatus(next);
+                    if (next === "ratified" && !authority.trim()) {
+                      setAuthority("RISC-V International");
+                    }
+                  }}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {STANDARD_STATUS_VALUES.map((s) => (
+                    <option key={s} value={s}>
+                      {STANDARD_STATUS_INFO[s].label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field
+                label="Authority"
+                htmlFor="wiz-authority"
+                required
+                hint='Who defines the spec? e.g. "RISC-V International", "T-Head / XuanTie", "University of Michigan".'
+                error={
+                  authorityTrimmed.length > 0 && !authorityOk
+                    ? "Authority must be 2–200 characters."
+                    : undefined
+                }
+              >
+                <Input
+                  id="wiz-authority"
+                  type="text"
+                  maxLength={200}
+                  placeholder={
+                    standardStatus === "ratified"
+                      ? "RISC-V International"
+                      : standardStatus === "vendor"
+                        ? "T-Head / XuanTie"
+                        : "University / company / individual"
+                  }
+                  value={authority}
+                  onChange={(e) => setAuthority(e.target.value)}
+                  required
                 />
               </Field>
             </div>

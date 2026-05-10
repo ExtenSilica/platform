@@ -1,15 +1,31 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { RegistryPackage } from "@/lib/types";
+import {
+  RegistryPackage,
+  STANDARD_STATUS_INFO,
+  STANDARD_STATUS_VALUES,
+  type StandardStatus,
+} from "@/lib/types";
 import { fetchPackages } from "@/lib/api";
 import { PackageCard } from "@/components/package-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { RefreshCcw, WifiOff, SlidersHorizontal } from "lucide-react";
+
+function parseStatuses(raw: string): StandardStatus[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter((s): s is StandardStatus =>
+      (STANDARD_STATUS_VALUES as string[]).includes(s),
+    );
+}
 
 function CardSkeleton() {
   return <div className="h-44 animate-pulse rounded-lg border bg-muted/40" />;
@@ -25,8 +41,14 @@ export function SearchResults() {
   const author = searchParams.get("author") ?? "";
   const org = searchParams.get("org") ?? "";
   const level = searchParams.get("level") ?? "";
+  const standardStatusRaw = searchParams.get("standardStatus") ?? "";
   const sort = searchParams.get("sort") ?? "created";
   const order = searchParams.get("order") ?? "desc";
+
+  const activeStatuses = useMemo(
+    () => parseStatuses(standardStatusRaw),
+    [standardStatusRaw],
+  );
 
   const [packages, setPackages] = useState<RegistryPackage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +63,7 @@ export function SearchResults() {
         author: author || undefined,
         org: org || undefined,
         level: level || undefined,
+        standardStatus: activeStatuses.length ? activeStatuses : undefined,
         sort: sort === "downloads" ? "downloads" : "created",
         order: order === "asc" ? "asc" : "desc",
       });
@@ -51,7 +74,7 @@ export function SearchResults() {
     } finally {
       setLoading(false);
     }
-  }, [query, author, org, level, sort, order]);
+  }, [query, author, org, level, activeStatuses, sort, order]);
 
   useEffect(() => {
     load();
@@ -72,16 +95,69 @@ export function SearchResults() {
     if (au) params.set("author", au);
     if (og) params.set("org", og);
     if (lv && lv !== "any") params.set("level", lv);
+    if (activeStatuses.length) {
+      params.set("standardStatus", activeStatuses.join(","));
+    }
     if (st === "downloads" || st === "created") params.set("sort", st);
     if (ord === "asc" || ord === "desc") params.set("order", ord);
 
     router.replace(`/search?${params.toString()}`);
   }
 
-  const hasStructuredFilters = Boolean(author || org || level);
+  function toggleStatus(s: StandardStatus) {
+    const next = activeStatuses.includes(s)
+      ? activeStatuses.filter((x) => x !== s)
+      : [...activeStatuses, s];
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (next.length) params.set("standardStatus", next.join(","));
+    else params.delete("standardStatus");
+    router.replace(`/search${params.toString() ? `?${params.toString()}` : ""}`);
+  }
+
+  const hasStructuredFilters = Boolean(
+    author || org || level || activeStatuses.length,
+  );
 
   return (
     <div className="container max-w-6xl px-4 py-10">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground">
+          Standard:
+        </span>
+        {STANDARD_STATUS_VALUES.map((s) => {
+          const active = activeStatuses.includes(s);
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => toggleStatus(s)}
+              title={STANDARD_STATUS_INFO[s].description}
+              className={cn(
+                "rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors",
+                active
+                  ? "border-foreground/40 bg-foreground/10 text-foreground"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted/40",
+              )}
+            >
+              {STANDARD_STATUS_INFO[s].label}
+            </button>
+          );
+        })}
+        {activeStatuses.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.delete("standardStatus");
+              router.replace(`/search${params.toString() ? `?${params.toString()}` : ""}`);
+            }}
+            className="ml-1 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+          >
+            clear
+          </button>
+        )}
+      </div>
       <form
         key={spKey}
         onSubmit={handleSubmit}
@@ -216,6 +292,8 @@ export function SearchResults() {
                     author && `Author: ${author}`,
                     org && `Org: @${org}`,
                     level && `RL${level}`,
+                    activeStatuses.length &&
+                      `Status: ${activeStatuses.map((s) => STANDARD_STATUS_INFO[s].label).join(", ")}`,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
