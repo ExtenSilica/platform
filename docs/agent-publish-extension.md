@@ -1,8 +1,10 @@
-# Agent Publishing Procedure — `.xsil` packages
+# Agent Publishing Procedure — `.xsil` packages (RL ≥ 2, reproducible)
 
 **Status:** Canonical playbook (May 2026)
 **Audience:** An autonomous coding agent (e.g. Claude / Codex / Cursor) that has shell, filesystem, and internet access.
 **Goal:** Take **one** row from a catalog of RISC-V extensions and produce a fully reproducible `.xsil` package, prove it runs and passes its tests with the public `xsil` CLI, and publish it (when explicitly authorized).
+
+> **Looking for the lightweight catalog-seed variant?** If the goal is to seed the registry with **RL 1 spec-derived scaffolds** (no working simulator, no pinned toolchain — just extracted opcodes + skeleton), use **[`catalog-seed/agent-prompt.md`](./catalog-seed/agent-prompt.md)** instead. It runs row by row across the 91 rows in [`catalog-seed/catalog.md`](./catalog-seed/catalog.md). This document is the **upgrade path** for a maintainer (or a follow-up agent run) that wants to take a seeded scaffold to RL ≥ 2.
 
 This replaces the ad-hoc prompt that was used to publish `riscv-zbkb v1.0.0`. It folds in everything that has changed since:
 
@@ -336,6 +338,7 @@ If the agent does not see that, it stops at STEP 5 and surfaces the dry-run outp
 
 ## Cross-references
 
+- Catalog-seed variant (RL 1 scaffolds): [`catalog-seed/agent-prompt.md`](./catalog-seed/agent-prompt.md), with the 91-row tracker in [`catalog-seed/catalog.md`](./catalog-seed/catalog.md).
 - Format spec: [`spec/xsil.md`](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) (v0.2)
 - Reference example: [`examples/rvx-demo`](https://github.com/ExtenSilica/xsil/tree/main/examples/rvx-demo)
 - Backend publishing flow: [`publishing-flow-v3.md`](./publishing-flow-v3.md)
