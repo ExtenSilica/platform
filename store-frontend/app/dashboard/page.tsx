@@ -54,6 +54,7 @@ import {
   CheckCircle,
   XCircle,
   Undo2,
+  KeyRound,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
@@ -496,6 +497,12 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link href="/dashboard/tokens">
+            <Button variant="outline" className="gap-2" size="sm">
+              <KeyRound className="h-4 w-4" />
+              Tokens
+            </Button>
+          </Link>
           {user.isPlatformAdmin && (
             <Link href="/dashboard/admin">
               <Button variant="outline" className="gap-2" size="sm">

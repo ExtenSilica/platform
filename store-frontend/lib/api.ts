@@ -253,6 +253,38 @@ export async function apiUploadAvatar(
   return { user };
 }
 
+/* ─── API tokens (per-user, multi-token) ───────────────────────────────── */
+
+/** Public shape of an ApiToken row — never includes the hash or raw token. */
+export interface ApiTokenRow {
+  id: number;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+}
+
+export async function apiListMyTokens(token: string): Promise<ApiTokenRow[]> {
+  const data = await apiFetch<{ tokens: ApiTokenRow[] }>("/auth/me/tokens", token);
+  return data.tokens;
+}
+
+export async function apiCreateMyToken(
+  token: string,
+  name: string,
+): Promise<{ token: string; apiToken: ApiTokenRow }> {
+  return apiWrite<{ token: string; apiToken: ApiTokenRow }>(
+    "POST",
+    "/auth/me/tokens",
+    token,
+    { name },
+  );
+}
+
+export async function apiRevokeMyToken(token: string, id: number): Promise<void> {
+  await apiWrite("DELETE", `/auth/me/tokens/${id}`, token);
+}
+
 export async function apiForgotPassword(email: string): Promise<{ ok: boolean; message: string }> {
   const res = await fetch(`${API_BASE}/auth/forgot-password`, {
     method: "POST",
