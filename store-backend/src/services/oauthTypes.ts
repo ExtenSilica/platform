@@ -16,5 +16,5 @@ export type OAuthCanonicalIdentity = {
 };
 
 export type OAuthSignInResult =
-  | { ok: true; user: User }
+  | { ok: true; user: User; token: string }
   | { ok: false; error: "email_exists" | "server_error" | "invalid_identity" };

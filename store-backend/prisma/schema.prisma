@@ -16,7 +16,6 @@ model User {
   username                   String    @unique
   email                      String    @unique
   passwordHash               String
-  apiToken                   String?   @unique
   /// Set when the user proves control of `email` (verify link or OAuth sign-up).
   emailVerifiedAt            DateTime?
   /// SHA-256 hex of the raw token emailed for verification; cleared after success.
@@ -36,6 +35,31 @@ model User {
   toolArtifacts       ToolArtifact[]
   ownershipRequests   OwnershipRequest[]   @relation("OwnershipRequester")
   ownershipDecisions  OwnershipRequest[]   @relation("OwnershipDecider")
+  apiTokens           ApiToken[]
+}
+
+/// Named API credential. Each user may hold N independent tokens (web sessions,
+/// CLI installs, CI bots…). The raw token is only ever shown to the client at
+/// creation time; the server stores `sha256(raw)` so a database leak does not
+/// expose credentials. Revocation is per-row, never global on login.
+model ApiToken {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  /// Human label shown in `/dashboard/tokens` (e.g. "Web session — Firefox",
+  /// "xsil-cli @ felipe-precision", "catalog-seed-bot"). 1–80 chars.
+  name       String
+  /// Lowercase hex SHA-256 of the raw 64-char token. Unique across all users.
+  tokenHash  String    @unique
+  /// Bumped by the auth middleware on every successful request (fire-and-forget).
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  /// Set when the user (or an admin) revokes the token. Revoked tokens are
+  /// kept for audit but rejected by the auth middleware.
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// External identity from GitHub or Google OAuth (see docs/oauth-data-model.md).

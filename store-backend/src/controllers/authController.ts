@@ -8,6 +8,12 @@ import { sendPasswordResetEmail, sendVerifyEmailAddress } from '../mailer';
 import { getOAuthProviderSummaryForUser } from '../services/oauthProviderSummary';
 import { passwordPolicyError } from '../passwordPolicy';
 import { isPlatformAdminUser } from '../lib/platformAdmin';
+import {
+  createApiToken,
+  generateRawToken,
+  revokeApiTokenById,
+  webSessionNameFromUserAgent,
+} from '../lib/apiTokens';
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -22,8 +28,13 @@ const BCRYPT_ROUNDS = 12;
 // Characters allowed in usernames: lowercase letters, digits, hyphens, underscores.
 const USERNAME_RE = /^[a-z0-9_-]{2,32}$/;
 
+/**
+ * Generate a raw 64-char hex token. Kept as a thin re-export so legacy callers
+ * (e.g. the password-reset and email-verify flows, which need their own one-shot
+ * tokens unrelated to ApiToken) don't have to import from two places.
+ */
 export function generateToken(): string {
-  return crypto.randomBytes(32).toString('hex');
+  return generateRawToken();
 }
 
 function authFlags(user: { id: number; email: string }) {
@@ -118,7 +129,6 @@ export async function register(req: Request, res: Response): Promise<void> {
         username: username.toLowerCase(),
         email: email.toLowerCase(),
         passwordHash,
-        apiToken: null,
         emailVerifiedAt: null,
         emailVerificationTokenHash,
         emailVerificationExpires,
@@ -149,12 +159,21 @@ export async function register(req: Request, res: Response): Promise<void> {
 
 /**
  * POST /auth/login
- * Body: { email, password }
+ * Body: { email, password, name? } — `name` optionally labels the new token
+ *       (e.g. "xsil-cli @ felipe-precision"). Defaults to a Web session label
+ *       derived from the User-Agent header.
  * Returns: { token, user }
- * Generates a fresh token on every successful login.
+ *
+ * Creates a *new* ApiToken row. Existing tokens for this user are NOT touched —
+ * logging in on a phone does not invalidate the laptop session. Use the
+ * `/dashboard/tokens` UI or `DELETE /auth/me/tokens/:id` to revoke individually.
  */
 export async function login(req: Request, res: Response): Promise<void> {
-  const { email, password } = req.body ?? {};
+  const { email, password, name } = (req.body ?? {}) as {
+    email?: string;
+    password?: string;
+    name?: string;
+  };
 
   if (!email || !password) {
     res.status(400).json({ error: 'email and password are required.' });
@@ -181,13 +200,13 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const apiToken = generateToken();
-    const updated = await prisma.user.update({
-      where: { id: user.id },
-      data: { apiToken },
-    });
+    const tokenName =
+      typeof name === 'string' && name.trim().length > 0
+        ? name.trim().slice(0, 80)
+        : webSessionNameFromUserAgent(req.headers['user-agent']);
+    const { rawToken } = await createApiToken({ userId: user.id, name: tokenName });
 
-    res.json({ token: apiToken, user: sanitizeUser(updated), ...authFlags(updated) });
+    res.json({ token: rawToken, user: sanitizeUser(user), ...authFlags(user) });
   } catch (err) {
     console.error('[auth/login]', err);
     res.status(500).json({ error: 'Login failed. Please try again.' });
@@ -197,13 +216,19 @@ export async function login(req: Request, res: Response): Promise<void> {
 /**
  * POST /auth/logout
  * Requires: Authorization: Bearer <token>
- * Clears the API token so the credential is immediately invalidated.
+ * Revokes ONLY the token that authenticated this request — other sessions for
+ * the same user keep working. Use `/dashboard/tokens` or
+ * `DELETE /auth/me/tokens/:id` to manage the rest.
  */
 export async function logout(req: Request, res: Response): Promise<void> {
-  // req.user is attached by the authenticate middleware; requireAuth ensures it exists.
-  const userId = req.user!.id;
+  const tokenId = req.apiTokenId;
+  if (tokenId === undefined) {
+    // Defensive — middleware order should guarantee this is set.
+    res.json({ ok: true });
+    return;
+  }
   try {
-    await prisma.user.update({ where: { id: userId }, data: { apiToken: null } });
+    await revokeApiTokenById(tokenId);
     res.json({ ok: true });
   } catch (err) {
     console.error('[auth/logout]', err);
@@ -226,12 +251,15 @@ export async function me(req: Request, res: Response): Promise<void> {
  * PATCH /auth/me/password
  * Requires: Authorization: Bearer <token>
  * Body: { currentPassword, newPassword }
- * Verifies the current password, then replaces the hash and rotates the API
- * token (all other sessions are immediately invalidated). Returns the new token
- * so the calling client can update its stored credential without logging out.
+ *
+ * Verifies the current password, replaces the hash, and revokes every OTHER
+ * ApiToken on this account (the current token survives so the calling client
+ * is not logged out). Returns the still-valid current token so the client can
+ * keep using it.
  */
 export async function changePassword(req: Request, res: Response): Promise<void> {
   const userId = req.user!.id;
+  const currentTokenId = req.apiTokenId;
   const { currentPassword, newPassword } = req.body ?? {};
 
   if (!currentPassword || !newPassword) {
@@ -264,18 +292,29 @@ export async function changePassword(req: Request, res: Response): Promise<void>
       return;
     }
 
-    const [newHash, newToken] = await Promise.all([
-      bcrypt.hash(newPassword, BCRYPT_ROUNDS),
-      Promise.resolve(generateToken()),
+    const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } }),
+      // Revoke every token EXCEPT the one the caller is using right now, so
+      // the dashboard stays signed in but every other device is forced out.
+      prisma.apiToken.updateMany({
+        where: {
+          userId,
+          revokedAt: null,
+          ...(currentTokenId !== undefined ? { id: { not: currentTokenId } } : {}),
+        },
+        data: { revokedAt: new Date() },
+      }),
     ]);
 
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash: newHash, apiToken: newToken },
-    });
+    // The client's existing bearer is still valid; surfacing it preserves the
+    // historical response shape (`{ token, user, isPlatformAdmin }`).
+    const authHeader = req.headers.authorization;
+    const currentRawToken =
+      authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
 
-    // Return the new token so the client can swap it without logging out.
-    res.json({ token: newToken, user: sanitizeUser(updated), ...authFlags(updated) });
+    res.json({ token: currentRawToken, user: sanitizeUser(user), ...authFlags(user) });
   } catch (err) {
     console.error('[auth/changePassword]', err);
     res.status(500).json({ error: 'Password change failed. Please try again.' });
@@ -430,12 +469,11 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const [newHash, newApiToken] = await Promise.all([
-      bcrypt.hash(newPassword, BCRYPT_ROUNDS),
-      Promise.resolve(generateToken()),
-    ]);
+    const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
-    // Mark token used and update credentials atomically.
+    // Mark token used + update credentials + revoke every live ApiToken for
+    // this user, atomically. The credential may have been compromised — every
+    // existing session has to die.
     await prisma.$transaction([
       prisma.passwordResetToken.update({
         where: { tokenHash },
@@ -445,11 +483,14 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
         where: { id: record.userId },
         data: {
           passwordHash: newHash,
-          apiToken: newApiToken,
           emailVerifiedAt: new Date(),
           emailVerificationTokenHash: null,
           emailVerificationExpires: null,
         },
+      }),
+      prisma.apiToken.updateMany({
+        where: { userId: record.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
       }),
     ]);
 
@@ -486,18 +527,21 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const apiToken = generateToken();
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: {
         emailVerifiedAt: new Date(),
         emailVerificationTokenHash: null,
         emailVerificationExpires: null,
-        apiToken,
       },
     });
 
-    res.json({ token: apiToken, user: sanitizeUser(updated), ...authFlags(updated) });
+    // First sign-in after verifying email — mint a fresh ApiToken so the user
+    // is logged in seamlessly without having to enter their password again.
+    const tokenName = webSessionNameFromUserAgent(req.headers['user-agent']);
+    const { rawToken } = await createApiToken({ userId: updated.id, name: tokenName });
+
+    res.json({ token: rawToken, user: sanitizeUser(updated), ...authFlags(updated) });
   } catch (err) {
     console.error('[auth/verifyEmail]', err);
     res.status(500).json({ error: 'Email verification failed. Please try again.' });

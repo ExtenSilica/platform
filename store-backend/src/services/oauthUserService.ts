@@ -2,7 +2,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { OAuthProvider, Prisma, type User } from "@prisma/client";
 import { prisma } from "../db";
-import { generateToken } from "../controllers/authController";
+import { createApiToken } from "../lib/apiTokens";
 import { validateAndNormalizeOAuthIdentity } from "./oauthIdentityValidation";
 import type { OAuthCanonicalIdentity, OAuthSignInResult } from "./oauthTypes";
 
@@ -37,7 +37,21 @@ export async function randomOAuthOnlyPasswordHash(): Promise<string> {
   return bcrypt.hash(raw, BCRYPT_ROUNDS);
 }
 
-async function rotateTokenAndSyncOAuthAccount(params: {
+/**
+ * Default token name used for OAuth-originated sessions. Distinct from the
+ * password-login path's User-Agent–derived name so the dashboard can show the
+ * user *how* a session was created.
+ */
+function oauthSessionName(provider: OAuthProvider): string {
+  return provider === OAuthProvider.github ? "GitHub sign-in" : "Google sign-in";
+}
+
+/**
+ * Refresh the `OAuthAccount` row with the freshest profile fields from the
+ * provider so the dashboard never drifts. Optionally bumps `User.avatarUrl`
+ * the first time the user has no avatar of their own.
+ */
+async function syncOAuthProfile(params: {
   user: User;
   provider: OAuthProvider;
   providerAccountId: string;
@@ -46,14 +60,13 @@ async function rotateTokenAndSyncOAuthAccount(params: {
   avatarUrl: string | null;
 }): Promise<User> {
   const { user, provider, providerAccountId, email, accountLabel, avatarUrl } = params;
-  const apiToken = generateToken();
-  const updated = await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      apiToken,
-      avatarUrl: user.avatarUrl ?? avatarUrl ?? undefined,
-    },
-  });
+  const needsAvatar = !user.avatarUrl && avatarUrl;
+  const updatedUser = needsAvatar
+    ? await prisma.user.update({
+        where: { id: user.id },
+        data: { avatarUrl },
+      })
+    : user;
   await prisma.oAuthAccount.update({
     where: {
       provider_providerAccountId: {
@@ -67,12 +80,14 @@ async function rotateTokenAndSyncOAuthAccount(params: {
       avatarUrl: avatarUrl ?? undefined,
     },
   });
-  return updated;
+  return updatedUser;
 }
 
 /**
- * Find or create `User` + `OAuthAccount`, rotate `apiToken` (same semantics as password login).
- * Does not perform HTTP or redirects.
+ * Find or create `User` + `OAuthAccount` and mint a fresh `ApiToken` for the
+ * resulting session (the OAuth flow is the moral equivalent of a password
+ * login, but other tokens for this user are NOT touched). Does not perform
+ * HTTP or redirects.
  */
 export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity): Promise<OAuthSignInResult> {
   const validated = validateAndNormalizeOAuthIdentity(identity);
@@ -94,7 +109,7 @@ export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity
     });
 
     if (existingLink?.user) {
-      const user = await rotateTokenAndSyncOAuthAccount({
+      const user = await syncOAuthProfile({
         user: existingLink.user,
         provider,
         providerAccountId,
@@ -102,7 +117,8 @@ export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity
         accountLabel,
         avatarUrl,
       });
-      return { ok: true, user };
+      const { rawToken } = await createApiToken({ userId: user.id, name: oauthSessionName(provider) });
+      return { ok: true, user, token: rawToken };
     }
 
     const emailOwner = await prisma.user.findUnique({ where: { email } });
@@ -113,7 +129,6 @@ export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity
     const fallbackPrefix = provider === OAuthProvider.github ? "gh" : "g";
     const username = await allocateUniqueUsername(validated.identity.usernameBase, fallbackPrefix);
     const passwordHash = await randomOAuthOnlyPasswordHash();
-    const apiToken = generateToken();
 
     const txnResult = await prisma.$transaction(async (tx) => {
       const raced = await tx.oAuthAccount.findUnique({
@@ -139,7 +154,6 @@ export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity
           username,
           email,
           passwordHash,
-          apiToken,
           avatarUrl,
           emailVerifiedAt: new Date(),
         },
@@ -178,7 +192,7 @@ export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity
     }
 
     if (txnResult.kind === "raced_existing") {
-      const user = await rotateTokenAndSyncOAuthAccount({
+      const user = await syncOAuthProfile({
         user: txnResult.user,
         provider,
         providerAccountId,
@@ -186,10 +200,15 @@ export async function signInOrRegisterOAuthUser(identity: OAuthCanonicalIdentity
         accountLabel,
         avatarUrl,
       });
-      return { ok: true, user };
+      const { rawToken } = await createApiToken({ userId: user.id, name: oauthSessionName(provider) });
+      return { ok: true, user, token: rawToken };
     }
 
-    return { ok: true, user: txnResult.user };
+    const { rawToken } = await createApiToken({
+      userId: txnResult.user.id,
+      name: oauthSessionName(provider),
+    });
+    return { ok: true, user: txnResult.user, token: rawToken };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       const target = (e.meta?.target as string[] | undefined) ?? [];

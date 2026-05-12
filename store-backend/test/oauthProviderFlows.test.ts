@@ -15,12 +15,29 @@ const prismaMock = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
   },
+  apiToken: {
+    create: vi.fn(),
+    update: vi.fn(),
+    updateMany: vi.fn(),
+    findUnique: vi.fn(),
+    count: vi.fn(),
+  },
   $transaction: vi.fn(),
 }));
 
 vi.mock("../src/db", () => ({
   prisma: prismaMock,
 }));
+
+const createApiTokenMock = vi.hoisted(() => vi.fn());
+
+vi.mock("../src/lib/apiTokens", async () => {
+  const actual = await vi.importActual<typeof import("../src/lib/apiTokens")>("../src/lib/apiTokens");
+  return {
+    ...actual,
+    createApiToken: createApiTokenMock,
+  };
+});
 
 vi.mock("../src/controllers/authController", () => ({
   generateToken: () =>
@@ -138,13 +155,28 @@ function baseUser(over: Partial<User> = {}): User {
     username: "legacyuser",
     email: "oauthuser@example.com",
     passwordHash: "hashed",
-    apiToken: "previous_api_token_hex_64_chars________________________________",
     bio: null,
     avatarUrl: null,
     createdAt: new Date("2020-01-01"),
     updatedAt: new Date("2020-01-01"),
     ...over,
   } as User;
+}
+
+/** Programs `createApiToken` to return a deterministic raw token for the next call. */
+function expectNextCreatedToken(rawToken: string) {
+  createApiTokenMock.mockResolvedValueOnce({
+    rawToken,
+    row: {
+      id: Math.floor(Math.random() * 10_000) + 1,
+      userId: 0,
+      name: "test",
+      tokenHash: "n/a",
+      lastUsedAt: null,
+      createdAt: new Date(),
+      revokedAt: null,
+    },
+  });
 }
 
 describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
@@ -162,6 +194,7 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
     prismaMock.$transaction.mockImplementation(async (fn: (t: typeof prismaMock) => Promise<unknown>) =>
       fn(prismaMock),
     );
+    createApiTokenMock.mockReset();
     handoffSpy = vi.spyOn(oauthPending, "createPendingExchange").mockReturnValue("test_handoff_code");
   });
 
@@ -208,11 +241,12 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
         id: 42,
         username: "octocat",
         email: "newgithub@example.com",
-        apiToken:
-          "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       }),
     );
     prismaMock.oAuthAccount.create.mockResolvedValue({});
+    expectNextCreatedToken(
+      "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    );
 
     const cbRes = new MockResponse();
     const req = {
@@ -233,16 +267,14 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
     );
   });
 
-  it("callback signs in existing OAuth account and rotates token", async () => {
+  it("callback signs in existing OAuth account and mints a fresh ApiToken", async () => {
     mockGithubFetch(githubProfile("oauthuser@example.com"));
     const startRes = new MockResponse();
     await githubOAuthStart({} as Request, asRes(startRes));
     const cookiePair = firstSetCookieHeader(startRes);
     const state = new URL(startRes.redirectUrl).searchParams.get("state")!;
 
-    const linked = baseUser({
-      apiToken: "old_token____________________________________________________",
-    });
+    const linked = baseUser();
     prismaMock.oAuthAccount.findUnique.mockResolvedValue({
       id: 7,
       userId: linked.id,
@@ -253,11 +285,11 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
       avatarUrl: null,
       user: linked,
     });
-    prismaMock.user.update.mockResolvedValue({
-      ...linked,
-      apiToken: "rotated_token_______________________________________________",
-    });
+    prismaMock.user.update.mockResolvedValue(linked);
     prismaMock.oAuthAccount.update.mockResolvedValue({});
+    expectNextCreatedToken(
+      "rotated_token_______________________________________________",
+    );
 
     const cbRes = new MockResponse();
     await githubOAuthCallback(
@@ -310,7 +342,6 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
       id: 50,
       email: "race@example.com",
       username: "octocat",
-      apiToken: "winner_tok____________________________________________________",
     });
 
     const p2002 = new Prisma.PrismaClientKnownRequestError("dup", {
@@ -332,11 +363,11 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
       user: winner,
     });
 
-    prismaMock.user.update.mockResolvedValue({
-      ...winner,
-      apiToken: "after_race_tok______________________________________________",
-    });
+    prismaMock.user.update.mockResolvedValue(winner);
     prismaMock.oAuthAccount.update.mockResolvedValue({});
+    expectNextCreatedToken(
+      "after_race_tok______________________________________________",
+    );
 
     const cbRes = new MockResponse();
     await githubOAuthCallback(
@@ -374,10 +405,12 @@ describe("GitHub OAuth flow (mocked HTTP + DB)", () => {
         id: 60,
         username: args.data.username,
         email: "collide@example.com",
-        apiToken: "suffix_user_token___________________________________________",
       }),
     );
     prismaMock.oAuthAccount.create.mockResolvedValue({});
+    expectNextCreatedToken(
+      "suffix_user_token___________________________________________",
+    );
 
     const cbRes = new MockResponse();
     await githubOAuthCallback(
@@ -411,6 +444,7 @@ describe("Google OAuth flow (mocked HTTP + DB)", () => {
     prismaMock.$transaction.mockImplementation(async (fn: (t: typeof prismaMock) => Promise<unknown>) =>
       fn(prismaMock),
     );
+    createApiTokenMock.mockReset();
     handoffSpy = vi.spyOn(oauthPending, "createPendingExchange").mockReturnValue("google_handoff");
   });
 
@@ -451,11 +485,12 @@ describe("Google OAuth flow (mocked HTTP + DB)", () => {
         id: 77,
         username: "goognew",
         email: "goognew@example.com",
-        apiToken:
-          "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       }),
     );
     prismaMock.oAuthAccount.create.mockResolvedValue({});
+    expectNextCreatedToken(
+      "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    );
 
     const cbRes = new MockResponse();
     await googleOAuthCallback(
@@ -479,11 +514,7 @@ describe("Google OAuth flow (mocked HTTP + DB)", () => {
     await googleOAuthStart({} as Request, asRes(startRes));
     const state = new URL(startRes.redirectUrl).searchParams.get("state")!;
 
-    const u = baseUser({
-      id: 77,
-      email: "goognew@example.com",
-      apiToken: "before______________________________________________________",
-    });
+    const u = baseUser({ id: 77, email: "goognew@example.com" });
     prismaMock.oAuthAccount.findUnique.mockResolvedValue({
       id: 2,
       userId: u.id,
@@ -494,11 +525,11 @@ describe("Google OAuth flow (mocked HTTP + DB)", () => {
       avatarUrl: null,
       user: u,
     });
-    prismaMock.user.update.mockResolvedValue({
-      ...u,
-      apiToken: "after_google________________________________________________",
-    });
+    prismaMock.user.update.mockResolvedValue(u);
     prismaMock.oAuthAccount.update.mockResolvedValue({});
+    expectNextCreatedToken(
+      "after_google________________________________________________",
+    );
 
     const cbRes = new MockResponse();
     await googleOAuthCallback(

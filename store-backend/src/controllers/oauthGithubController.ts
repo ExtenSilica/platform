@@ -115,6 +115,6 @@ export async function githubOAuthCallback(req: Request, res: Response): Promise<
     return;
   }
 
-  const handoff = createOAuthBrowserHandoff(signIn.user.apiToken!, signIn.user);
+  const handoff = createOAuthBrowserHandoff(signIn.token, signIn.user);
   redirectOAuthLoginSuccess(res, handoff);
 }

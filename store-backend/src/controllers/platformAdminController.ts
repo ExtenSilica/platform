@@ -94,13 +94,15 @@ export async function listAdminUsers(req: Request, res: Response): Promise<void>
         username: true,
         email: true,
         emailVerifiedAt: true,
-        apiToken: true,
         createdAt: true,
         updatedAt: true,
         _count: {
           select: {
             ownedPackages: true,
             orgMemberships: true,
+            // Count of currently-live ApiToken rows for this user. `where`
+            // inside `_count.select` requires Prisma Client ≥ 5.0, which we use.
+            apiTokens: { where: { revokedAt: null } },
           },
         },
       },
@@ -118,7 +120,8 @@ export async function listAdminUsers(req: Request, res: Response): Promise<void>
       email: u.email,
       emailVerified: Boolean(u.emailVerifiedAt),
       emailVerifiedAt: u.emailVerifiedAt?.toISOString() ?? null,
-      hasActiveToken: Boolean(u.apiToken),
+      hasActiveToken: u._count.apiTokens > 0,
+      activeTokenCount: u._count.apiTokens,
       createdAt: u.createdAt.toISOString(),
       updatedAt: u.updatedAt.toISOString(),
       ownedPackageCount: u._count.ownedPackages,
@@ -330,7 +333,6 @@ export async function postAdminCreateUser(req: Request, res: Response): Promise<
       username: normalizedUsername,
       email: normalizedEmail,
       passwordHash,
-      apiToken: null,
       emailVerifiedAt: emailVerified ? new Date() : null,
       emailVerificationTokenHash: null,
       emailVerificationExpires: null,
@@ -471,10 +473,15 @@ export async function postAdminResetUserPassword(req: Request, res: Response): P
   }
 
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-  await prisma.user.update({
-    where: { id },
-    data: { passwordHash, apiToken: null },
-  });
+  // Reset is a credential-recovery flow: every existing session for this user
+  // must die so the admin's new password is the only path back in.
+  await prisma.$transaction([
+    prisma.user.update({ where: { id }, data: { passwordHash } }),
+    prisma.apiToken.updateMany({
+      where: { userId: id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+  ]);
   res.json({ ok: true });
 }
 
