@@ -55,8 +55,23 @@ export type VersionMaturityFields = Pick<
   'isa' | 'toolchain' | 'targets' | 'resolutionMode' | 'execution'
 >;
 
+/**
+ * Optional package-level signals that influence the *aggregate* maturity level,
+ * but not the capability badge list. Today the only signal is `portStatus`:
+ * a `"seeded"` package is, by construction, a spec-derived scaffold (the
+ * catalog-seed agent ships a Spike skeleton with `// TODO` handlers and an
+ * assemble-only smoke test). The structural presence of `targets.spike` and
+ * `execution.testEntry` would otherwise mislead the ladder into L4 ("Tests"),
+ * which is dishonest. We cap the level at 1 for seeded packages so the badge
+ * matches the actual readiness of the code, and let badges remain factual.
+ */
+export interface PackageMaturityOpts {
+  portStatus?: string | null;
+}
+
 export function computePackageMaturityFromVersion(
   v: VersionMaturityFields | null | undefined,
+  opts?: PackageMaturityOpts,
 ): { badges: CapabilityBadge[]; level: PackageMaturityLevel } {
   if (!v) {
     return { badges: [], level: 1 };
@@ -103,6 +118,15 @@ export function computePackageMaturityFromVersion(
   if (level >= 2 && bundledToolchain) level = 3;
   if (level >= 2 && input.hasTests) level = 4;
   if (hasHw && level >= 2) level = 5;
+
+  // Seeded packages are spec-derived scaffolds. The ladder reads structural
+  // signals (declared targets, declared testEntry) it cannot semantically
+  // validate; for catalog-seed publishes those signals point at TODO handlers
+  // and assemble-only checks, so cap the level to keep the badge honest.
+  const portStatus = (opts?.portStatus ?? '').toLowerCase();
+  if (portStatus === 'seeded') {
+    level = 1;
+  }
 
   return { badges, level };
 }

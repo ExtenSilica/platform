@@ -19,12 +19,15 @@ async function main() {
       execution: true,
       dependencies: true,
       resolutionMode: true,
+      extension: { select: { portStatus: true } },
     },
   });
 
   let updated = 0;
   for (const v of versions) {
-    const { readinessLevel, capabilities } = computeReadinessFromVersion(v);
+    const { readinessLevel, capabilities } = computeReadinessFromVersion(v, {
+      portStatus: v.extension?.portStatus ?? null,
+    });
     await prisma.version.update({
       where: { id: v.id },
       data: {

@@ -10,7 +10,7 @@
  * - RL6/RL7 are reserved for future explicit evidence schema (do not infer from targets alone).
  */
 import type { Version } from '@prisma/client';
-import { computePackageMaturityFromVersion } from './maturity';
+import { computePackageMaturityFromVersion, type PackageMaturityOpts } from './maturity';
 
 export type ReadinessLevel = 1 | 2 | 3 | 4 | 5;
 
@@ -47,17 +47,21 @@ export type VersionReadinessFields = Pick<
 
 export function computeReadinessFromVersion(
   v: VersionReadinessFields | null | undefined,
+  opts?: PackageMaturityOpts,
 ): { readinessLevel: ReadinessLevel; capabilities: Capability[] } {
   if (!v) return { readinessLevel: 1, capabilities: [] };
 
   // Reuse the already synced badge logic as the base capability set.
-  const m = computePackageMaturityFromVersion({
-    isa: v.isa,
-    toolchain: v.toolchain,
-    targets: v.targets,
-    resolutionMode: v.resolutionMode,
-    execution: v.execution,
-  });
+  const m = computePackageMaturityFromVersion(
+    {
+      isa: v.isa,
+      toolchain: v.toolchain,
+      targets: v.targets,
+      resolutionMode: v.resolutionMode,
+      execution: v.execution,
+    },
+    opts,
+  );
 
   const caps = new Set<Capability>(m.badges as Capability[]);
 

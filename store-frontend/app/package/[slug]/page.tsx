@@ -177,6 +177,7 @@ export default async function PackagePage({
     resolutionMode: latest?.resolutionMode ?? null,
     dependenciesRaw: latest?.dependencies ?? null,
     hasTests: executionIndicatesTests(latest?.execution ?? null),
+    portStatus: pkg.portStatus ?? null,
   });
   const readinessLevelDisplay = displayReadinessLevel(latest, maturity.level);
   const execObj = safeParseJsonObject(latest?.execution ?? null);

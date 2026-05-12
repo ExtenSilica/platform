@@ -30,11 +30,11 @@ function parseCapabilitiesJson(raw: string | null | undefined): string[] | null 
  * version; falls back to `computePackageMaturityFromVersion` when columns are unset.
  */
 export function packageReadinessSummary(
-  ext: Pick<Extension, 'latestReadinessLevel'>,
+  ext: Pick<Extension, 'latestReadinessLevel' | 'portStatus'>,
   versions: Version[],
 ): { maturityLevel: number; capabilityBadges: string[] } {
   const latest = semverLatestVersion(versions);
-  const fallback = computePackageMaturityFromVersion(latest);
+  const fallback = computePackageMaturityFromVersion(latest, { portStatus: ext.portStatus ?? null });
 
   const extRl = ext.latestReadinessLevel;
   const verRl = latest?.readinessLevel;

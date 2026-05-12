@@ -51,6 +51,7 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
     resolutionMode: latest?.resolutionMode ?? null,
     dependenciesRaw: latest?.dependencies ?? null,
     hasTests: executionIndicatesTests(latest?.execution ?? null),
+    portStatus: pkg.portStatus ?? null,
   });
   const readinessLevel = displayReadinessLevel(latest, maturity.level);
 

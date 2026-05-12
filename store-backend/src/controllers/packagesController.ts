@@ -732,14 +732,17 @@ export const publishVersion = async (req: Request, res: Response) => {
 
     let newVersion;
     try {
-      const readiness = computeReadinessFromVersion({
-        isa: mfIsa || null,
-        toolchain: mfToolchain || null,
-        targets: mfTargets || null,
-        execution: mfExecution || null,
-        dependencies: mfDeps || null,
-        resolutionMode: mfResolution ? mfResolution.trim() : null,
-      });
+      const readiness = computeReadinessFromVersion(
+        {
+          isa: mfIsa || null,
+          toolchain: mfToolchain || null,
+          targets: mfTargets || null,
+          execution: mfExecution || null,
+          dependencies: mfDeps || null,
+          resolutionMode: mfResolution ? mfResolution.trim() : null,
+        },
+        { portStatus: pkg.portStatus ?? null },
+      );
       newVersion = await prisma.version.create({
         data: {
           extensionId: pkg.id,

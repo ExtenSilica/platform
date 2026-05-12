@@ -201,6 +201,13 @@ export function computeCapabilityBadges(input: {
   resolutionMode?: string | null;
   dependenciesRaw?: string | null;
   hasTests?: boolean;
+  /**
+   * Package-level provenance. When `"seeded"` (catalog-seed scaffolds whose
+   * Spike handlers are TODO and whose tests only assemble), cap the computed
+   * level at 1 so the displayed badge matches actual readiness. Mirrors the
+   * server-side cap in store-backend/src/lib/maturity.ts.
+   */
+  portStatus?: string | null;
 }): { badges: CapabilityBadge[]; level: PackageMaturityLevel } {
   const badges: CapabilityBadge[] = [];
 
@@ -245,6 +252,13 @@ export function computeCapabilityBadges(input: {
   if (level >= 2 && bundledToolchain) level = 3;
   if (level >= 2 && input.hasTests) level = (level >= 3 ? 4 : 4);
   if (hasHw && level >= 2) level = 5;
+
+  // Match the server-side cap: seeded scaffolds stay at L1 regardless of
+  // declared `targets.spike` / `execution.testEntry`, because those signals
+  // point at TODO handlers and assemble-only smoke tests.
+  if ((input.portStatus ?? "").toLowerCase() === "seeded") {
+    level = 1;
+  }
 
   return { badges, level };
 }
