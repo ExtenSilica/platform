@@ -17,6 +17,11 @@ import {
   resendVerification,
   deleteAccount,
 } from '../controllers/authController';
+import {
+  listMyTokens,
+  createMyToken,
+  revokeMyToken,
+} from '../controllers/apiTokensController';
 import { githubOAuthStart, githubOAuthCallback } from '../controllers/oauthGithubController';
 import { oauthBrowserExchange } from '../services/oauthService';
 import { googleOAuthStart, googleOAuthCallback } from '../controllers/oauthGoogleController';
@@ -82,6 +87,19 @@ const oauthBrowserExchangeLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many OAuth exchange attempts. Please try again in 15 minutes.' },
+});
+
+/**
+ * Soft rate-limit on token creation. The handler still enforces a hard
+ * `MAX_LIVE_TOKENS_PER_USER` cap, but this stops a runaway script from
+ * exhausting the user's quota in one second.
+ */
+const tokenCreateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  max: 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many token creation attempts. Please try again in 1 hour.' },
 });
 
 // Multer: store in uploads/tmp while we validate, then move to uploads/avatars/.
@@ -273,10 +291,11 @@ router.patch('/me', requireAuth, updateMe);
  *   patch:
  *     summary: Change the authenticated user's password
  *     description: >
- *       Verifies the current password, replaces the password hash, and rotates
- *       the API token. All existing sessions (other devices/CLI) are immediately
- *       invalidated. The response includes the new token so the calling client
- *       can update its stored credential without logging out.
+ *       Verifies the current password and replaces the password hash. Every
+ *       OTHER API token on this account is immediately revoked; the token used
+ *       to make this call survives so the dashboard does not log itself out.
+ *       The response includes that still-valid token under `token` for
+ *       protocol compatibility.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -296,13 +315,92 @@ router.patch('/me', requireAuth, updateMe);
  *                 example: "correcthorsebatterystaple"
  *     responses:
  *       200:
- *         description: Password changed. Returns new API token and updated user profile.
+ *         description: Password changed. Other sessions revoked; current session preserved.
  *       400:
  *         description: Validation error (too short, same as current, missing fields).
  *       401:
  *         description: Current password is incorrect, or not authenticated.
  */
 router.patch('/me/password', requireAuth, changePassword);
+
+/**
+ * @swagger
+ * /auth/me/tokens:
+ *   get:
+ *     summary: List the authenticated user's API tokens
+ *     description: >
+ *       Returns every ApiToken owned by the current user, including revoked
+ *       ones, ordered newest first. The raw token value is never returned by
+ *       this endpoint — only by `POST /auth/me/tokens` at creation time.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of tokens (without their hashes).
+ *       401:
+ *         description: Not authenticated.
+ *   post:
+ *     summary: Create a new named API token
+ *     description: >
+ *       Mints a fresh ApiToken for the current user and returns the raw token
+ *       value ONCE. The server only stores the SHA-256 hash, so callers must
+ *       persist the returned `token` immediately.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 80
+ *                 example: "xsil-cli @ felipe-precision"
+ *     responses:
+ *       201:
+ *         description: Token created. Response includes `token` (raw, shown ONCE) and `apiToken` metadata.
+ *       400:
+ *         description: Invalid `name`.
+ *       401:
+ *         description: Not authenticated.
+ *       409:
+ *         description: User already holds the maximum allowed live tokens.
+ */
+router.get('/me/tokens', requireAuth, listMyTokens);
+router.post('/me/tokens', tokenCreateLimiter, requireAuth, createMyToken);
+
+/**
+ * @swagger
+ * /auth/me/tokens/{id}:
+ *   delete:
+ *     summary: Revoke a single API token
+ *     description: >
+ *       Marks the token as revoked. The auth middleware rejects revoked tokens
+ *       on subsequent requests. Only tokens belonging to the authenticated user
+ *       can be revoked (404 otherwise).
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Token revoked (or already revoked).
+ *       400:
+ *         description: Invalid token id.
+ *       401:
+ *         description: Not authenticated.
+ *       404:
+ *         description: Token not found or not owned by the caller.
+ */
+router.delete('/me/tokens/:id', requireAuth, revokeMyToken);
 
 router.delete('/me', requireAuth, deleteAccount);
 
