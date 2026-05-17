@@ -40,6 +40,11 @@ model User {
   ownershipRequests   OwnershipRequest[]   @relation("OwnershipRequester")
   ownershipDecisions  OwnershipRequest[]   @relation("OwnershipDecider")
   apiTokens           ApiToken[]
+  implementationRequestsCreated  ImplementationRequest[]  @relation("ImplementationRequestCreator")
+  implementationRequestsAssigned ImplementationRequest[]  @relation("ImplementationRequestAssignee")
+  implementationSubmissions      ImplementationSubmission[]
+  implementationInterests        ImplementationInterest[]
+  verificationRuns               VerificationRun[]          @relation("VerificationRunVerifier")
 }
 
 /// Named API credential. Each user may hold N independent tokens (web sessions,
@@ -147,6 +152,7 @@ model Organization {
   members           OrgMember[]
   packages          Extension[]         @relation("ExtensionOrg")
   ownershipRequests OwnershipRequest[]  @relation("OwnershipClaimantOrg")
+  implementationRequests ImplementationRequest[] @relation("ImplementationRequestOrg")
 }
 
 model OrgMember {
@@ -201,6 +207,7 @@ model Extension {
   reviews              Review[]
   downloadEvents       DownloadEvent[]
   ownershipRequests    OwnershipRequest[]
+  implementationRequests ImplementationRequest[]
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
@@ -292,6 +299,7 @@ model Version {
 
   downloadEvents   DownloadEvent[]
   toolDependencies VersionToolDependency[]
+  implementationSubmissions ImplementationSubmission[]
 
   @@unique([extensionId, version])
 }
@@ -377,4 +385,133 @@ model Review {
   user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([packageId, userId]) // one review per user per package
+}
+
+// ── Implementation coordination (Phase C) ─────────────────────
+
+enum ImplementationRequestVisibility {
+  public
+  org_only
+  unlisted
+}
+
+enum ImplementationRequestStatus {
+  draft
+  open
+  in_progress
+  submitted
+  verified
+  completed
+  cancelled
+}
+
+/// Open technical work on a package (no payments on-platform).
+model ImplementationRequest {
+  id                        Int                             @id @default(autoincrement())
+  packageId                 Int
+  createdByUserId           Int
+  createdByOrgId            Int?
+  title                     String
+  description               String
+  visibility                ImplementationRequestVisibility @default(public)
+  status                    ImplementationRequestStatus     @default(draft)
+  /// Optional capability target (e.g. RL2, spike, tests).
+  targetCapability          String?
+  acceptanceCriteriaSummary String?
+  /// Off-platform funding contact only — not a payment rail.
+  fundingContactEmail       String?
+  fundingNote               String?
+  assignedImplementerUserId Int?
+  openedAt                  DateTime?
+  completedAt               DateTime?
+  cancelledAt               DateTime?
+  createdAt                 DateTime                        @default(now())
+  updatedAt                 DateTime                        @updatedAt
+
+  package              Extension                  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  createdBy            User                       @relation("ImplementationRequestCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  createdByOrg         Organization?              @relation("ImplementationRequestOrg", fields: [createdByOrgId], references: [id], onDelete: SetNull)
+  assignedImplementer  User?                      @relation("ImplementationRequestAssignee", fields: [assignedImplementerUserId], references: [id], onDelete: SetNull)
+  milestones           ImplementationMilestone[]
+  submissions          ImplementationSubmission[]
+  interests            ImplementationInterest[]
+
+  @@index([packageId, status])
+  @@index([createdByUserId, status])
+  @@index([status, createdAt])
+  @@index([assignedImplementerUserId])
+}
+
+model ImplementationMilestone {
+  id          Int      @id @default(autoincrement())
+  requestId   Int
+  title       String
+  description String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  request ImplementationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, sortOrder])
+}
+
+enum ImplementationSubmissionStatus {
+  draft
+  submitted
+}
+
+model ImplementationSubmission {
+  id              Int                            @id @default(autoincrement())
+  requestId       Int
+  submittedById   Int
+  status          ImplementationSubmissionStatus @default(draft)
+  summary         String
+  evidenceUrl     String?
+  /// Optional published registry version tied to this deliverable.
+  versionId       Int?
+  submittedAt     DateTime?
+  createdAt       DateTime                       @default(now())
+  updatedAt       DateTime                       @updatedAt
+
+  request     ImplementationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  submittedBy User                  @relation(fields: [submittedById], references: [id], onDelete: Cascade)
+  version     Version?              @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  verificationRuns VerificationRun[]
+
+  @@index([requestId, status])
+  @@index([submittedById])
+}
+
+enum VerificationRunOutcome {
+  pass
+  fail
+}
+
+model VerificationRun {
+  id           Int                    @id @default(autoincrement())
+  submissionId Int
+  verifierId   Int
+  outcome      VerificationRunOutcome
+  notes        String?
+  logUrl       String?
+  createdAt    DateTime               @default(now())
+
+  submission ImplementationSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  verifier   User                     @relation("VerificationRunVerifier", fields: [verifierId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId, createdAt])
+}
+
+model ImplementationInterest {
+  id        Int      @id @default(autoincrement())
+  requestId Int
+  userId    Int
+  message   String?
+  createdAt DateTime @default(now())
+
+  request ImplementationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, userId])
 }
