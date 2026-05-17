@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/star-rating";
 import { ReviewsSection } from "@/components/reviews-section";
 import { ClaimOwnershipCard } from "@/components/claim-ownership-card";
+import { RequestImplementationCard } from "@/components/request-implementation-card";
 import { StandardStatusBadge } from "@/components/standard-status-badge";
 import { PortStatusBadge } from "@/components/port-status-badge";
 import { PORT_STATUS_INFO } from "@/lib/types";
@@ -562,6 +563,7 @@ export default async function PackagePage({
             {/* Authorship claim — auto-hides for owners, maintainers, org members,
                 and users with a pending request. */}
             <ClaimOwnershipCard slug={pkg.slug} />
+            <RequestImplementationCard slug={pkg.slug} />
           </aside>
 
           {/* ══ Main content ══════════════════════════════════════════════ */}
