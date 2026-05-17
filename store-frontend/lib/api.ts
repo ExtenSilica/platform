@@ -1134,7 +1134,11 @@ export async function apiOwnershipEligibility(
 export async function apiCreateOwnershipRequest(
   token: string,
   slug: string,
-  input: { reason: string; evidenceUrl?: string | null },
+  input: {
+    reason: string;
+    evidenceUrl?: string | null;
+    claimantOrgId?: number | null;
+  },
 ): Promise<{ request: OwnershipRequest }> {
   return apiWrite("POST", `/packages/${slug}/ownership-requests`, token, input);
 }

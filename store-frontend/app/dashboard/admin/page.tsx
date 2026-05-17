@@ -1144,6 +1144,12 @@ export default function PlatformAdminPage() {
                               `user #${r.userId}`
                             )}
                             {r.user?.email && ` · ${r.user.email}`}
+                            {r.claimantOrg && (
+                              <>
+                                {" · "}
+                                Claiming as @{r.claimantOrg.slug}
+                              </>
+                            )}
                             {" · "}
                             submitted {new Date(r.createdAt).toLocaleString()}
                           </p>

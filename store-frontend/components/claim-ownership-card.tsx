@@ -6,9 +6,10 @@ import { useAuth } from "@/lib/auth";
 import {
   apiOwnershipEligibility,
   apiCreateOwnershipRequest,
+  apiGetMyOrgs,
   ApiError,
 } from "@/lib/api";
-import type { OwnershipEligibility } from "@/lib/types";
+import type { MyOrg, OwnershipEligibility } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,8 @@ export function ClaimOwnershipCard({ slug }: { slug: string }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [claimantOrgId, setClaimantOrgId] = useState("");
+  const [myOrgs, setMyOrgs] = useState<MyOrg[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -55,10 +58,23 @@ export function ClaimOwnershipCard({ slug }: { slug: string }) {
     };
   }, [slug, token, user?.id]);
 
-  // Don't render until we know.
+  useEffect(() => {
+    if (!open || !token) return;
+    let cancelled = false;
+    apiGetMyOrgs(token)
+      .then((orgs) => {
+        if (!cancelled) setMyOrgs(orgs);
+      })
+      .catch(() => {
+        if (!cancelled) setMyOrgs([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, token]);
+
   if (!eligibility) return null;
 
-  // Already submitted in this session — show a confirmation.
   if (submitted) {
     return (
       <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/[0.06] p-4">
@@ -82,7 +98,6 @@ export function ClaimOwnershipCard({ slug }: { slug: string }) {
     );
   }
 
-  // Anonymous viewer: invite to sign in.
   if (!eligibility.eligible && eligibility.requiresAuth) {
     return (
       <div className="rounded-lg border border-border bg-muted/40 p-4">
@@ -105,12 +120,10 @@ export function ClaimOwnershipCard({ slug }: { slug: string }) {
     );
   }
 
-  // Signed-in but blocked (owner / maintainer / org member / pending) — render nothing.
   if (!eligibility.eligible) {
     return null;
   }
 
-  // Eligible — show the CTA + collapsed/expanded form.
   const trimmedLen = reason.trim().length;
   const canSubmit =
     !submitting &&
@@ -127,6 +140,7 @@ export function ClaimOwnershipCard({ slug }: { slug: string }) {
       await apiCreateOwnershipRequest(token, slug, {
         reason: reason.trim(),
         evidenceUrl: evidenceUrl.trim() || null,
+        claimantOrgId: claimantOrgId ? Number(claimantOrgId) : null,
       });
       setSubmitted(true);
       setOpen(false);
@@ -166,6 +180,30 @@ export function ClaimOwnershipCard({ slug }: { slug: string }) {
 
       {open && (
         <form onSubmit={submit} className="mt-4 space-y-3">
+          {myOrgs.length > 0 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="claim-org" className="text-xs font-semibold">
+                Claiming as
+              </Label>
+              <select
+                id="claim-org"
+                value={claimantOrgId}
+                onChange={(e) => setClaimantOrgId(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">Myself (personal account)</option>
+                {myOrgs.map((o) => (
+                  <option key={o.id} value={String(o.id)}>
+                    Organization @{o.slug} — {o.displayName}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-muted-foreground">
+                If approved, the package may be linked to the selected organization.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="claim-reason" className="text-xs font-semibold">
               Why are you the rightful owner?{" "}

@@ -4,6 +4,7 @@ import {
   validateReason,
   validateEvidenceUrl,
   validateDecisionNote,
+  parseClaimantOrgId,
   isOwnershipRequestStatus,
   evaluateEligibility,
   type OwnershipRequestStatus,
@@ -29,8 +30,10 @@ type PrismaOwnershipRequestRow = {
   decisionNote: string | null;
   decidedById: number | null;
   decidedAt: Date | null;
+  claimantOrgId: number | null;
   createdAt: Date;
   updatedAt: Date;
+  claimantOrg?: { id: number; slug: string; displayName: string } | null;
   package?: {
     id: number;
     slug: string;
@@ -58,6 +61,31 @@ function serializeUser(u?: PrismaUser | null) {
   };
 }
 
+const ownershipRequestInclude = {
+  package: {
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      iconUrl: true,
+      ownerId: true,
+      orgId: true,
+      author: true,
+      org: { select: { id: true, slug: true, displayName: true } },
+    },
+  },
+  user: {
+    select: { id: true, username: true, email: true, avatarUrl: true },
+  },
+  decidedBy: {
+    select: { id: true, username: true, email: true, avatarUrl: true },
+  },
+  claimantOrg: {
+    select: { id: true, slug: true, displayName: true },
+  },
+} as const;
+
 function serializeRequest(row: PrismaOwnershipRequestRow) {
   return {
     id: row.id,
@@ -69,8 +97,10 @@ function serializeRequest(row: PrismaOwnershipRequestRow) {
     decisionNote: row.decisionNote,
     decidedById: row.decidedById,
     decidedAt: row.decidedAt?.toISOString() ?? null,
+    claimantOrgId: row.claimantOrgId ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    claimantOrg: row.claimantOrg ?? null,
     package: row.package
       ? {
           id: row.package.id,
@@ -206,6 +236,12 @@ export async function createRequest(
     return;
   }
 
+  const parsedOrg = parseClaimantOrgId(req.body?.claimantOrgId);
+  if (parsedOrg.error) {
+    res.status(400).json({ error: parsedOrg.error });
+    return;
+  }
+
   const [isMaintainer, isOrgMember, hasPending] = await Promise.all([
     isUserMaintainer(pkg.id, req.user.id),
     pkg.orgId ? isUserInOrg(pkg.orgId, req.user.id) : Promise.resolve(false),
@@ -225,6 +261,25 @@ export async function createRequest(
     return;
   }
 
+  let claimantOrgId = parsedOrg.value;
+  if (claimantOrgId !== null) {
+    const org = await prisma.organization.findUnique({
+      where: { id: claimantOrgId },
+      select: { id: true },
+    });
+    if (!org) {
+      res.status(400).json({ error: 'Organization not found.' });
+      return;
+    }
+    const isMember = await isUserInOrg(claimantOrgId, req.user.id);
+    if (!isMember) {
+      res.status(403).json({
+        error: 'You must be a member of the organization to claim on its behalf.',
+      });
+      return;
+    }
+  }
+
   const reason = String(req.body.reason).trim();
   const evidenceUrl =
     typeof req.body?.evidenceUrl === 'string' && req.body.evidenceUrl.trim()
@@ -237,25 +292,9 @@ export async function createRequest(
       userId: req.user.id,
       reason,
       evidenceUrl,
+      claimantOrgId,
     },
-    include: {
-      package: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          description: true,
-          iconUrl: true,
-          ownerId: true,
-          orgId: true,
-          author: true,
-          org: { select: { id: true, slug: true, displayName: true } },
-        },
-      },
-      user: {
-        select: { id: true, username: true, email: true, avatarUrl: true },
-      },
-    },
+    include: ownershipRequestInclude,
   });
 
   res.status(201).json({ request: serializeRequest(created) });
@@ -289,24 +328,7 @@ export async function listMyRequests(
   const rows = await prisma.ownershipRequest.findMany({
     where,
     orderBy: { createdAt: 'desc' },
-    include: {
-      package: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          description: true,
-          iconUrl: true,
-          ownerId: true,
-          orgId: true,
-          author: true,
-          org: { select: { id: true, slug: true, displayName: true } },
-        },
-      },
-      decidedBy: {
-        select: { id: true, username: true, email: true, avatarUrl: true },
-      },
-    },
+    include: ownershipRequestInclude,
   });
 
   res.json({ requests: rows.map(serializeRequest) });
@@ -346,21 +368,7 @@ export async function withdrawMyRequest(
   const updated = await prisma.ownershipRequest.update({
     where: { id },
     data: { status: 'withdrawn' },
-    include: {
-      package: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          description: true,
-          iconUrl: true,
-          ownerId: true,
-          orgId: true,
-          author: true,
-          org: { select: { id: true, slug: true, displayName: true } },
-        },
-      },
-    },
+    include: ownershipRequestInclude,
   });
 
   res.json({ request: serializeRequest(updated) });
@@ -391,27 +399,7 @@ export async function adminListRequests(
   const rows = await prisma.ownershipRequest.findMany({
     where,
     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
-    include: {
-      package: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          description: true,
-          iconUrl: true,
-          ownerId: true,
-          orgId: true,
-          author: true,
-          org: { select: { id: true, slug: true, displayName: true } },
-        },
-      },
-      user: {
-        select: { id: true, username: true, email: true, avatarUrl: true },
-      },
-      decidedBy: {
-        select: { id: true, username: true, email: true, avatarUrl: true },
-      },
-    },
+    include: ownershipRequestInclude,
   });
 
   res.json({ requests: rows.map(serializeRequest) });
@@ -477,27 +465,7 @@ export async function adminApproveRequest(
         decidedById,
         decidedAt,
       },
-      include: {
-        package: {
-          select: {
-            id: true,
-            slug: true,
-            name: true,
-            description: true,
-            iconUrl: true,
-            ownerId: true,
-            orgId: true,
-            author: true,
-            org: { select: { id: true, slug: true, displayName: true } },
-          },
-        },
-        user: {
-          select: { id: true, username: true, email: true, avatarUrl: true },
-        },
-        decidedBy: {
-          select: { id: true, username: true, email: true, avatarUrl: true },
-        },
-      },
+      include: ownershipRequestInclude,
     });
 
     // Flip provenance on the package: seeded / community_port collapse to
@@ -511,7 +479,11 @@ export async function adminApproveRequest(
 
     await tx.extension.update({
       where: { id: existing.packageId },
-      data: { ownerId: existing.userId, portStatus: nextPortStatus },
+      data: {
+        ownerId: existing.userId,
+        portStatus: nextPortStatus,
+        ...(existing.claimantOrgId ? { orgId: existing.claimantOrgId } : {}),
+      },
     });
 
     await tx.maintainer.upsert({
@@ -600,27 +572,7 @@ export async function adminRejectRequest(
       decidedById: req.user.id,
       decidedAt: new Date(),
     },
-    include: {
-      package: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          description: true,
-          iconUrl: true,
-          ownerId: true,
-          orgId: true,
-          author: true,
-          org: { select: { id: true, slug: true, displayName: true } },
-        },
-      },
-      user: {
-        select: { id: true, username: true, email: true, avatarUrl: true },
-      },
-      decidedBy: {
-        select: { id: true, username: true, email: true, avatarUrl: true },
-      },
-    },
+    include: ownershipRequestInclude,
   });
 
   res.json({ request: serializeRequest(updated) });

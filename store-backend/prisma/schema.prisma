@@ -140,8 +140,9 @@ model Organization {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  members  OrgMember[]
-  packages Extension[] @relation("ExtensionOrg")
+  members           OrgMember[]
+  packages          Extension[]         @relation("ExtensionOrg")
+  ownershipRequests OwnershipRequest[]  @relation("OwnershipClaimantOrg")
 }
 
 model OrgMember {
@@ -239,16 +240,20 @@ model OwnershipRequest {
   /// Set by the platform admin who closed the request.
   decidedById  Int?
   decidedAt    DateTime?
+  /// When set, the user claims on behalf of this organization (must be a member).
+  claimantOrgId Int?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  package   Extension @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  user      User      @relation("OwnershipRequester", fields: [userId], references: [id], onDelete: Cascade)
-  decidedBy User?     @relation("OwnershipDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  package     Extension     @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  user        User          @relation("OwnershipRequester", fields: [userId], references: [id], onDelete: Cascade)
+  decidedBy   User?         @relation("OwnershipDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  claimantOrg Organization? @relation("OwnershipClaimantOrg", fields: [claimantOrgId], references: [id], onDelete: SetNull)
 
   @@index([packageId, status])
   @@index([userId, status])
   @@index([status, createdAt])
+  @@index([claimantOrgId])
 }
 
 model Version {

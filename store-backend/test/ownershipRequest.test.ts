@@ -3,6 +3,7 @@ import {
   validateReason,
   validateEvidenceUrl,
   validateDecisionNote,
+  parseClaimantOrgId,
   isOwnershipRequestStatus,
   isTerminalStatus,
   evaluateEligibility,
@@ -173,5 +174,24 @@ describe('evaluateEligibility', () => {
     expect(
       evaluateEligibility({ ...baseInput, packageOwnerId: null }),
     ).toEqual({ eligible: true });
+  });
+});
+
+describe('parseClaimantOrgId', () => {
+  it('treats undefined / null / empty as absent', () => {
+    expect(parseClaimantOrgId(undefined)).toEqual({ value: null, error: null });
+    expect(parseClaimantOrgId(null)).toEqual({ value: null, error: null });
+    expect(parseClaimantOrgId('')).toEqual({ value: null, error: null });
+  });
+
+  it('accepts positive integers', () => {
+    expect(parseClaimantOrgId(42)).toEqual({ value: 42, error: null });
+    expect(parseClaimantOrgId('12')).toEqual({ value: 12, error: null });
+  });
+
+  it('rejects invalid values', () => {
+    expect(parseClaimantOrgId(0).error).toMatch(/positive integer/);
+    expect(parseClaimantOrgId(-1).error).toMatch(/positive integer/);
+    expect(parseClaimantOrgId('abc').error).toMatch(/positive integer/);
   });
 });

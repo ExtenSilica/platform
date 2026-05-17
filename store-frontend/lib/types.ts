@@ -251,6 +251,12 @@ export interface OwnershipRequestPackageSummary {
   org?: { id: number; slug: string; displayName: string } | null;
 }
 
+export interface OwnershipRequestOrgSummary {
+  id: number;
+  slug: string;
+  displayName: string;
+}
+
 export interface OwnershipRequest {
   id: number;
   packageId: number;
@@ -261,6 +267,8 @@ export interface OwnershipRequest {
   decisionNote?: string | null;
   decidedById?: number | null;
   decidedAt?: string | null;
+  claimantOrgId?: number | null;
+  claimantOrg?: OwnershipRequestOrgSummary | null;
   createdAt: string;
   updatedAt: string;
   package?: OwnershipRequestPackageSummary;

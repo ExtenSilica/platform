@@ -60,6 +60,26 @@ export function validateEvidenceUrl(raw: unknown): string | null {
   return null;
 }
 
+/**
+ * Optional org on behalf of which the user claims ownership.
+ * Returns { value: null } when omitted; error string when malformed.
+ */
+export function parseClaimantOrgId(
+  raw: unknown,
+): { value: number | null; error: string | null } {
+  if (raw === undefined || raw === null || raw === '') {
+    return { value: null, error: null };
+  }
+  const n =
+    typeof raw === 'number' && Number.isInteger(raw)
+      ? raw
+      : Number.parseInt(String(raw), 10);
+  if (!Number.isInteger(n) || n <= 0) {
+    return { value: null, error: 'claimantOrgId must be a positive integer.' };
+  }
+  return { value: n, error: null };
+}
+
 export function validateDecisionNote(raw: unknown): string | null {
   if (raw === undefined || raw === null) return null;
   if (typeof raw !== 'string') return 'decisionNote must be a string.';
