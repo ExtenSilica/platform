@@ -10,6 +10,7 @@ import {
   type OwnershipRequestStatus,
 } from '../lib/ownershipRequest';
 import { portStatusAfterOwnershipClaim } from '../lib/portStatus';
+import { notifyOwnershipDecisionEmail } from '../lib/notifyOwnershipDecision';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -520,6 +521,14 @@ export async function adminApproveRequest(
     return approved;
   });
 
+  notifyOwnershipDecisionEmail(
+    result.user,
+    result.package,
+    true,
+    decisionNote,
+    result.claimantOrg,
+  );
+
   res.json({ request: serializeRequest(result) });
 }
 
@@ -574,6 +583,14 @@ export async function adminRejectRequest(
     },
     include: ownershipRequestInclude,
   });
+
+  notifyOwnershipDecisionEmail(
+    updated.user,
+    updated.package,
+    false,
+    decisionNote,
+    updated.claimantOrg,
+  );
 
   res.json({ request: serializeRequest(updated) });
 }
