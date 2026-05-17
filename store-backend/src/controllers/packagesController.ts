@@ -26,10 +26,11 @@ import {
   type StandardStatus,
 } from '../lib/standardStatus';
 import {
+  evaluatePortStatusPatch,
   normalizePortStatus,
-  PORT_STATUS_VALUES,
   portStatusAfterOwnershipClaim,
   type PortStatus,
+  type PortStatusAuditPatch,
 } from '../lib/portStatus';
 import { isCatalogBotUser, isPlatformAdminUser } from '../lib/platformAdmin';
 
@@ -181,6 +182,13 @@ export function mapPackage(
     standardStatus: ext.standardStatus ?? null,
     authority: ext.authority ?? null,
     portStatus: (ext as Extension & { portStatus?: PortStatus | null }).portStatus ?? null,
+    portStatusDecisionNote:
+      (ext as Extension & { portStatusDecisionNote?: string | null }).portStatusDecisionNote ??
+      null,
+    portStatusDecidedAt:
+      (
+        ext as Extension & { portStatusDecidedAt?: Date | null }
+      ).portStatusDecidedAt?.toISOString() ?? null,
     latestVersion: ext.latestVersion ?? latest?.version ?? null,
     totalDownloads: ext.totalDownloads,
     weeklyDownloads: ext.weeklyDownloads,
@@ -870,34 +878,24 @@ export const updatePackage = async (req: Request, res: Response) => {
         : { authority: normalizeAuthority(authorityRaw) };
 
     // Port status is SERVER-SIDE provenance — only platform admins may set it
-    // directly (e.g. flipping a hand-vetted package to `official`). Owners may
-    // additionally archive their own package via `portStatus: "archived"`.
-    let portStatusUpdate: { portStatus: PortStatus | null } | null = null;
+    // directly (e.g. `official` requires portStatusDecisionNote). Owners may
+    // archive their own package via `portStatus: "archived"`. Verification of
+    // implementation work never changes portStatus (PR-C4).
+    let portStatusUpdate: PortStatusAuditPatch | null = null;
     if (portStatusRaw !== undefined) {
-      const admin = isPlatformAdminUser(user);
-      if (portStatusRaw === null || portStatusRaw === '') {
-        if (!admin) {
-          res.status(403).json({ error: 'Only platform admins may clear portStatus.' });
-          return;
-        }
-        portStatusUpdate = { portStatus: null };
-      } else {
-        const normalized = normalizePortStatus(portStatusRaw);
-        if (normalized === null) {
-          res.status(400).json({
-            error: `portStatus must be one of: ${PORT_STATUS_VALUES.join(', ')}.`,
-          });
-          return;
-        }
-        // Owners (without admin) can only archive their own package.
-        if (!admin && normalized !== 'archived') {
-          res.status(403).json({
-            error: 'Only platform admins may change portStatus (except `archived`, which the owner may set).',
-          });
-          return;
-        }
-        portStatusUpdate = { portStatus: normalized };
+      const evaluated = evaluatePortStatusPatch({
+        userIsPlatformAdmin: isPlatformAdminUser(user),
+        userIsOwner: isOwner,
+        current: pkg.portStatus ?? null,
+        rawPortStatus: portStatusRaw,
+        decisionNoteRaw: (req.body as Record<string, unknown>).portStatusDecisionNote,
+        decidedByUserId: user.id,
+      });
+      if (!evaluated.ok) {
+        res.status(evaluated.status).json({ error: evaluated.error });
+        return;
       }
+      portStatusUpdate = evaluated.patch;
     }
 
     const updated = await prisma.extension.update({

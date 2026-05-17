@@ -13,6 +13,15 @@ import type {
   StandardStatus,
   CatalogStats,
   PortStatus,
+  ImplementationRequest,
+  ImplementationRequestStatus,
+  ImplementationSubmission,
+  ImplementationInterest,
+  ImplementationMilestone,
+  VerificationRun,
+  VerificationRunOutcome,
+  CreateImplementationRequestInput,
+  PatchImplementationRequestInput,
 } from "@/lib/types";
 import type { AuthUser } from "@/lib/auth";
 
@@ -968,6 +977,8 @@ export interface AdminPackageRow {
   standardStatus?: StandardStatus | null;
   authority?: string | null;
   portStatus?: PortStatus | null;
+  portStatusDecisionNote?: string | null;
+  portStatusDecidedAt?: string | null;
   owner: { id: number; username: string; email: string } | null;
   org: { id: number; slug: string; displayName: string } | null;
   createdAt: string;
@@ -1109,6 +1120,7 @@ export async function apiAdminUpdatePackage(
     standardStatus?: StandardStatus | null;
     authority?: string | null;
     portStatus?: PortStatus | null;
+    portStatusDecisionNote?: string | null;
   }
 ): Promise<{ package: AdminPackageDetail }> {
   return apiWrite("PATCH", `/admin/packages/${slug}`, token, patch);
@@ -1204,4 +1216,171 @@ export async function apiAdminRejectOwnershipRequest(
     token,
     decisionNote != null ? { decisionNote } : {},
   );
+}
+
+/* ─── Implementation requests (Phase C) ─────────────────────────────────── */
+
+function implementationRequestsQuery(params?: {
+  status?: ImplementationRequestStatus;
+  capability?: string;
+}): string {
+  const qs = new URLSearchParams();
+  if (params?.status) qs.set("status", params.status);
+  if (params?.capability?.trim()) qs.set("capability", params.capability.trim());
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+}
+
+export async function apiListPackageImplementationRequests(
+  slug: string,
+  token?: string | null,
+): Promise<{ requests: ImplementationRequest[] }> {
+  return apiFetch(`/packages/${slug}/implementation-requests`, token);
+}
+
+export async function apiCreatePackageImplementationRequest(
+  token: string,
+  slug: string,
+  input: CreateImplementationRequestInput,
+): Promise<{ request: ImplementationRequest }> {
+  return apiWrite("POST", `/packages/${slug}/implementation-requests`, token, input);
+}
+
+export async function apiListImplementationRequests(
+  token?: string | null,
+  params?: { status?: ImplementationRequestStatus; capability?: string },
+): Promise<{ requests: ImplementationRequest[] }> {
+  return apiFetch(
+    `/implementation-requests${implementationRequestsQuery(params)}`,
+    token,
+  );
+}
+
+export async function apiGetImplementationRequest(
+  id: number,
+  token?: string | null,
+): Promise<{ request: ImplementationRequest }> {
+  return apiFetch(`/implementation-requests/${id}`, token);
+}
+
+export async function apiPatchImplementationRequest(
+  token: string,
+  id: number,
+  patch: PatchImplementationRequestInput,
+): Promise<{ request: ImplementationRequest }> {
+  return apiWrite("PATCH", `/implementation-requests/${id}`, token, patch);
+}
+
+export async function apiCreateImplementationInterest(
+  token: string,
+  requestId: number,
+  message?: string | null,
+): Promise<{ interest: ImplementationInterest }> {
+  return apiWrite(
+    "POST",
+    `/implementation-requests/${requestId}/interests`,
+    token,
+    message != null && message.trim() ? { message: message.trim() } : {},
+  );
+}
+
+export async function apiCreateImplementationMilestone(
+  token: string,
+  requestId: number,
+  input: { title: string; description?: string | null; sortOrder?: number },
+): Promise<{ milestone: ImplementationMilestone & { requestId: number } }> {
+  return apiWrite(
+    "POST",
+    `/implementation-requests/${requestId}/milestones`,
+    token,
+    input,
+  );
+}
+
+export async function apiPatchImplementationMilestone(
+  token: string,
+  requestId: number,
+  milestoneId: number,
+  patch: { title?: string; description?: string | null; sortOrder?: number },
+): Promise<{ milestone: ImplementationMilestone & { requestId: number } }> {
+  return apiWrite(
+    "PATCH",
+    `/implementation-requests/${requestId}/milestones/${milestoneId}`,
+    token,
+    patch,
+  );
+}
+
+export async function apiCreateImplementationSubmission(
+  token: string,
+  requestId: number,
+  input: {
+    summary: string;
+    evidenceUrl?: string | null;
+    versionId?: number | null;
+  },
+): Promise<{ submission: ImplementationSubmission }> {
+  return apiWrite(
+    "POST",
+    `/implementation-requests/${requestId}/submissions`,
+    token,
+    input,
+  );
+}
+
+export async function apiPatchImplementationSubmission(
+  token: string,
+  submissionId: number,
+  patch: {
+    summary?: string;
+    evidenceUrl?: string | null;
+    status?: "submitted";
+  },
+): Promise<{ submission: ImplementationSubmission }> {
+  return apiWrite("PATCH", `/submissions/${submissionId}`, token, patch);
+}
+
+export async function apiCreateVerificationRun(
+  token: string,
+  submissionId: number,
+  input: {
+    outcome: VerificationRunOutcome;
+    notes?: string | null;
+    logUrl?: string | null;
+  },
+): Promise<{ verificationRun: VerificationRun }> {
+  return apiWrite(
+    "POST",
+    `/submissions/${submissionId}/verification-runs`,
+    token,
+    input,
+  );
+}
+
+export async function apiListMyImplementationRequests(
+  token: string,
+): Promise<{ requests: ImplementationRequest[] }> {
+  return apiFetch("/me/implementation-requests", token);
+}
+
+export async function apiListMyImplementationSubmissions(
+  token: string,
+): Promise<{ submissions: ImplementationSubmission[] }> {
+  return apiFetch("/me/implementation-submissions", token);
+}
+
+export async function apiAdminListImplementationRequests(
+  token: string,
+  status?: ImplementationRequestStatus | "all",
+): Promise<{ requests: ImplementationRequest[] }> {
+  const qs =
+    status && status !== "all" ? `?status=${encodeURIComponent(status)}` : "";
+  return apiFetch(`/admin/implementation-requests${qs}`, token);
+}
+
+export async function apiAdminCancelImplementationRequest(
+  token: string,
+  id: number,
+): Promise<{ request: ImplementationRequest }> {
+  return apiWrite("POST", `/admin/implementation-requests/${id}/cancel`, token);
 }

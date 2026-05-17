@@ -4,6 +4,9 @@ import {
   isPortStatus,
   normalizePortStatus,
   portStatusAfterOwnershipClaim,
+  evaluatePortStatusPatch,
+  validatePortStatusDecisionNote,
+  PORT_STATUS_DECISION_NOTE_MIN,
   type PortStatus,
 } from '../src/lib/portStatus';
 
@@ -70,5 +73,92 @@ describe('portStatusAfterOwnershipClaim', () => {
 
   it('leaves an already-claimed package as claimed', () => {
     expect(portStatusAfterOwnershipClaim('claimed' as PortStatus)).toBe('claimed');
+  });
+});
+
+describe('validatePortStatusDecisionNote', () => {
+  it('requires a note when marking official', () => {
+    expect(validatePortStatusDecisionNote(undefined, true)).toMatch(/required/);
+    expect(validatePortStatusDecisionNote('short', true)).toMatch(/at least/);
+    expect(validatePortStatusDecisionNote('a'.repeat(PORT_STATUS_DECISION_NOTE_MIN), true)).toBeNull();
+  });
+});
+
+describe('evaluatePortStatusPatch', () => {
+  const adminId = 42;
+
+  it('blocks non-admins from setting official', () => {
+    const result = evaluatePortStatusPatch({
+      userIsPlatformAdmin: false,
+      userIsOwner: true,
+      current: 'claimed',
+      rawPortStatus: 'official',
+      decisionNoteRaw: 'a'.repeat(PORT_STATUS_DECISION_NOTE_MIN),
+      decidedByUserId: adminId,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(403);
+    }
+  });
+
+  it('requires portStatusDecisionNote when admin sets official', () => {
+    const missing = evaluatePortStatusPatch({
+      userIsPlatformAdmin: true,
+      userIsOwner: false,
+      current: 'claimed',
+      rawPortStatus: 'official',
+      decisionNoteRaw: undefined,
+      decidedByUserId: adminId,
+    });
+    expect(missing.ok).toBe(false);
+
+    const ok = evaluatePortStatusPatch({
+      userIsPlatformAdmin: true,
+      userIsOwner: false,
+      current: 'claimed',
+      rawPortStatus: 'official',
+      decisionNoteRaw: 'Verified upstream maintainer identity via org email.',
+      decidedByUserId: adminId,
+    });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) {
+      expect(ok.patch.portStatus).toBe('official');
+      expect(ok.patch.portStatusDecisionNote).toContain('Verified');
+      expect(ok.patch.portStatusDecidedById).toBe(adminId);
+      expect(ok.patch.portStatusDecidedAt).toBeInstanceOf(Date);
+    }
+  });
+
+  it('lets owners archive without a decision note', () => {
+    const result = evaluatePortStatusPatch({
+      userIsPlatformAdmin: false,
+      userIsOwner: true,
+      current: 'claimed',
+      rawPortStatus: 'archived',
+      decisionNoteRaw: undefined,
+      decidedByUserId: 1,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.patch.portStatus).toBe('archived');
+      expect(result.patch.portStatusDecisionNote).toBeNull();
+    }
+  });
+
+  it('clears audit fields when admin clears portStatus', () => {
+    const result = evaluatePortStatusPatch({
+      userIsPlatformAdmin: true,
+      userIsOwner: false,
+      current: 'official',
+      rawPortStatus: null,
+      decisionNoteRaw: undefined,
+      decidedByUserId: adminId,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.patch.portStatus).toBeNull();
+      expect(result.patch.portStatusDecisionNote).toBeNull();
+    }
   });
 });

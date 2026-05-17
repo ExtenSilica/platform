@@ -16,6 +16,7 @@ import {
   validateHttpsUrl,
   parseCreatedByOrgId,
   parsePositiveInt,
+  requestStatusSideEffects,
   validateMilestoneTitle,
   validateSubmissionSummary,
   validateInterestMessage,
@@ -678,10 +679,7 @@ export async function patchImplementationRequest(
       return;
     }
     data.status = toStatus;
-    const now = new Date();
-    if (toStatus === 'open' && !loaded.row.openedAt) data.openedAt = now;
-    if (toStatus === 'completed') data.completedAt = now;
-    if (toStatus === 'cancelled') data.cancelledAt = now;
+    Object.assign(data, requestStatusSideEffects(toStatus, loaded.row));
   }
 
   if (Object.keys(data).length === 0) {
@@ -1177,6 +1175,7 @@ export async function createVerificationRun(
   const logUrl =
     typeof req.body?.logUrl === 'string' && req.body.logUrl.trim() ? req.body.logUrl.trim() : null;
 
+  // PR-C4: verification records outcome only — never auto-promotes Extension.portStatus.
   const run = await prisma.$transaction(async (tx) => {
     const created = await tx.verificationRun.create({
       data: {
@@ -1311,7 +1310,7 @@ export async function adminCancelImplementationRequest(
 
   const updated = await prisma.implementationRequest.update({
     where: { id },
-    data: { status: 'cancelled', cancelledAt: new Date() },
+    data: { status: 'cancelled', ...requestStatusSideEffects('cancelled', existing) },
     include: requestInclude,
   });
 

@@ -156,6 +156,9 @@ export interface RegistryPackage {
   authority?: string | null;
   /** Provenance on ExtenSilica (server-set; never from the manifest). */
   portStatus?: PortStatus | null;
+  /** Audit note when `portStatus` is `official` (platform admin). */
+  portStatusDecisionNote?: string | null;
+  portStatusDecidedAt?: string | null;
   latestVersion?: string | null;
   version?: string;
   totalDownloads: number;
@@ -286,6 +289,220 @@ export type OwnershipEligibility =
       /** Set when the only blocker is "not signed in". */
       requiresAuth?: boolean;
     };
+
+/* ─── Implementation coordination (Phase C) ─────────────────────────────── */
+
+export type ImplementationRequestVisibility = "public" | "org_only" | "unlisted";
+
+export const IMPLEMENTATION_REQUEST_VISIBILITIES: ImplementationRequestVisibility[] = [
+  "public",
+  "org_only",
+  "unlisted",
+];
+
+export type ImplementationRequestStatus =
+  | "draft"
+  | "open"
+  | "in_progress"
+  | "submitted"
+  | "verified"
+  | "completed"
+  | "cancelled";
+
+export const IMPLEMENTATION_REQUEST_STATUSES: ImplementationRequestStatus[] = [
+  "draft",
+  "open",
+  "in_progress",
+  "submitted",
+  "verified",
+  "completed",
+  "cancelled",
+];
+
+export type ImplementationSubmissionStatus = "draft" | "submitted";
+
+export const IMPLEMENTATION_SUBMISSION_STATUSES: ImplementationSubmissionStatus[] = [
+  "draft",
+  "submitted",
+];
+
+export type VerificationRunOutcome = "pass" | "fail";
+
+export const VERIFICATION_RUN_OUTCOMES: VerificationRunOutcome[] = ["pass", "fail"];
+
+/** Field length limits (mirror store-backend `lib/implementationRequest.ts`). */
+export const IMPLEMENTATION_TITLE_MIN = 5;
+export const IMPLEMENTATION_TITLE_MAX = 200;
+export const IMPLEMENTATION_DESCRIPTION_MIN = 50;
+export const IMPLEMENTATION_DESCRIPTION_MAX = 10000;
+export const IMPLEMENTATION_TARGET_CAPABILITY_MAX = 120;
+export const IMPLEMENTATION_ACCEPTANCE_CRITERIA_MAX = 4000;
+export const IMPLEMENTATION_FUNDING_NOTE_MAX = 2000;
+export const IMPLEMENTATION_SUBMISSION_SUMMARY_MIN = 50;
+export const IMPLEMENTATION_SUBMISSION_SUMMARY_MAX = 10000;
+export const IMPLEMENTATION_INTEREST_MESSAGE_MAX = 500;
+export const IMPLEMENTATION_VERIFICATION_NOTES_MAX = 4000;
+
+export function isTerminalImplementationRequestStatus(
+  status: ImplementationRequestStatus,
+): boolean {
+  return status === "completed" || status === "cancelled";
+}
+
+export const IMPLEMENTATION_REQUEST_STATUS_INFO: Record<
+  ImplementationRequestStatus,
+  { label: string; description: string }
+> = {
+  draft: {
+    label: "Draft",
+    description: "Visible only to the creator until published as open.",
+  },
+  open: {
+    label: "Open",
+    description: "Accepting implementer interest and work proposals.",
+  },
+  in_progress: {
+    label: "In progress",
+    description: "Assigned or active implementation work.",
+  },
+  submitted: {
+    label: "Submitted",
+    description: "Deliverable submitted; awaiting verification.",
+  },
+  verified: {
+    label: "Verified",
+    description: "Technical verification passed; upstream may close the request.",
+  },
+  completed: {
+    label: "Completed",
+    description: "Request closed successfully.",
+  },
+  cancelled: {
+    label: "Cancelled",
+    description: "Request withdrawn or closed without completion.",
+  },
+};
+
+export interface ImplementationUserSummary {
+  id: number;
+  username: string;
+  avatarUrl?: string | null;
+  implementerGithubUrl?: string | null;
+}
+
+export interface ImplementationPackageSummary {
+  id: number;
+  slug: string;
+  name: string;
+  ownerId?: number | null;
+  orgId?: number | null;
+}
+
+export interface ImplementationOrgSummary {
+  id: number;
+  slug: string;
+  displayName: string;
+}
+
+export interface ImplementationMilestone {
+  id: number;
+  title: string;
+  description?: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ImplementationRequest {
+  id: number;
+  packageId: number;
+  createdByUserId: number;
+  createdByOrgId?: number | null;
+  title: string;
+  description: string;
+  visibility: ImplementationRequestVisibility;
+  status: ImplementationRequestStatus;
+  targetCapability?: string | null;
+  acceptanceCriteriaSummary?: string | null;
+  fundingContactEmail?: string | null;
+  fundingNote?: string | null;
+  assignedImplementerUserId?: number | null;
+  openedAt?: string | null;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  package?: ImplementationPackageSummary;
+  createdBy?: ImplementationUserSummary;
+  createdByOrg?: ImplementationOrgSummary | null;
+  assignedImplementer?: ImplementationUserSummary | null;
+  milestones?: ImplementationMilestone[];
+  interestCount: number;
+  submissionCount: number;
+}
+
+export interface ImplementationInterest {
+  id: number;
+  requestId: number;
+  userId: number;
+  message?: string | null;
+  createdAt: string;
+}
+
+export interface VerificationRun {
+  id: number;
+  submissionId?: number;
+  verifierId: number;
+  outcome: VerificationRunOutcome;
+  notes?: string | null;
+  logUrl?: string | null;
+  createdAt: string;
+}
+
+export interface ImplementationSubmission {
+  id: number;
+  requestId: number;
+  submittedById: number;
+  status: ImplementationSubmissionStatus;
+  summary: string;
+  evidenceUrl?: string | null;
+  versionId?: number | null;
+  submittedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  submittedBy?: ImplementationUserSummary;
+  request?: {
+    id: number;
+    packageId: number;
+    status: ImplementationRequestStatus;
+    title: string;
+    package: ImplementationPackageSummary;
+  };
+  verificationRuns?: VerificationRun[];
+}
+
+export interface CreateImplementationRequestInput {
+  title: string;
+  description: string;
+  visibility?: ImplementationRequestVisibility;
+  targetCapability?: string | null;
+  acceptanceCriteriaSummary?: string | null;
+  fundingContactEmail?: string | null;
+  fundingNote?: string | null;
+  createdByOrgId?: number | null;
+}
+
+export interface PatchImplementationRequestInput {
+  title?: string;
+  description?: string;
+  visibility?: ImplementationRequestVisibility;
+  targetCapability?: string | null;
+  acceptanceCriteriaSummary?: string | null;
+  fundingContactEmail?: string | null;
+  fundingNote?: string | null;
+  assignedImplementerUserId?: number | null;
+  status?: ImplementationRequestStatus;
+}
 
 export interface Organization {
   id: number;

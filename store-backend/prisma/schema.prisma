@@ -45,6 +45,7 @@ model User {
   implementationSubmissions      ImplementationSubmission[]
   implementationInterests        ImplementationInterest[]
   verificationRuns               VerificationRun[]          @relation("VerificationRunVerifier")
+  portStatusDecisions            Extension[]                @relation("PortStatusDecider")
 }
 
 /// Named API credential. Each user may hold N independent tokens (web sessions,
@@ -202,6 +203,10 @@ model Extension {
   /// Provenance on ExtenSilica. SERVER-SET ONLY — never copied from the
   /// uploaded manifest. Null for legacy packages predating this field.
   portStatus           PortStatus?
+  /// Required audit trail when `portStatus` is set to `official` (platform admin only).
+  portStatusDecisionNote String?
+  portStatusDecidedById  Int?
+  portStatusDecidedAt    DateTime?
   versions             Version[]
   maintainers          Maintainer[]
   reviews              Review[]
@@ -213,6 +218,7 @@ model Extension {
 
   owner User?         @relation("ExtensionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   org   Organization? @relation("ExtensionOrg", fields: [orgId], references: [id], onDelete: SetNull)
+  portStatusDecidedBy User? @relation("PortStatusDecider", fields: [portStatusDecidedById], references: [id], onDelete: SetNull)
 
   @@index([latestReadinessLevel])
   @@index([standardStatus])

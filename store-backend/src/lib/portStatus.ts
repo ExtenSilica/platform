@@ -64,3 +64,147 @@ export function portStatusAfterOwnershipClaim(
   if (current === 'official' || current === 'archived') return current;
   return 'claimed';
 }
+
+export const PORT_STATUS_DECISION_NOTE_MIN = 10;
+export const PORT_STATUS_DECISION_NOTE_MAX = 1000;
+
+/** Statuses that only a platform admin may assign (except owner may set `archived`). */
+export const ADMIN_ONLY_PORT_STATUSES: readonly PortStatus[] = [
+  'seeded',
+  'community_port',
+  'claimed',
+  'official',
+];
+
+export function validatePortStatusDecisionNote(
+  raw: unknown,
+  required: boolean,
+): string | null {
+  if (raw === undefined || raw === null) {
+    return required ? 'portStatusDecisionNote is required when setting portStatus to official.' : null;
+  }
+  if (typeof raw !== 'string') return 'portStatusDecisionNote must be a string.';
+  const trimmed = raw.trim();
+  if (!required && trimmed === '') return null;
+  if (trimmed.length < PORT_STATUS_DECISION_NOTE_MIN) {
+    return `portStatusDecisionNote must be at least ${PORT_STATUS_DECISION_NOTE_MIN} characters.`;
+  }
+  if (trimmed.length > PORT_STATUS_DECISION_NOTE_MAX) {
+    return `portStatusDecisionNote must be at most ${PORT_STATUS_DECISION_NOTE_MAX} characters.`;
+  }
+  return null;
+}
+
+export type PortStatusAuditPatch = {
+  portStatus: PortStatus | null;
+  portStatusDecisionNote: string | null;
+  portStatusDecidedById: number | null;
+  portStatusDecidedAt: Date | null;
+};
+
+export type EvaluatePortStatusPatchInput = {
+  userIsPlatformAdmin: boolean;
+  userIsOwner: boolean;
+  current: PortStatus | null;
+  rawPortStatus: unknown;
+  decisionNoteRaw: unknown;
+  decidedByUserId: number;
+};
+
+export type EvaluatePortStatusPatchResult =
+  | { ok: true; patch: PortStatusAuditPatch }
+  | { ok: false; error: string; status: 400 | 403 };
+
+/**
+ * Validates a requested `portStatus` change. Owners may only archive; admins may
+ * set any value but must supply `portStatusDecisionNote` when marking `official`.
+ */
+export function evaluatePortStatusPatch(
+  input: EvaluatePortStatusPatchInput,
+): EvaluatePortStatusPatchResult {
+  const { userIsPlatformAdmin, userIsOwner, current, rawPortStatus, decisionNoteRaw, decidedByUserId } =
+    input;
+
+  if (rawPortStatus === null || rawPortStatus === '') {
+    if (!userIsPlatformAdmin) {
+      return {
+        ok: false,
+        status: 403,
+        error: 'Only platform admins may clear portStatus.',
+      };
+    }
+    return {
+      ok: true,
+      patch: {
+        portStatus: null,
+        portStatusDecisionNote: null,
+        portStatusDecidedById: null,
+        portStatusDecidedAt: null,
+      },
+    };
+  }
+
+  const normalized = normalizePortStatus(rawPortStatus);
+  if (normalized === null) {
+    return {
+      ok: false,
+      status: 400,
+      error: `portStatus must be one of: ${PORT_STATUS_VALUES.join(', ')}.`,
+    };
+  }
+
+  if (!userIsPlatformAdmin) {
+    if (!userIsOwner || normalized !== 'archived') {
+      return {
+        ok: false,
+        status: 403,
+        error:
+          'Only platform admins may change portStatus (except `archived`, which the owner may set).',
+      };
+    }
+    return {
+      ok: true,
+      patch: {
+        portStatus: normalized,
+        portStatusDecisionNote: null,
+        portStatusDecidedById: null,
+        portStatusDecidedAt: null,
+      },
+    };
+  }
+
+  if (normalized === 'official') {
+    const noteErr = validatePortStatusDecisionNote(decisionNoteRaw, true);
+    if (noteErr) return { ok: false, status: 400, error: noteErr };
+    const note =
+      typeof decisionNoteRaw === 'string' ? decisionNoteRaw.trim() : '';
+    return {
+      ok: true,
+      patch: {
+        portStatus: 'official',
+        portStatusDecisionNote: note,
+        portStatusDecidedById: decidedByUserId,
+        portStatusDecidedAt: new Date(),
+      },
+    };
+  }
+
+  const noteErr = validatePortStatusDecisionNote(decisionNoteRaw, false);
+  if (noteErr) return { ok: false, status: 400, error: noteErr };
+
+  return {
+    ok: true,
+    patch: {
+      portStatus: normalized,
+      portStatusDecisionNote: null,
+      portStatusDecidedById: null,
+      portStatusDecidedAt: null,
+    },
+  };
+}
+
+/** Verification of implementation work must never change package provenance. */
+export function assertVerificationDoesNotAlterPortStatus(): void {
+  // Documented guard for code review — call sites must not patch Extension.portStatus
+  // from implementation-request verification flows (see implementation-plan PR-C4).
+}

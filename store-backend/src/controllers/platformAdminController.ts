@@ -10,10 +10,7 @@ import {
   normalizeStandardStatus,
   STANDARD_STATUS_VALUES,
 } from '../lib/standardStatus';
-import {
-  normalizePortStatus,
-  PORT_STATUS_VALUES,
-} from '../lib/portStatus';
+import { evaluatePortStatusPatch } from '../lib/portStatus';
 
 const MAX_PAGE = 200;
 const BCRYPT_ROUNDS = 12;
@@ -705,18 +702,24 @@ export async function patchAdminPackageBySlug(req: Request, res: Response): Prom
     patch.authority = normalizeAuthority(authorityRaw);
   }
   if ('portStatus' in (req.body ?? {})) {
-    if (portStatusRaw === null || portStatusRaw === '') {
-      patch.portStatus = null;
-    } else {
-      const normalized = normalizePortStatus(portStatusRaw);
-      if (normalized === null) {
-        res.status(400).json({
-          error: `portStatus must be one of: ${PORT_STATUS_VALUES.join(', ')}.`,
-        });
-        return;
-      }
-      patch.portStatus = normalized;
+    const adminUserId = req.user?.id;
+    if (!adminUserId) {
+      res.status(401).json({ error: 'Authentication required.' });
+      return;
     }
+    const evaluated = evaluatePortStatusPatch({
+      userIsPlatformAdmin: true,
+      userIsOwner: false,
+      current: pkg.portStatus ?? null,
+      rawPortStatus: portStatusRaw,
+      decisionNoteRaw: (req.body as Record<string, unknown>).portStatusDecisionNote,
+      decidedByUserId: adminUserId,
+    });
+    if (!evaluated.ok) {
+      res.status(evaluated.status).json({ error: evaluated.error });
+      return;
+    }
+    Object.assign(patch, evaluated.patch);
   }
 
   if (Object.keys(patch).length === 0) {
@@ -758,6 +761,8 @@ export async function patchAdminPackageBySlug(req: Request, res: Response): Prom
       standardStatus: updated.standardStatus ?? null,
       authority: updated.authority ?? null,
       portStatus: updated.portStatus ?? null,
+      portStatusDecisionNote: updated.portStatusDecisionNote ?? null,
+      portStatusDecidedAt: updated.portStatusDecidedAt?.toISOString() ?? null,
       latestVersion: updated.latestVersion ?? null,
       totalDownloads: updated.totalDownloads,
       weeklyDownloads: updated.weeklyDownloads,

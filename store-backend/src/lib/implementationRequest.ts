@@ -81,6 +81,33 @@ const REQUEST_TRANSITIONS: Record<
   cancelled: [],
 };
 
+/** Timestamp side-effects when an implementation request changes status (PR-C4). */
+export function requestStatusSideEffects(
+  toStatus: ImplementationRequestStatus,
+  row: {
+    openedAt: Date | null;
+    completedAt: Date | null;
+    cancelledAt: Date | null;
+  },
+): {
+  openedAt?: Date;
+  completedAt?: Date;
+  cancelledAt?: Date;
+} {
+  const now = new Date();
+  const patch: {
+    openedAt?: Date;
+    completedAt?: Date;
+    cancelledAt?: Date;
+  } = {};
+
+  if (toStatus === 'open' && !row.openedAt) patch.openedAt = now;
+  if (toStatus === 'completed') patch.completedAt = now;
+  if (toStatus === 'cancelled') patch.cancelledAt = now;
+
+  return patch;
+}
+
 /**
  * Reject API bodies that carry structured payment fields (off-platform funding
  * uses fundingContactEmail + fundingNote only).

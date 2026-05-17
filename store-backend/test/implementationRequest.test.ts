@@ -5,6 +5,7 @@ import {
   validateDescription,
   validateVisibility,
   validateRequestStatusTransition,
+  requestStatusSideEffects,
   validateFundingContactEmail,
   validateOptionalShortText,
   parseCreatedByOrgId,
@@ -142,6 +143,45 @@ describe('parseCreatedByOrgId', () => {
 
   it('rejects invalid values', () => {
     expect(parseCreatedByOrgId(-1).error).toMatch(/positive/);
+  });
+});
+
+describe('requestStatusSideEffects', () => {
+  it('sets openedAt on first transition to open', () => {
+    const patch = requestStatusSideEffects('open', {
+      openedAt: null,
+      completedAt: null,
+      cancelledAt: null,
+    });
+    expect(patch.openedAt).toBeInstanceOf(Date);
+    expect(patch.completedAt).toBeUndefined();
+  });
+
+  it('does not overwrite an existing openedAt', () => {
+    const existing = new Date('2020-01-01');
+    const patch = requestStatusSideEffects('open', {
+      openedAt: existing,
+      completedAt: null,
+      cancelledAt: null,
+    });
+    expect(patch.openedAt).toBeUndefined();
+  });
+
+  it('sets completedAt and cancelledAt on terminal transitions', () => {
+    expect(
+      requestStatusSideEffects('completed', {
+        openedAt: new Date(),
+        completedAt: null,
+        cancelledAt: null,
+      }).completedAt,
+    ).toBeInstanceOf(Date);
+    expect(
+      requestStatusSideEffects('cancelled', {
+        openedAt: null,
+        completedAt: null,
+        cancelledAt: null,
+      }).cancelledAt,
+    ).toBeInstanceOf(Date);
   });
 });
 
