@@ -36,6 +36,10 @@ import {
   type RequestAccessContext,
   type UserAccessContext,
 } from '../lib/implementationAccess';
+import {
+  notifyNewSubmissionEmails,
+  notifyVerificationFailedEmail,
+} from '../lib/notifyImplementationFlow';
 
 // ── Includes / serializers ────────────────────────────────────────────────────
 
@@ -1080,6 +1084,7 @@ export async function patchImplementationSubmission(
       where: { id: submissionId },
       include: submissionInclude,
     });
+    notifyNewSubmissionEmails(submissionId);
     res.json({ submission: serializeSubmission(refreshed!) });
     return;
   }
@@ -1192,6 +1197,19 @@ export async function createVerificationRun(
 
     return created;
   });
+
+  if (outcome === 'fail') {
+    const verifier = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { username: true },
+    });
+    notifyVerificationFailedEmail(
+      submissionId,
+      verifier?.username ?? 'reviewer',
+      notes,
+      logUrl,
+    );
+  }
 
   res.status(201).json({
     verificationRun: {
