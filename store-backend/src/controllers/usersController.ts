@@ -14,8 +14,10 @@ export const getUserProfile = async (req: Request, res: Response) => {
     select: {
       id:        true,
       username:  true,
-      bio:       true,
-      avatarUrl: true,
+      bio:                  true,
+      avatarUrl:            true,
+      implementerGithubUrl: true,
+      implementerBio:       true,
       createdAt: true,
       ownedPackages: {
         where: { orgId: null }, // personal packages only (scoped live under orgs)
@@ -39,8 +41,10 @@ export const getUserProfile = async (req: Request, res: Response) => {
   res.json({
     id:        user.id,
     username:  user.username,
-    bio:       user.bio       ?? null,
-    avatarUrl: user.avatarUrl ?? null,
+    bio:                  user.bio ?? null,
+    avatarUrl:            user.avatarUrl ?? null,
+    implementerGithubUrl: user.implementerGithubUrl ?? null,
+    implementerBio:       user.implementerBio ?? null,
     createdAt: user.createdAt.toISOString(),
     packages:  user.ownedPackages.map((p) => {
       const { maturityLevel, capabilityBadges } = packageReadinessSummary(p, p.versions);

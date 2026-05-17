@@ -21,6 +21,8 @@ export interface AuthUser {
   emailVerified?: boolean;
   bio?: string | null;
   avatarUrl?: string | null;
+  implementerGithubUrl?: string | null;
+  implementerBio?: string | null;
   createdAt: string;
   updatedAt?: string;
   /** Set from the API when the account is listed in PLATFORM_ADMIN_* env on the registry. */

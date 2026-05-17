@@ -56,6 +56,9 @@ export function normalizeAuthMePayload(body: unknown): AuthUser | null {
           emailVerified: typeof u.emailVerified === "boolean" ? u.emailVerified : undefined,
           bio: (u.bio as string | null | undefined) ?? null,
           avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
+          implementerGithubUrl:
+            (u.implementerGithubUrl as string | null | undefined) ?? null,
+          implementerBio: (u.implementerBio as string | null | undefined) ?? null,
           createdAt:
             typeof u.createdAt === "string"
               ? u.createdAt
@@ -87,6 +90,9 @@ export function normalizeAuthMePayload(body: unknown): AuthUser | null {
         emailVerified: typeof u.emailVerified === "boolean" ? u.emailVerified : undefined,
         bio: (u.bio as string | null | undefined) ?? null,
         avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
+        implementerGithubUrl:
+          (u.implementerGithubUrl as string | null | undefined) ?? null,
+        implementerBio: (u.implementerBio as string | null | undefined) ?? null,
         createdAt:
           typeof u.createdAt === "string"
             ? u.createdAt
@@ -188,7 +194,12 @@ export const EMAIL_NOT_VERIFIED_CODE = "EMAIL_NOT_VERIFIED";
 
 export async function apiUpdateProfile(
   token: string,
-  patch: { bio?: string | null; avatarUrl?: string | null }
+  patch: {
+    bio?: string | null;
+    avatarUrl?: string | null;
+    implementerGithubUrl?: string | null;
+    implementerBio?: string | null;
+  }
 ): Promise<{ user: import("@/lib/auth").AuthUser }> {
   const data = await apiWrite<Record<string, unknown>>("PATCH", "/auth/me", token, patch);
   const user = normalizeAuthMePayload(data);

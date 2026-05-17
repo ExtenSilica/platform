@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { fetchOrgPublic, fetchUser } from "@/lib/api";
-import { ArrowLeft, Calendar, Download, Package, User } from "lucide-react";
+import { ArrowLeft, Calendar, Download, Github, Package, User } from "lucide-react";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
 
 export async function generateMetadata({
@@ -62,6 +62,20 @@ export default async function UserProfilePage({
           <h1 className="text-2xl font-bold">@{user.username}</h1>
           {user.bio && (
             <p className="mt-1 text-muted-foreground">{user.bio}</p>
+          )}
+          {user.implementerBio && (
+            <p className="mt-2 text-sm text-muted-foreground">{user.implementerBio}</p>
+          )}
+          {user.implementerGithubUrl && (
+            <a
+              href={user.implementerGithubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              <Github className="h-4 w-4" />
+              GitHub
+            </a>
           )}
           <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />

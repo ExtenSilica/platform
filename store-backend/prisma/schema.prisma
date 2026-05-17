@@ -23,6 +23,10 @@ model User {
   emailVerificationExpires   DateTime?
   bio                        String?
   avatarUrl                  String?
+  /// Public GitHub profile for implementation/coordination work (https://github.com/<user>).
+  implementerGithubUrl       String?
+  /// Short pitch shown when expressing interest in implementation requests (PR-B1).
+  implementerBio             String?
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
 

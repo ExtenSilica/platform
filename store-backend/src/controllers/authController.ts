@@ -14,6 +14,12 @@ import {
   revokeApiTokenById,
   webSessionNameFromUserAgent,
 } from '../lib/apiTokens';
+import {
+  normalizeImplementerBio,
+  normalizeImplementerGithubUrl,
+  validateImplementerBio,
+  validateImplementerGithubUrl,
+} from '../lib/implementerProfile';
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -48,6 +54,8 @@ export function sanitizeUser(user: {
   emailVerifiedAt?: Date | null;
   bio: string | null;
   avatarUrl: string | null;
+  implementerGithubUrl?: string | null;
+  implementerBio?: string | null;
   createdAt: Date;
   updatedAt?: Date;
 }) {
@@ -58,6 +66,8 @@ export function sanitizeUser(user: {
     emailVerified: Boolean(user.emailVerifiedAt),
     bio: user.bio,
     avatarUrl: user.avatarUrl,
+    implementerGithubUrl: user.implementerGithubUrl ?? null,
+    implementerBio: user.implementerBio ?? null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: (user.updatedAt ?? user.createdAt).toISOString(),
   };
@@ -324,14 +334,19 @@ export async function changePassword(req: Request, res: Response): Promise<void>
 /**
  * PATCH /auth/me
  * Requires: Authorization: Bearer <token>
- * Body: { bio?, avatarUrl? }
- * Updates the authenticated user's bio and/or avatarUrl.
+ * Body: { bio?, avatarUrl?, implementerGithubUrl?, implementerBio? }
+ * Updates the authenticated user's profile fields.
  */
 export async function updateMe(req: Request, res: Response): Promise<void> {
   const userId = req.user!.id;
-  const { bio, avatarUrl } = req.body ?? {};
+  const { bio, avatarUrl, implementerGithubUrl, implementerBio } = req.body ?? {};
 
-  const patch: { bio?: string | null; avatarUrl?: string | null } = {};
+  const patch: {
+    bio?: string | null;
+    avatarUrl?: string | null;
+    implementerGithubUrl?: string | null;
+    implementerBio?: string | null;
+  } = {};
 
   if (bio !== undefined) {
     if (bio === null || bio === '') {
@@ -371,8 +386,35 @@ export async function updateMe(req: Request, res: Response): Promise<void> {
     }
   }
 
+  if (implementerGithubUrl !== undefined) {
+    const ghErr = validateImplementerGithubUrl(implementerGithubUrl);
+    if (ghErr) {
+      res.status(400).json({ error: ghErr });
+      return;
+    }
+    const normalized = normalizeImplementerGithubUrl(implementerGithubUrl);
+    if (normalized !== undefined) {
+      patch.implementerGithubUrl = normalized;
+    }
+  }
+
+  if (implementerBio !== undefined) {
+    const bioErr = validateImplementerBio(implementerBio);
+    if (bioErr) {
+      res.status(400).json({ error: bioErr });
+      return;
+    }
+    const normalized = normalizeImplementerBio(implementerBio);
+    if (normalized !== undefined) {
+      patch.implementerBio = normalized;
+    }
+  }
+
   if (Object.keys(patch).length === 0) {
-    res.status(400).json({ error: 'Nothing to update. Provide bio or avatarUrl.' });
+    res.status(400).json({
+      error:
+        'Nothing to update. Provide bio, avatarUrl, implementerGithubUrl, and/or implementerBio.',
+    });
     return;
   }
 

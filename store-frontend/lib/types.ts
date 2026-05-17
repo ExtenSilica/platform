@@ -197,6 +197,8 @@ export interface UserProfile {
   username: string;
   bio?: string | null;
   avatarUrl?: string | null;
+  implementerGithubUrl?: string | null;
+  implementerBio?: string | null;
   createdAt: string;
   packages: Array<{
     slug: string;

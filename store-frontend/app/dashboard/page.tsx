@@ -108,6 +108,8 @@ export default function DashboardPage() {
   // Profile edit state
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [implementerGithubUrl, setImplementerGithubUrl] = useState("");
+  const [implementerBio, setImplementerBio] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSaved, setProfileSaved] = useState(false);
@@ -164,6 +166,8 @@ export default function DashboardPage() {
     if (user) {
       setBio(user.bio ?? "");
       setAvatarUrl(user.avatarUrl ?? "");
+      setImplementerGithubUrl(user.implementerGithubUrl ?? "");
+      setImplementerBio(user.implementerBio ?? "");
     }
   }, [user]);
 
@@ -378,6 +382,8 @@ export default function DashboardPage() {
       const { user: updated } = await apiUpdateProfile(token, {
         bio: bio.trim() || null,
         avatarUrl: avatarUrl.trim() || null,
+        implementerGithubUrl: implementerGithubUrl.trim() || null,
+        implementerBio: implementerBio.trim() || null,
       });
       updateUser(updated);
       setProfileSaved(true);
@@ -1012,6 +1018,43 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">
               Public URL to a square image (HTTPS recommended).
             </p>
+          </div>
+
+          <div className="rounded-lg border border-dashed bg-muted/10 p-4 space-y-4">
+            <div>
+              <p className="text-sm font-medium">Implementer profile</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Shown on your public profile when you contribute to implementation
+                requests. Optional — not required to publish packages.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="implementer-github">GitHub profile</Label>
+              <Input
+                id="implementer-github"
+                type="url"
+                placeholder="https://github.com/your-username"
+                value={implementerGithubUrl}
+                onChange={(e) => setImplementerGithubUrl(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="implementer-bio">Implementer bio</Label>
+              <Textarea
+                id="implementer-bio"
+                placeholder="e.g. Spike/QEMU ports for ratified crypto extensions, CI and test harnesses."
+                maxLength={500}
+                rows={3}
+                value={implementerBio}
+                onChange={(e) => setImplementerBio(e.target.value)}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {implementerBio.length} / 500
+              </p>
+            </div>
           </div>
 
           {profileError && (
