@@ -221,6 +221,35 @@ async function scheduleWeeklyRefresh(): Promise<void> {
   setTimeout(scheduleWeeklyRefresh, WEEKLY_REFRESH_MS);
 }
 
+// ── Stale open implementation requests (PR-C11) ─────────────────────────────
+//
+// Emails creators and upstream maintainers once when a request stays `open`
+// longer than STALE_OPEN_DAYS (default 30). Disabled when STALE_OPEN_CHECK_ENABLED=0.
+
+const STALE_OPEN_CHECK_ENABLED = process.env.STALE_OPEN_CHECK_ENABLED !== '0';
+const STALE_OPEN_CHECK_MS =
+  parseInt(process.env.STALE_OPEN_CHECK_MS ?? '', 10) || 24 * 60 * 60 * 1000;
+const STALE_OPEN_DAYS = parseInt(process.env.STALE_OPEN_DAYS ?? '', 10) || 30;
+
+async function scheduleStaleOpenCheck(): Promise<void> {
+  if (!STALE_OPEN_CHECK_ENABLED) {
+    setTimeout(scheduleStaleOpenCheck, STALE_OPEN_CHECK_MS);
+    return;
+  }
+  try {
+    const { runStaleOpenNotifications } = await import('./lib/notifyStaleOpenRequests');
+    const result = await runStaleOpenNotifications(STALE_OPEN_DAYS);
+    if (result.notified > 0) {
+      console.log(
+        `[implementation] stale-open: notified ${result.notified} request(s), ${result.emailsSent} email(s) sent (scanned ${result.scanned})`,
+      );
+    }
+  } catch (err) {
+    console.error('[implementation] stale-open check failed:', err);
+  }
+  setTimeout(scheduleStaleOpenCheck, STALE_OPEN_CHECK_MS);
+}
+
 // Initialize storage driver before accepting traffic.
 // Crashes the process on misconfiguration (e.g. bad S3 credentials).
 initStorage()
@@ -228,8 +257,9 @@ initStorage()
     app.listen(port, () => {
       console.log(`XSIL registry listening on port ${port}`);
       logOAuthStartupSummary();
-      // Start the weekly-downloads refresh loop after the server is up.
+      // Start background maintenance loops after the server is up.
       scheduleWeeklyRefresh();
+      scheduleStaleOpenCheck();
     });
   })
   .catch((err: Error) => {

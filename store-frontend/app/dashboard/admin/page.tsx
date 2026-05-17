@@ -19,6 +19,8 @@ import {
   apiAdminListOwnershipRequests,
   apiAdminApproveOwnershipRequest,
   apiAdminRejectOwnershipRequest,
+  apiAdminListImplementationRequests,
+  apiAdminCancelImplementationRequest,
   ApiError,
   type AdminHealthResponse,
   type AdminUserRow,
@@ -27,11 +29,18 @@ import {
 import {
   PORT_STATUS_INFO,
   PORT_STATUS_VALUES,
+  PORT_STATUS_DECISION_NOTE_MIN,
+  PORT_STATUS_DECISION_NOTE_MAX,
+  IMPLEMENTATION_REQUEST_STATUSES,
+  isTerminalImplementationRequestStatus,
   type OwnershipRequest,
   type OwnershipRequestStatus,
+  type ImplementationRequest,
+  type ImplementationRequestStatus,
   type PortStatus,
 } from "@/lib/types";
 import { PortStatusBadge } from "@/components/port-status-badge";
+import { ImplementationRequestStatusBadge } from "@/components/implementation-request-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,12 +67,18 @@ import {
   Clock3,
   XCircle,
   Undo2,
+  ClipboardList,
 } from "lucide-react";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
 
 const PAGE_SIZE = 50;
 
-type AdminTab = "health" | "users" | "packages" | "requests";
+type AdminTab =
+  | "health"
+  | "users"
+  | "packages"
+  | "ownership"
+  | "implementation";
 
 export default function PlatformAdminPage() {
   const { user, token, isLoading } = useAuth();
@@ -113,6 +128,8 @@ export default function PlatformAdminPage() {
   const [editPkgDeprecated, setEditPkgDeprecated] = useState(false);
   const [editPkgDeprecationMessage, setEditPkgDeprecationMessage] = useState("");
   const [editPkgPortStatus, setEditPkgPortStatus] = useState<PortStatus | "">("");
+  const [editPkgPortStatusDecisionNote, setEditPkgPortStatusDecisionNote] =
+    useState("");
 
   // Ownership-request review queue
   const [reqStatusFilter, setReqStatusFilter] =
@@ -123,6 +140,14 @@ export default function PlatformAdminPage() {
   const [reqDecisionNote, setReqDecisionNote] = useState<Record<number, string>>(
     {},
   );
+
+  // Implementation-request admin queue (PR-C8)
+  const [implStatusFilter, setImplStatusFilter] = useState<
+    ImplementationRequestStatus | "all"
+  >("open");
+  const [implRows, setImplRows] = useState<ImplementationRequest[]>([]);
+  const [implLoading, setImplLoading] = useState(false);
+  const [implBusyId, setImplBusyId] = useState<number | null>(null);
 
   const loadOwnershipRequests = useCallback(async () => {
     if (!token) return;
@@ -144,6 +169,27 @@ export default function PlatformAdminPage() {
       setReqLoading(false);
     }
   }, [token, reqStatusFilter]);
+
+  const loadImplementationRequests = useCallback(async () => {
+    if (!token) return;
+    setImplLoading(true);
+    setError("");
+    try {
+      const { requests } = await apiAdminListImplementationRequests(
+        token,
+        implStatusFilter,
+      );
+      setImplRows(requests);
+    } catch (e) {
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : "Failed to load implementation requests.",
+      );
+    } finally {
+      setImplLoading(false);
+    }
+  }, [token, implStatusFilter]);
 
   async function handleApproveRequest(id: number) {
     if (!token) return;
@@ -220,8 +266,32 @@ export default function PlatformAdminPage() {
   }, [isLoading, user, router, loadAll]);
 
   useEffect(() => {
-    if (tab === "requests") void loadOwnershipRequests();
+    if (tab === "ownership") void loadOwnershipRequests();
   }, [tab, loadOwnershipRequests]);
+
+  useEffect(() => {
+    if (tab === "implementation") void loadImplementationRequests();
+  }, [tab, loadImplementationRequests]);
+
+  async function handleCancelImplementationRequest(id: number) {
+    if (!token) return;
+    // eslint-disable-next-line no-alert
+    if (!confirm(`Cancel implementation request #${id}?`)) return;
+    setImplBusyId(id);
+    setError("");
+    setActionMsg("");
+    try {
+      await apiAdminCancelImplementationRequest(token, id);
+      setActionMsg(`Cancelled implementation request #${id}.`);
+      await loadImplementationRequests();
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Cancel failed.",
+      );
+    } finally {
+      setImplBusyId(null);
+    }
+  }
 
   async function verifyUser(id: number) {
     if (!token) return;
@@ -375,10 +445,21 @@ export default function PlatformAdminPage() {
     setEditPkgDeprecated(p.isDeprecated);
     setEditPkgDeprecationMessage("");
     setEditPkgPortStatus(p.portStatus ?? "");
+    setEditPkgPortStatusDecisionNote(p.portStatusDecisionNote ?? "");
   }
 
   async function savePackageEdits() {
     if (!token || !editPkgSlug) return;
+    const noteTrimmed = editPkgPortStatusDecisionNote.trim();
+    if (
+      editPkgPortStatus === "official" &&
+      noteTrimmed.length < PORT_STATUS_DECISION_NOTE_MIN
+    ) {
+      setError(
+        `portStatusDecisionNote is required when setting official (min ${PORT_STATUS_DECISION_NOTE_MIN} characters).`,
+      );
+      return;
+    }
     setError("");
     setActionMsg("");
     setBusy(true);
@@ -392,6 +473,9 @@ export default function PlatformAdminPage() {
         isDeprecated: editPkgDeprecated,
         deprecationMessage: editPkgDeprecationMessage.trim() === "" ? null : editPkgDeprecationMessage,
         portStatus: editPkgPortStatus === "" ? null : editPkgPortStatus,
+        ...(editPkgPortStatus === "official"
+          ? { portStatusDecisionNote: noteTrimmed }
+          : {}),
       });
       setActionMsg(`Package ${editPkgSlug} updated.`);
       setEditPkgSlug(null);
@@ -477,7 +561,8 @@ export default function PlatformAdminPage() {
             { id: "health", label: "Health", icon: Activity },
             { id: "users", label: "Users", icon: Users },
             { id: "packages", label: "Packages", icon: Package },
-            { id: "requests", label: "Ownership requests", icon: ShieldQuestion },
+            { id: "ownership", label: "Ownership", icon: ShieldQuestion },
+            { id: "implementation", label: "Implementation", icon: ClipboardList },
           ] as const
         ).map(({ id, label, icon: Icon }) => (
           <Button
@@ -1010,6 +1095,24 @@ export default function PlatformAdminPage() {
                       <code>community_port</code> → <code>claimed</code>.
                     </p>
                   </div>
+                  {editPkgPortStatus === "official" && (
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="pkg-port-status-note">
+                        Official decision note{" "}
+                        <span className="font-normal text-muted-foreground">
+                          ({PORT_STATUS_DECISION_NOTE_MIN}–{PORT_STATUS_DECISION_NOTE_MAX} chars, required)
+                        </span>
+                      </Label>
+                      <Textarea
+                        id="pkg-port-status-note"
+                        value={editPkgPortStatusDecisionNote}
+                        onChange={(e) => setEditPkgPortStatusDecisionNote(e.target.value)}
+                        rows={3}
+                        maxLength={PORT_STATUS_DECISION_NOTE_MAX}
+                        placeholder="How upstream identity / affiliation was verified (shown on the package page)."
+                      />
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 md:col-span-2">
                     <Checkbox
                       checked={editPkgDeprecated}
@@ -1040,7 +1143,7 @@ export default function PlatformAdminPage() {
         </section>
       )}
 
-      {tab === "requests" && (
+      {tab === "ownership" && (
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Ownership-request review</h2>
@@ -1258,6 +1361,167 @@ export default function PlatformAdminPage() {
             </ul>
           )}
         </section>
+      )}
+
+      {tab === "implementation" && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Implementation requests</h2>
+            <ImplFilterBar
+              implStatusFilter={implStatusFilter}
+              setImplStatusFilter={setImplStatusFilter}
+              implLoading={implLoading}
+              onRefresh={() => void loadImplementationRequests()}
+            />
+          </div>
+
+          {implLoading ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center text-sm text-muted-foreground">
+              Loading…
+            </div>
+          ) : implRows.length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center">
+              <ClipboardList className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">
+                No implementation requests with status “{implStatusFilter}”.
+              </p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {implRows.map((r) => {
+                const terminal = isTerminalImplementationRequestStatus(r.status);
+                return (
+                  <Card key={r.id}>
+                    <CardContent className="space-y-3 pt-6">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <ImplCardHeader request={r} />
+                          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                            {r.description}
+                          </p>
+                          {r.targetCapability && (
+                            <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                              Target: {r.targetCapability}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span>{r.interestCount} interested</span>
+                        <span>·</span>
+                        <span>{r.submissionCount} submissions</span>
+                        <span>·</span>
+                        <span>visibility: {r.visibility}</span>
+                      </div>
+                      {!terminal && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <Link
+                            href={`/requests/${r.id}`}
+                            className="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium hover:bg-muted"
+                          >
+                            View
+                          </Link>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            className="gap-1.5"
+                            disabled={implBusyId === r.id}
+                            onClick={() => void handleCancelImplementationRequest(r.id)}
+                          >
+                            <XCircle className="h-4 w-4" />
+                            {implBusyId === r.id ? "Cancelling…" : "Cancel"}
+                          </Button>
+                        </div>
+                      )}
+                      {terminal && (
+                        <Link
+                          href={`/requests/${r.id}`}
+                          className="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium hover:bg-muted"
+                        >
+                          View
+                        </Link>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
+function ImplFilterBar({
+  implStatusFilter,
+  setImplStatusFilter,
+  implLoading,
+  onRefresh,
+}: {
+  implStatusFilter: ImplementationRequestStatus | "all";
+  setImplStatusFilter: (v: ImplementationRequestStatus | "all") => void;
+  implLoading: boolean;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Label htmlFor="impl-status-filter" className="text-xs text-muted-foreground">
+        Filter
+      </Label>
+      <select
+        id="impl-status-filter"
+        value={implStatusFilter}
+        onChange={(e) =>
+          setImplStatusFilter(e.target.value as ImplementationRequestStatus | "all")
+        }
+        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+      >
+        <option value="all">All</option>
+        {IMPLEMENTATION_REQUEST_STATUSES.map((s) => (
+          <option key={s} value={s}>
+            {s.replace("_", " ")}
+          </option>
+        ))}
+      </select>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={implLoading}
+        onClick={onRefresh}
+        className="gap-2"
+      >
+        <RefreshCcw className="h-4 w-4" />
+        Refresh
+      </Button>
+    </div>
+  );
+}
+
+function ImplCardHeader({ request: r }: { request: ImplementationRequest }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Link
+        href={`/requests/${r.id}`}
+        className="font-semibold hover:underline"
+      >
+        {r.title}
+      </Link>
+      <ImplementationRequestStatusBadge status={r.status} />
+      {r.package && (
+        <Link
+          href={`/package/${encodeURIComponent(r.package.slug)}`}
+          className="font-mono text-[10px] text-muted-foreground hover:text-foreground hover:underline"
+        >
+          {r.package.slug}
+        </Link>
+      )}
+      {r.createdBy && (
+        <span className="text-[10px] text-muted-foreground">
+          by @{r.createdBy.username}
+        </span>
       )}
     </div>
   );

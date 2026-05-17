@@ -125,13 +125,14 @@ export function ImplementationRequestsList() {
           </select>
         </FilterField>
 
-        <FilterField label="Capability" htmlFor="req-cap-filter">
+        <FilterField label="Target capability" htmlFor="req-cap-filter">
           <Input
             id="req-cap-filter"
             value={capabilityFilter}
             onChange={(e) => setCapabilityFilter(e.target.value)}
             placeholder="e.g. spike, RL3"
             className="h-9 w-40 text-sm sm:w-52"
+            title="Substring match on each request's optional target field"
           />
         </FilterField>
 

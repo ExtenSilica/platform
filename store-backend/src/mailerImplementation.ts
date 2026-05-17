@@ -57,6 +57,14 @@ export type VerificationFailedEmailInput = ImplementationRecipient & {
   logUrl?: string | null;
 };
 
+export type StaleOpenRequestEmailInput = ImplementationRecipient & {
+  requestTitle: string;
+  requestId: number;
+  packageSlug: string;
+  packageName: string;
+  daysOpen: number;
+};
+
 export async function sendNewSubmissionEmail(input: NewSubmissionEmailInput): Promise<void> {
   const {
     toEmail,
@@ -187,6 +195,63 @@ export async function sendVerificationFailedEmail(
     `,
     primaryUrl: requestUrl,
     primaryLabel: 'View request',
+  });
+
+  await deliver({ toEmail, subject, text, html, logoAtt });
+}
+
+export async function sendStaleOpenRequestEmail(
+  input: StaleOpenRequestEmailInput,
+): Promise<void> {
+  const {
+    toEmail,
+    toUsername,
+    requestTitle,
+    requestId,
+    packageSlug,
+    packageName,
+    daysOpen,
+  } = input;
+
+  const requestUrl = `${SITE_URL}/requests/${requestId}`;
+  const packageUrl = `${SITE_URL}/package/${encodeURIComponent(packageSlug)}`;
+  const subject = `Still open after ${daysOpen} days — ${requestTitle}`;
+
+  const text = [
+    `Hi ${toUsername},`,
+    '',
+    `The implementation request "${requestTitle}" on ${packageName} (${packageSlug}) has been open for ${daysOpen} days without moving to in progress.`,
+    '',
+    'Consider updating the request, assigning an implementer, or cancelling it if it is no longer needed.',
+    '',
+    `View request: ${requestUrl}`,
+    `Package: ${packageUrl}`,
+    '',
+    '— ExtenSilica',
+  ].join('\n');
+
+  const logoAtt = await getEmailLogoAttachments();
+  const showLogo = logoAtt.length > 0;
+
+  const html = buildHtmlEmail({
+    showLogo,
+    headline: 'Implementation request still open',
+    greeting: toUsername,
+    body: `
+      <p style="margin:0 0 16px;color:#374151;line-height:1.6">
+        <strong>${escapeHtml(requestTitle)}</strong> on
+        <strong>${escapeHtml(packageName)}</strong>
+        (<code>${escapeHtml(packageSlug)}</code>) has been
+        <strong>open for ${daysOpen} days</strong> without moving to in progress.
+      </p>
+      <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6">
+        Consider updating the request, assigning an implementer, or cancelling it if it is no longer needed.
+      </p>
+    `,
+    primaryUrl: requestUrl,
+    primaryLabel: 'Review request',
+    secondaryUrl: packageUrl,
+    secondaryLabel: 'View package',
   });
 
   await deliver({ toEmail, subject, text, html, logoAtt });

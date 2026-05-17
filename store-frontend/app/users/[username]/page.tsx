@@ -1,9 +1,21 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { fetchOrgPublic, fetchUser } from "@/lib/api";
-import { ArrowLeft, Calendar, Download, Github, Package, User } from "lucide-react";
+import { fetchOrgPublic, fetchUser, fetchUserContributions } from "@/lib/api";
+import type { UserContributions } from "@/lib/types";
+import {
+  ArrowLeft,
+  Calendar,
+  Download,
+  Github,
+  Package,
+  User,
+  ClipboardList,
+  Send,
+  ShieldCheck,
+} from "lucide-react";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
+import { ImplementationRequestStatusBadge } from "@/components/implementation-request-status-badge";
 
 export async function generateMetadata({
   params,
@@ -28,12 +40,21 @@ export default async function UserProfilePage({
 }: {
   params: { username: string };
 }) {
-  const user = await fetchUser(params.username).catch(() => null);
+  const [user, contributions] = await Promise.all([
+    fetchUser(params.username).catch(() => null),
+    fetchUserContributions(params.username).catch(() => null),
+  ]);
   if (!user) {
     const org = await fetchOrgPublic(params.username);
     if (org) redirect(`/orgs/${params.username}`);
     notFound();
   }
+
+  const hasContributions =
+    contributions != null &&
+    (contributions.requestsCreated.length > 0 ||
+      contributions.submissions.length > 0 ||
+      contributions.verifications.length > 0);
 
   return (
     <div className="container max-w-5xl px-4 py-8">
@@ -160,6 +181,144 @@ export default async function UserProfilePage({
           </div>
         )}
       </section>
+
+      {hasContributions && contributions && (
+        <ContributionsSection contributions={contributions} fmt={fmt} />
+      )}
+    </div>
+  );
+}
+
+function ContributionsSection({
+  contributions,
+  fmt,
+}: {
+  contributions: UserContributions;
+  fmt: (d: string) => string;
+}) {
+  return (
+    <section className="mt-12 border-t pt-10">
+      <ContributionsHeader />
+      <p className="mb-6 text-sm text-muted-foreground">
+        Public technical coordination on ExtenSilica — cite this profile URL on a CV or grant.
+      </p>
+
+      {contributions.requestsCreated.length > 0 && (
+        <ContributionBlock title="Requests filed" icon={ClipboardList}>
+          <ul className="space-y-2">
+            {contributions.requestsCreated.map((r) => (
+              <li key={r.id}>
+                <Link
+                  href={`/requests/${r.id}`}
+                  className="block rounded-lg border bg-background p-3 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{r.title}</span>
+                    <ImplementationRequestStatusBadge status={r.status} />
+                  </div>
+                  <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                    {r.packageSlug} · {fmt(r.createdAt)}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </ContributionBlock>
+      )}
+
+      {contributions.submissions.length > 0 && (
+        <ContributionBlock title="Deliverables submitted" icon={Send}>
+          <ul className="space-y-2">
+            {contributions.submissions.map((s) => (
+              <li key={s.id}>
+                <Link
+                  href={`/requests/${s.requestId}`}
+                  className="block rounded-lg border bg-background p-3 hover:bg-muted/30 transition-colors"
+                >
+                  <p className="font-medium">{s.requestTitle}</p>
+                  <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                    {s.packageSlug}
+                    {s.submittedAt && ` · submitted ${fmt(s.submittedAt)}`}
+                  </p>
+                  {s.latestVerificationOutcome && (
+                    <p className="mt-1 text-[11px]">
+                      Verification:{" "}
+                      <span
+                        className={
+                          s.latestVerificationOutcome === "pass"
+                            ? "text-emerald-700"
+                            : "text-amber-700"
+                        }
+                      >
+                        {s.latestVerificationOutcome}
+                      </span>
+                    </p>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </ContributionBlock>
+      )}
+
+      {contributions.verifications.length > 0 && (
+        <ContributionBlock title="Verifications performed" icon={ShieldCheck}>
+          <ul className="space-y-2">
+            {contributions.verifications.map((v) => (
+              <li key={v.id}>
+                <Link
+                  href={`/requests/${v.requestId}`}
+                  className="block rounded-lg border bg-background p-3 hover:bg-muted/30 transition-colors"
+                >
+                  <p className="font-medium">{v.requestTitle}</p>
+                  <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                    {v.packageSlug} · {fmt(v.createdAt)}
+                  </p>
+                  <p className="mt-1 text-[11px]">
+                    Outcome:{" "}
+                    <span
+                      className={
+                        v.outcome === "pass" ? "text-emerald-700" : "text-amber-700"
+                      }
+                    >
+                      {v.outcome}
+                    </span>
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </ContributionBlock>
+      )}
+    </section>
+  );
+}
+
+function ContributionsHeader() {
+  return (
+    <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold">
+      <ClipboardList className="h-5 w-5 text-primary" />
+      Implementation contributions
+    </h2>
+  );
+}
+
+function ContributionBlock({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: typeof ClipboardList;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-8">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        {title}
+      </h3>
+      {children}
     </div>
   );
 }

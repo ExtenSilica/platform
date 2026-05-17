@@ -431,6 +431,8 @@ model ImplementationRequest {
   openedAt                  DateTime?
   completedAt               DateTime?
   cancelledAt               DateTime?
+  /// Set when a stale-open reminder email was sent (PR-C11).
+  staleOpenNotifiedAt       DateTime?
   createdAt                 DateTime                        @default(now())
   updatedAt                 DateTime                        @updatedAt
 

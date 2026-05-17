@@ -2,6 +2,7 @@ import type {
   RegistryPackage,
   RegistryVersion,
   UserProfile,
+  UserContributions,
   Review,
   PackageStats,
   Organization,
@@ -424,12 +425,24 @@ export async function fetchPackageStats(
 export async function fetchUser(
   username: string
 ): Promise<UserProfile | null> {
-  const res = await fetch(`${API_BASE}/users/${username}`, {
+  const res = await fetch(`${API_BASE}/users/${encodeURIComponent(username)}`, {
     cache: "no-store",
   });
   if (res.status === 404) return null;
   if (!res.ok) throw new ApiError(res.statusText, res.status);
   return res.json() as Promise<UserProfile>;
+}
+
+export async function fetchUserContributions(
+  username: string,
+): Promise<UserContributions | null> {
+  const res = await fetch(
+    `${API_BASE}/users/${encodeURIComponent(username)}/contributions`,
+    { cache: "no-store" },
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new ApiError(res.statusText, res.status);
+  return res.json() as Promise<UserContributions>;
 }
 
 export async function fetchMaintainers(slug: string): Promise<Maintainer[]> {

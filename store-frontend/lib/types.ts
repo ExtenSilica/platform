@@ -135,6 +135,10 @@ export const PORT_STATUS_INFO: Record<
   },
 };
 
+/** Required when an admin sets `portStatus` to `official` (PR-C4). */
+export const PORT_STATUS_DECISION_NOTE_MIN = 10;
+export const PORT_STATUS_DECISION_NOTE_MAX = 1000;
+
 export interface RegistryPackage {
   id: number;
   slug: string;
@@ -193,6 +197,44 @@ export interface PackageStats {
   last30Days: number;
   dailyHistory?: Array<{ day: string; count: number }> | null;
   byVersion?: Array<{ version: string; count90Days: number }> | null;
+}
+
+export interface UserContributionRequest {
+  id: number;
+  title: string;
+  status: ImplementationRequestStatus;
+  packageSlug: string;
+  packageName: string;
+  createdAt: string;
+}
+
+export interface UserContributionSubmission {
+  id: number;
+  requestId: number;
+  requestTitle: string;
+  packageSlug: string;
+  packageName: string;
+  status: ImplementationSubmissionStatus;
+  submittedAt: string | null;
+  latestVerificationOutcome: VerificationRunOutcome | null;
+}
+
+export interface UserContributionVerification {
+  id: number;
+  submissionId: number;
+  requestId: number;
+  requestTitle: string;
+  packageSlug: string;
+  packageName: string;
+  outcome: VerificationRunOutcome;
+  createdAt: string;
+}
+
+export interface UserContributions {
+  username: string;
+  requestsCreated: UserContributionRequest[];
+  submissions: UserContributionSubmission[];
+  verifications: UserContributionVerification[];
 }
 
 export interface UserProfile {

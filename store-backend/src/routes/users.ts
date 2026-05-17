@@ -1,7 +1,10 @@
 import { Router } from 'express';
-import { getUserProfile } from '../controllers/usersController';
+import { getUserContributions, getUserProfile } from '../controllers/usersController';
 
 const router = Router();
+
+// GET /users/:username/contributions — public coordination history (before /:username)
+router.get('/:username/contributions', getUserContributions);
 
 // GET /users/:username — public profile (no auth required)
 router.get('/:username', getUserProfile);
