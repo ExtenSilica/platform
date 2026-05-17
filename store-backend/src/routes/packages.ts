@@ -21,6 +21,10 @@ import {
   getEligibility,
   createRequest,
 } from '../controllers/ownershipRequestsController';
+import {
+  createPackageImplementationRequest,
+  listPackageImplementationRequests,
+} from '../controllers/implementationRequestsController';
 import { requireAuth } from '../middleware/auth';
 
 /* ─── multer ─────────────────────────────────────────────────────────────── */
@@ -82,6 +86,18 @@ router.get('/me/packages', requireAuth, getMyPackages);
 // ── Scoped variants ───────────────────────────────────────────────────────
 // Order matters: more-specific (sub-resource) routes before the bare name route.
 
+router.get(
+  '/@:scope/:name/implementation-requests',
+  normalizePkgName,
+  listPackageImplementationRequests,
+);
+router.post(
+  '/@:scope/:name/implementation-requests',
+  requireAuth,
+  normalizePkgName,
+  createPackageImplementationRequest,
+);
+
 // GET /packages/@scope/name/versions
 router.get('/@:scope/:name/versions', normalizePkgName, listVersions);
 // GET /packages/@scope/name/:version
@@ -90,6 +106,13 @@ router.get('/@:scope/:name/:version', normalizePkgName, getPackageVersion);
 router.get('/@:scope/:name', normalizePkgName, getPackageBySlug);
 
 // ── Unscoped variants ─────────────────────────────────────────────────────
+
+router.get('/:name/implementation-requests', listPackageImplementationRequests);
+router.post(
+  '/:name/implementation-requests',
+  requireAuth,
+  createPackageImplementationRequest,
+);
 
 // /:name/versions before /:name/:version so "versions" is not parsed as a version tag
 router.get('/:name/versions', listVersions);

@@ -20,6 +20,10 @@ import {
   adminApproveRequest,
   adminRejectRequest,
 } from '../controllers/ownershipRequestsController';
+import {
+  adminListImplementationRequests,
+  adminCancelImplementationRequest,
+} from '../controllers/implementationRequestsController';
 
 const router = Router();
 
@@ -40,5 +44,18 @@ router.post('/users/:id/verify-email', requireAuth, requirePlatformAdmin, postAd
 router.get('/ownership-requests', requireAuth, requirePlatformAdmin, adminListRequests);
 router.post('/ownership-requests/:id/approve', requireAuth, requirePlatformAdmin, adminApproveRequest);
 router.post('/ownership-requests/:id/reject',  requireAuth, requirePlatformAdmin, adminRejectRequest);
+
+router.get(
+  '/implementation-requests',
+  requireAuth,
+  requirePlatformAdmin,
+  adminListImplementationRequests,
+);
+router.post(
+  '/implementation-requests/:id/cancel',
+  requireAuth,
+  requirePlatformAdmin,
+  adminCancelImplementationRequest,
+);
 
 export default router;

@@ -4,6 +4,10 @@ import {
   listMyRequests,
   withdrawMyRequest,
 } from '../controllers/ownershipRequestsController';
+import {
+  listMyImplementationRequests,
+  listMyImplementationSubmissions,
+} from '../controllers/implementationRequestsController';
 
 const router = Router();
 
@@ -17,5 +21,8 @@ router.post(
   requireAuth,
   withdrawMyRequest,
 );
+
+router.get('/implementation-requests', requireAuth, listMyImplementationRequests);
+router.get('/implementation-submissions', requireAuth, listMyImplementationSubmissions);
 
 export default router;

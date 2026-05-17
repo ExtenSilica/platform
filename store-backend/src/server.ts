@@ -18,6 +18,8 @@ import platformAdminRoutes from './routes/platformAdmin';
 import artifactRoutes from './routes/artifacts';
 import wizardRoutes from './routes/wizard';
 import meRoutes from './routes/me';
+import implementationRequestRoutes from './routes/implementationRequests';
+import submissionRoutes from './routes/submissions';
 import { initStorage, storage } from './storage';
 import { specs } from './swagger';
 import { prisma } from './db';
@@ -169,6 +171,12 @@ app.use('/api/admin', platformAdminRoutes);
 // /me/ownership-requests, /me/ownership-requests/:id/withdraw
 app.use('/me', meRoutes);
 app.use('/api/me', meRoutes);
+
+// ── Implementation coordination (Phase C) ─────────────────────────────────
+app.use('/implementation-requests', implementationRequestRoutes);
+app.use('/api/implementation-requests', implementationRequestRoutes);
+app.use('/submissions', submissionRoutes);
+app.use('/api/submissions', submissionRoutes);
 
 // ── Tool artifacts (optional uploads + resolve API for resolved manifests) ──
 app.use('/artifacts', artifactRoutes);

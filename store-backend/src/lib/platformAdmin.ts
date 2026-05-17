@@ -80,3 +80,11 @@ export function isCatalogBotUser(user: { id: number; email: string }): boolean {
   if (catalogBotIds().has(user.id)) return true;
   return catalogBotEmails().has(user.email.toLowerCase());
 }
+
+/** Test-only: re-read PLATFORM_ADMIN_* env after `process.env` changes. */
+export function clearPlatformAdminCacheForTests(): void {
+  cachedIds = null;
+  cachedEmails = null;
+  cachedBotIds = null;
+  cachedBotEmails = null;
+}
