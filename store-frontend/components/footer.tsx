@@ -64,6 +64,21 @@ export function Footer() {
                   FAQ
                 </Link>
               </li>
+              <li>
+                <Link href="/governance" className="text-muted-foreground transition-colors hover:text-riscv-accent">
+                  Governance
+                </Link>
+              </li>
+              <li>
+                <Link href="/adoption" className="text-muted-foreground transition-colors hover:text-riscv-accent">
+                  Adoption
+                </Link>
+              </li>
+              <li>
+                <Link href="/contributing" className="text-muted-foreground transition-colors hover:text-riscv-accent">
+                  Contributing
+                </Link>
+              </li>
             </ul>
           </div>
 

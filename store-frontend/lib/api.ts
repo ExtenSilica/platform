@@ -13,6 +13,7 @@ import type {
   OwnershipEligibility,
   StandardStatus,
   CatalogStats,
+  AdoptionStats,
   PortStatus,
   ImplementationRequest,
   ImplementationRequestStatus,
@@ -395,6 +396,18 @@ export async function fetchPackages(
 /** Aggregated counts for the homepage hero ("X ratified + Y vendor + …"). */
 export async function apiCatalogStats(): Promise<CatalogStats> {
   return apiFetch<CatalogStats>(`/stats/catalog`);
+}
+
+/** Registry-wide page views and downloads (PR-G1 / adoption page). */
+export async function fetchAdoptionStats(
+  days = 30,
+): Promise<AdoptionStats | null> {
+  const clamped = Math.min(90, Math.max(1, days));
+  const res = await fetch(`${API_BASE}/stats/adoption?days=${clamped}`, {
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as AdoptionStats;
 }
 
 export async function fetchPackage(

@@ -80,6 +80,33 @@ export interface CatalogStats {
   statusOrder: StandardStatus[];
 }
 
+export interface AdoptionDailyPoint {
+  day: string;
+  count: number;
+}
+
+export interface AdoptionStats {
+  days: number;
+  totalPackages: number;
+  views: {
+    windowTotal: number;
+    last7Days: number;
+    last30Days: number;
+    daily: AdoptionDailyPoint[];
+  };
+  downloads: {
+    windowTotal: number;
+    last7Days: number;
+    last30Days: number;
+    daily: AdoptionDailyPoint[];
+  };
+  topPackagesByViews: Array<{
+    slug: string;
+    name: string;
+    viewsInWindow: number;
+  }>;
+}
+
 /**
  * Provenance of a package on ExtenSilica — orthogonal to StandardStatus.
  * Always server-set; never carried by the .xsil manifest.
