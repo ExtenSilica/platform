@@ -1,11 +1,15 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db';
 import { refreshWeeklyDownloads } from '../analytics';
+import {
+  buildFilledDailySeries,
+  dayOffsetUtc,
+  parseAdoptionDaysQuery,
+} from '../lib/adoptionStats';
 import { STANDARD_STATUS_VALUES, type StandardStatus } from '../lib/standardStatus';
 
 function dayOffset(days: number): string {
-  const d = new Date(Date.now() - days * 86_400_000);
-  return d.toISOString().slice(0, 10); // "YYYY-MM-DD"
+  return dayOffsetUtc(days);
 }
 
 // GET /stats/packages/:name
@@ -113,6 +117,119 @@ export const getCatalogStats = async (_req: Request, res: Response) => {
     byStatus,
     unclassified,
     statusOrder: STANDARD_STATUS_VALUES,
+  });
+};
+
+// GET /stats/adoption — registry-wide page views + download adoption (PR-G1)
+export const getAdoptionStats = async (req: Request, res: Response) => {
+  const days = parseAdoptionDaysQuery(req.query.days);
+  const since = dayOffsetUtc(days - 1);
+  const since7 = dayOffsetUtc(7);
+  const since30 = dayOffsetUtc(30);
+
+  const [
+    totalPackages,
+    viewsAggWindow,
+    viewsAgg7,
+    viewsAgg30,
+    downloadsAggWindow,
+    downloadsAgg7,
+    downloadsAgg30,
+    rawViewsDaily,
+    rawDownloadsDaily,
+    topByViews,
+  ] = await Promise.all([
+    prisma.extension.count(),
+    prisma.packageViewEvent.aggregate({
+      where: { day: { gte: since } },
+      _sum: { count: true },
+    }),
+    prisma.packageViewEvent.aggregate({
+      where: { day: { gte: since7 } },
+      _sum: { count: true },
+    }),
+    prisma.packageViewEvent.aggregate({
+      where: { day: { gte: since30 } },
+      _sum: { count: true },
+    }),
+    prisma.downloadEvent.aggregate({
+      where: { day: { gte: since } },
+      _sum: { count: true },
+    }),
+    prisma.downloadEvent.aggregate({
+      where: { day: { gte: since7 } },
+      _sum: { count: true },
+    }),
+    prisma.downloadEvent.aggregate({
+      where: { day: { gte: since30 } },
+      _sum: { count: true },
+    }),
+    prisma.packageViewEvent.groupBy({
+      by: ['day'],
+      where: { day: { gte: since } },
+      _sum: { count: true },
+      orderBy: { day: 'asc' },
+    }),
+    prisma.downloadEvent.groupBy({
+      by: ['day'],
+      where: { day: { gte: since } },
+      _sum: { count: true },
+      orderBy: { day: 'asc' },
+    }),
+    prisma.packageViewEvent.groupBy({
+      by: ['packageId'],
+      where: { day: { gte: since } },
+      _sum: { count: true },
+      orderBy: { _sum: { count: 'desc' } },
+      take: 10,
+    }),
+  ]);
+
+  const packageIds = topByViews.map((r) => r.packageId);
+  const packages =
+    packageIds.length > 0
+      ? await prisma.extension.findMany({
+          where: { id: { in: packageIds } },
+          select: { id: true, slug: true, name: true },
+        })
+      : [];
+  const pkgMap = new Map(packages.map((p) => [p.id, p]));
+
+  const viewsDaily = buildFilledDailySeries(
+    rawViewsDaily.map((r) => ({ day: r.day, count: r._sum.count ?? 0 })),
+    since,
+  );
+  const downloadsDaily = buildFilledDailySeries(
+    rawDownloadsDaily.map((r) => ({ day: r.day, count: r._sum.count ?? 0 })),
+    since,
+  );
+
+  res.json({
+    days,
+    totalPackages,
+    views: {
+      windowTotal: viewsAggWindow._sum.count ?? 0,
+      last7Days: viewsAgg7._sum.count ?? 0,
+      last30Days: viewsAgg30._sum.count ?? 0,
+      daily: viewsDaily,
+    },
+    downloads: {
+      windowTotal: downloadsAggWindow._sum.count ?? 0,
+      last7Days: downloadsAgg7._sum.count ?? 0,
+      last30Days: downloadsAgg30._sum.count ?? 0,
+      daily: downloadsDaily,
+    },
+    topPackagesByViews: topByViews
+      .map((row) => {
+        const pkg = pkgMap.get(row.packageId);
+        if (!pkg) return null;
+        return {
+          slug: pkg.slug,
+          name: pkg.name,
+          viewsInWindow: row._sum.count ?? 0,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null),
   });
 };
 

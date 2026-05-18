@@ -211,6 +211,7 @@ model Extension {
   maintainers          Maintainer[]
   reviews              Review[]
   downloadEvents       DownloadEvent[]
+  viewEvents           PackageViewEvent[]
   ownershipRequests    OwnershipRequest[]
   implementationRequests ImplementationRequest[]
   createdAt            DateTime           @default(now())
@@ -361,6 +362,19 @@ model DownloadEvent {
   version Version   @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
   @@unique([packageId, versionId, day])
+}
+
+/// Package page views — one row per (package, UTC day); PR-G1.
+model PackageViewEvent {
+  id        Int    @id @default(autoincrement())
+  packageId Int
+  day       String // "YYYY-MM-DD"
+  count     Int    @default(1)
+
+  package Extension @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, day])
+  @@index([day])
 }
 
 // ── Password reset ────────────────────────────────────────────

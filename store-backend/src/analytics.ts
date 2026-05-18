@@ -52,6 +52,20 @@ export async function recordDownload(packageId: number, versionId: number): Prom
  *
  * Returns the number of packages that had at least one download in the window.
  */
+/**
+ * Record one package detail page view (GET /packages/:slug).
+ * Daily bucket per package — same upsert pattern as DownloadEvent.
+ */
+export async function recordPackageView(packageId: number): Promise<void> {
+  const day = new Date().toISOString().slice(0, 10);
+
+  await prisma.packageViewEvent.upsert({
+    where: { packageId_day: { packageId, day } },
+    update: { count: { increment: 1 } },
+    create: { packageId, day, count: 1 },
+  });
+}
+
 export async function refreshWeeklyDownloads(): Promise<number> {
   const since7 = dayOffset(7);
 

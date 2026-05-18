@@ -4,6 +4,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { prisma } from '../db';
+import { recordPackageView } from '../analytics';
 import { Prisma } from '@prisma/client';
 import { sortBySemverDesc } from '../lib/semverSort';
 import { computeReadinessFromVersion } from '../lib/readiness';
@@ -359,6 +360,9 @@ export const getPackageBySlug = async (req: Request, res: Response) => {
       res.status(404).json({ error: 'Package not found.' });
       return;
     }
+    void recordPackageView(pkg.id).catch((err) => {
+      console.error('[analytics/view]', err);
+    });
     res.json(mapPackage(pkg, {
       reviewCount: reviewAgg._count.id,
       averageRating: reviewAgg._avg.rating,

@@ -142,8 +142,9 @@ app.use('/auth', authRoutes);
 app.use('/api/auth', authRoutes);
 
 // ── Analytics / stats ──────────────────────────────────────────
-// GET /stats/packages/:name
+// GET /stats/packages/:name, GET /stats/adoption
 app.use('/stats', statsRoutes);
+app.use('/api/stats', statsRoutes);
 
 // ── Package registry ───────────────────────────────────────────
 // Public: GET /packages, GET /packages/:slug, GET /packages/:slug/:version
