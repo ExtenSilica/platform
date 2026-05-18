@@ -25,6 +25,8 @@ import {
   createPackageImplementationRequest,
   listPackageImplementationRequests,
 } from '../controllers/implementationRequestsController';
+import { listPackageExternalCitations } from '../controllers/externalCitationsController';
+import { getPackageCitation } from '../controllers/packageCitationController';
 import { requireAuth } from '../middleware/auth';
 
 /* ─── multer ─────────────────────────────────────────────────────────────── */
@@ -87,6 +89,16 @@ router.get('/me/packages', requireAuth, getMyPackages);
 // Order matters: more-specific (sub-resource) routes before the bare name route.
 
 router.get(
+  '/@:scope/:name/citations',
+  normalizePkgName,
+  listPackageExternalCitations,
+);
+router.get(
+  '/@:scope/:name/citation',
+  normalizePkgName,
+  getPackageCitation,
+);
+router.get(
   '/@:scope/:name/implementation-requests',
   normalizePkgName,
   listPackageImplementationRequests,
@@ -107,6 +119,8 @@ router.get('/@:scope/:name', normalizePkgName, getPackageBySlug);
 
 // ── Unscoped variants ─────────────────────────────────────────────────────
 
+router.get('/:name/citations', listPackageExternalCitations);
+router.get('/:name/citation', getPackageCitation);
 router.get('/:name/implementation-requests', listPackageImplementationRequests);
 router.post(
   '/:name/implementation-requests',

@@ -23,6 +23,10 @@ import type {
   VerificationRunOutcome,
   CreateImplementationRequestInput,
   PatchImplementationRequestInput,
+  ExternalCitation,
+  ExternalCitationKind,
+  CreateExternalCitationInput,
+  PackageCitation,
 } from "@/lib/types";
 import type { AuthUser } from "@/lib/auth";
 
@@ -1396,4 +1400,54 @@ export async function apiAdminCancelImplementationRequest(
   id: number,
 ): Promise<{ request: ImplementationRequest }> {
   return apiWrite("POST", `/admin/implementation-requests/${id}/cancel`, token);
+}
+
+export async function apiAdminListExternalCitations(
+  token: string,
+  params?: { packageSlug?: string; kind?: ExternalCitationKind; limit?: number },
+): Promise<{ citations: ExternalCitation[]; total: number }> {
+  const qs = new URLSearchParams();
+  if (params?.packageSlug?.trim()) qs.set("packageSlug", params.packageSlug.trim());
+  if (params?.kind) qs.set("kind", params.kind);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const q = qs.toString();
+  return apiFetch(`/admin/citations${q ? `?${q}` : ""}`, token);
+}
+
+export async function apiAdminCreateExternalCitation(
+  token: string,
+  input: CreateExternalCitationInput,
+): Promise<{ citation: ExternalCitation }> {
+  return apiWrite("POST", "/admin/citations", token, input);
+}
+
+export async function apiAdminDeleteExternalCitation(
+  token: string,
+  id: number,
+): Promise<void> {
+  await apiWrite("DELETE", `/admin/citations/${id}`, token);
+}
+
+export async function fetchPackageCitations(
+  slug: string,
+): Promise<ExternalCitation[]> {
+  const res = await fetch(`${API_BASE}/packages/${encodeURIComponent(slug)}/citations`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { citations: ExternalCitation[] };
+  return data.citations ?? [];
+}
+
+export async function fetchPackageCitation(
+  slug: string,
+  version?: string,
+): Promise<PackageCitation | null> {
+  const q = version ? `?version=${encodeURIComponent(version)}` : "";
+  const res = await fetch(
+    `${API_BASE}/packages/${encodeURIComponent(slug)}/citation${q}`,
+    { next: { revalidate: 3600 } },
+  );
+  if (!res.ok) return null;
+  return (await res.json()) as PackageCitation;
 }

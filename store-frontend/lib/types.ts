@@ -546,6 +546,53 @@ export interface PatchImplementationRequestInput {
   status?: ImplementationRequestStatus;
 }
 
+export type ExternalCitationKind = "doi" | "paper" | "website" | "other";
+
+export const EXTERNAL_CITATION_KINDS: ExternalCitationKind[] = [
+  "doi",
+  "paper",
+  "website",
+  "other",
+];
+
+export interface ExternalCitation {
+  id: number;
+  packageId: number | null;
+  label: string;
+  url: string;
+  kind: ExternalCitationKind;
+  createdByUserId: number;
+  createdAt: string;
+  updatedAt: string;
+  package?: { id: number; slug: string; name: string } | null;
+  createdBy?: { id: number; username: string };
+}
+
+export interface CreateExternalCitationInput {
+  label: string;
+  url: string;
+  kind: ExternalCitationKind;
+  packageSlug?: string | null;
+  packageId?: number | null;
+}
+
+export interface PackageCitationAuthor {
+  name: string;
+}
+
+export interface PackageCitation {
+  slug: string;
+  version: string;
+  title: string;
+  license: string | null;
+  registryPageUrl: string;
+  repositoryUrl: string | null;
+  doi: string | null;
+  authors: PackageCitationAuthor[];
+  cff: string;
+  bibtex: string;
+}
+
 export interface Organization {
   id: number;
   slug: string;

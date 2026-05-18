@@ -21,6 +21,9 @@ import {
   apiAdminRejectOwnershipRequest,
   apiAdminListImplementationRequests,
   apiAdminCancelImplementationRequest,
+  apiAdminListExternalCitations,
+  apiAdminCreateExternalCitation,
+  apiAdminDeleteExternalCitation,
   ApiError,
   type AdminHealthResponse,
   type AdminUserRow,
@@ -38,6 +41,9 @@ import {
   type ImplementationRequest,
   type ImplementationRequestStatus,
   type PortStatus,
+  EXTERNAL_CITATION_KINDS,
+  type ExternalCitation,
+  type ExternalCitationKind,
 } from "@/lib/types";
 import { PortStatusBadge } from "@/components/port-status-badge";
 import { ImplementationRequestStatusBadge } from "@/components/implementation-request-status-badge";
@@ -68,6 +74,7 @@ import {
   XCircle,
   Undo2,
   ClipboardList,
+  BookMarked,
 } from "lucide-react";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
 
@@ -78,7 +85,8 @@ type AdminTab =
   | "users"
   | "packages"
   | "ownership"
-  | "implementation";
+  | "implementation"
+  | "citations";
 
 export default function PlatformAdminPage() {
   const { user, token, isLoading } = useAuth();
@@ -149,6 +157,14 @@ export default function PlatformAdminPage() {
   const [implLoading, setImplLoading] = useState(false);
   const [implBusyId, setImplBusyId] = useState<number | null>(null);
 
+  const [citationRows, setCitationRows] = useState<ExternalCitation[]>([]);
+  const [citationLoading, setCitationLoading] = useState(false);
+  const [citationBusyId, setCitationBusyId] = useState<number | null>(null);
+  const [citLabel, setCitLabel] = useState("");
+  const [citUrl, setCitUrl] = useState("");
+  const [citKind, setCitKind] = useState<ExternalCitationKind>("doi");
+  const [citPackageSlug, setCitPackageSlug] = useState("");
+
   const loadOwnershipRequests = useCallback(async () => {
     if (!token) return;
     setReqLoading(true);
@@ -190,6 +206,22 @@ export default function PlatformAdminPage() {
       setImplLoading(false);
     }
   }, [token, implStatusFilter]);
+
+  const loadCitations = useCallback(async () => {
+    if (!token) return;
+    setCitationLoading(true);
+    setError("");
+    try {
+      const { citations } = await apiAdminListExternalCitations(token, { limit: 100 });
+      setCitationRows(citations);
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Failed to load citations.",
+      );
+    } finally {
+      setCitationLoading(false);
+    }
+  }, [token]);
 
   async function handleApproveRequest(id: number) {
     if (!token) return;
@@ -272,6 +304,52 @@ export default function PlatformAdminPage() {
   useEffect(() => {
     if (tab === "implementation") void loadImplementationRequests();
   }, [tab, loadImplementationRequests]);
+
+  useEffect(() => {
+    if (tab === "citations") void loadCitations();
+  }, [tab, loadCitations]);
+
+  async function handleCreateCitation(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token) return;
+    setBusy(true);
+    setError("");
+    setActionMsg("");
+    try {
+      await apiAdminCreateExternalCitation(token, {
+        label: citLabel.trim(),
+        url: citUrl.trim(),
+        kind: citKind,
+        packageSlug: citPackageSlug.trim() || null,
+      });
+      setCitLabel("");
+      setCitUrl("");
+      setCitPackageSlug("");
+      setActionMsg("Citation added.");
+      await loadCitations();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to add citation.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteCitation(id: number) {
+    if (!token) return;
+    // eslint-disable-next-line no-alert
+    if (!confirm(`Delete citation #${id}?`)) return;
+    setCitationBusyId(id);
+    setError("");
+    try {
+      await apiAdminDeleteExternalCitation(token, id);
+      setActionMsg(`Deleted citation #${id}.`);
+      await loadCitations();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Delete failed.");
+    } finally {
+      setCitationBusyId(null);
+    }
+  }
 
   async function handleCancelImplementationRequest(id: number) {
     if (!token) return;
@@ -563,6 +641,7 @@ export default function PlatformAdminPage() {
             { id: "packages", label: "Packages", icon: Package },
             { id: "ownership", label: "Ownership", icon: ShieldQuestion },
             { id: "implementation", label: "Implementation", icon: ClipboardList },
+            { id: "citations", label: "Citations", icon: BookMarked },
           ] as const
         ).map(({ id, label, icon: Icon }) => (
           <Button
@@ -1446,6 +1525,145 @@ export default function PlatformAdminPage() {
                   </Card>
                 );
               })}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {tab === "citations" && (
+        <section className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">External citations</h2>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={citationLoading}
+              onClick={() => void loadCitations()}
+            >
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Add citation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form
+                onSubmit={(e) => void handleCreateCitation(e)}
+                className="grid gap-3 sm:grid-cols-2"
+              >
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="cit-label">Label</Label>
+                  <Input
+                    id="cit-label"
+                    value={citLabel}
+                    onChange={(e) => setCitLabel(e.target.value)}
+                    placeholder="e.g. Zenodo deposit for v1.0.0"
+                    required
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="cit-url">URL</Label>
+                  <Input
+                    id="cit-url"
+                    type="url"
+                    value={citUrl}
+                    onChange={(e) => setCitUrl(e.target.value)}
+                    placeholder="https://doi.org/10.5281/zenodo.…"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="cit-kind">Kind</Label>
+                  <select
+                    id="cit-kind"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={citKind}
+                    onChange={(e) =>
+                      setCitKind(e.target.value as ExternalCitationKind)
+                    }
+                  >
+                    {EXTERNAL_CITATION_KINDS.map((k) => (
+                      <option key={k} value={k}>
+                        {k}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="cit-slug">Package slug (optional)</Label>
+                  <Input
+                    id="cit-slug"
+                    value={citPackageSlug}
+                    onChange={(e) => setCitPackageSlug(e.target.value)}
+                    placeholder="rvx-demo or @scope/pkg"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Button type="submit" disabled={busy} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add citation
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {citationLoading ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center text-sm text-muted-foreground">
+              Loading…
+            </div>
+          ) : citationRows.length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center text-sm text-muted-foreground">
+              No citations yet.
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {citationRows.map((c) => (
+                <li
+                  key={c.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card px-4 py-3 text-sm"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{c.label}</span>
+                      <Badge variant="secondary">{c.kind}</Badge>
+                      {c.package ? (
+                        <Link
+                          href={`/package/${c.package.slug}`}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          {c.package.slug}
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          registry-wide
+                        </span>
+                      )}
+                    </div>
+                    <a
+                      href={c.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 block truncate text-xs text-muted-foreground hover:text-primary"
+                    >
+                      {c.url}
+                    </a>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    disabled={citationBusyId === c.id}
+                    onClick={() => void handleDeleteCitation(c.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
             </ul>
           )}
         </section>

@@ -46,6 +46,7 @@ model User {
   implementationInterests        ImplementationInterest[]
   verificationRuns               VerificationRun[]          @relation("VerificationRunVerifier")
   portStatusDecisions            Extension[]                @relation("PortStatusDecider")
+  externalCitationsCreated       ExternalCitation[]         @relation("ExternalCitationCreator")
 }
 
 /// Named API credential. Each user may hold N independent tokens (web sessions,
@@ -212,6 +213,7 @@ model Extension {
   reviews              Review[]
   downloadEvents       DownloadEvent[]
   viewEvents           PackageViewEvent[]
+  externalCitations    ExternalCitation[]
   ownershipRequests    OwnershipRequest[]
   implementationRequests ImplementationRequest[]
   createdAt            DateTime           @default(now())
@@ -375,6 +377,25 @@ model PackageViewEvent {
 
   @@unique([packageId, day])
   @@index([day])
+}
+
+/// Linked publication or DOI for a package (or registry-wide when packageId is null) — PR-G2.
+model ExternalCitation {
+  id              Int      @id @default(autoincrement())
+  packageId       Int?
+  label           String
+  url             String
+  /// doi | paper | website | other
+  kind            String
+  createdByUserId Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  package   Extension? @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  createdBy User       @relation("ExternalCitationCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+  @@index([kind])
 }
 
 // ── Password reset ────────────────────────────────────────────

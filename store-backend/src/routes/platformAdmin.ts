@@ -24,6 +24,11 @@ import {
   adminListImplementationRequests,
   adminCancelImplementationRequest,
 } from '../controllers/implementationRequestsController';
+import {
+  adminListExternalCitations,
+  adminCreateExternalCitation,
+  adminDeleteExternalCitation,
+} from '../controllers/externalCitationsController';
 
 const router = Router();
 
@@ -57,5 +62,10 @@ router.post(
   requirePlatformAdmin,
   adminCancelImplementationRequest,
 );
+
+// ── External citations (PR-G2) ───────────────────────────────────────────────
+router.get('/citations', requireAuth, requirePlatformAdmin, adminListExternalCitations);
+router.post('/citations', requireAuth, requirePlatformAdmin, adminCreateExternalCitation);
+router.delete('/citations/:id', requireAuth, requirePlatformAdmin, adminDeleteExternalCitation);
 
 export default router;

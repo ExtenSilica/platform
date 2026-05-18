@@ -3,7 +3,12 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import ReactMarkdown from "react-markdown";
 
-import { fetchPackage, fetchPackageReviews, fetchPackageStats } from "@/lib/api";
+import {
+  fetchPackage,
+  fetchPackageReviews,
+  fetchPackageStats,
+  fetchPackageCitation,
+} from "@/lib/api";
 import type { RegistryVersion, Review, PackageStats } from "@/lib/types";
 import {
   targetsDisplayFromJson,
@@ -160,10 +165,11 @@ export default async function PackagePage({
 }: {
   params: { slug: string };
 }) {
-  const [pkg, reviews, stats] = await Promise.all([
+  const [pkg, reviews, stats, citation] = await Promise.all([
     fetchPackage(params.slug).catch(() => null),
     fetchPackageReviews(params.slug).catch((): Review[] => []),
     fetchPackageStats(params.slug).catch((): PackageStats | null => null),
+    fetchPackageCitation(params.slug).catch(() => null),
   ]);
 
   if (!pkg) notFound();
@@ -498,6 +504,52 @@ export default async function PackagePage({
                 )}
               </div>
             </SideCard>
+
+            {citation && (
+              <SideCard title="Cite">
+                <p className="mb-3 text-xs text-muted-foreground">
+                  CFF and BibTeX for papers and Zenodo (v
+                  <code className="font-mono">{citation.version}</code>).
+                </p>
+                {citation.doi && (
+                  <p className="mb-3 text-xs">
+                    <span className="text-muted-foreground">DOI </span>
+                    <a
+                      href={`https://doi.org/${citation.doi}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-foreground hover:underline"
+                    >
+                      {citation.doi}
+                    </a>
+                  </p>
+                )}
+                <div className="space-y-3">
+                  <div>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        CFF
+                      </p>
+                      <CopyButton text={citation.cff} />
+                    </div>
+                    <pre className="max-h-32 overflow-auto rounded-md border bg-muted/30 p-2 text-[10px] leading-snug text-muted-foreground">
+                      {citation.cff.trimEnd()}
+                    </pre>
+                  </div>
+                  <div>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        BibTeX
+                      </p>
+                      <CopyButton text={citation.bibtex} />
+                    </div>
+                    <pre className="max-h-24 overflow-auto rounded-md border bg-muted/30 p-2 text-[10px] leading-snug text-muted-foreground">
+                      {citation.bibtex.trimEnd()}
+                    </pre>
+                  </div>
+                </div>
+              </SideCard>
+            )}
 
             {/* Downloads quick view */}
             <SideCard title="Downloads">
