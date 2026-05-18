@@ -105,9 +105,27 @@ export default function ContributingPage() {
             >
               ExtenSilica GitHub organization
             </a>
-            . Contributions to those repositories will require accepting a{" "}
-            <InfoStrong>Contributor License Agreement (CLA)</InfoStrong> and using the
-            Apache-2.0 license (see upcoming PR-G5 in our roadmap).
+            . Contributions to the platform repository require the{" "}
+            <InfoStrong>Individual Contributor License Agreement (CLA)</InfoStrong>{" "}
+            and are licensed under Apache-2.0 — see{" "}
+            <a
+              href="https://github.com/ExtenSilica/ExtenSilica/blob/main/docs/CLA.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              docs/CLA.md
+            </a>{" "}
+            and{" "}
+            <a
+              href="https://github.com/ExtenSilica/ExtenSilica/blob/main/CONTRIBUTING.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              CONTRIBUTING.md
+            </a>{" "}
+            in the platform repository.
           </p>
           <p>
             Report security-sensitive issues through the contact path in our{" "}

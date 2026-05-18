@@ -54,7 +54,29 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="catalog-labels" title="3. Catalog Labels and Catalog-Seeded Packages">
+        <Section id="stewardship" title="3. Stewardship and technical coordination">
+          <p>
+            ExtenSilica Ltda. operates the Service as interim technical steward of the
+            public registry and <C>.xsil</C> format. We coordinate open technical work
+            (publication, ownership claims, implementation requests, verification) and
+            publish adoption metrics. We do <Strong>not</Strong> hold user funds, process
+            payments, set prices, or broker contracts on the Service.
+          </p>
+          <p>
+            Optional funding-contact fields on implementation requests are pointers to
+            off-platform arrangements only. See{" "}
+            <a href="/governance" className="text-primary underline">
+              Governance
+            </a>{" "}
+            and{" "}
+            <a href="/contributing" className="text-primary underline">
+              Contributing
+            </a>{" "}
+            on this site for more detail.
+          </p>
+        </Section>
+
+        <Section id="catalog-labels" title="4. Catalog Labels and Catalog-Seeded Packages">
           <p>
             <Strong>Honest classification (<C>standardStatus</C>).</Strong> Every
             package on ExtenSilica is labeled with one of five values describing
@@ -108,7 +130,7 @@ export default function TermsPage() {
           </Ul>
         </Section>
 
-        <Section id="ownership-claims" title="4. Ownership and Authorship Claims">
+        <Section id="ownership-claims" title="5. Ownership and Authorship Claims">
           <p>
             <Strong>Authors retain ownership.</Strong> ExtenSilica does not claim
             any intellectual property rights over packages — whether published by
@@ -134,7 +156,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="accounts" title="5. Accounts and Registration">
+        <Section id="accounts" title="6. Accounts and Registration">
           <p>
             Publishing packages requires a registered account. When you create an
             account you agree to:
@@ -163,7 +185,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="content" title="6. Published Content and Package Author Responsibility">
+        <Section id="content" title="7. Published Content and Package Author Responsibility">
           <p>
             <Strong>License grant.</Strong> By publishing a package you grant
             ExtenSilica and its users a worldwide, royalty-free, non-exclusive
@@ -211,7 +233,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="intellectual-property" title="7. Intellectual Property of the Service">
+        <Section id="intellectual-property" title="8. Intellectual Property of the Service">
           <p>
             The ExtenSilica website, registry infrastructure, and <C>xsil</C> CLI are
             open-source software. The name &ldquo;ExtenSilica&rdquo; and associated
@@ -221,7 +243,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="prohibited" title="8. Prohibited Conduct">
+        <Section id="prohibited" title="9. Prohibited Conduct">
           <p>You may not use the Service to:</p>
           <Ul>
             <li>
@@ -265,7 +287,7 @@ export default function TermsPage() {
           </Ul>
         </Section>
 
-        <Section id="moderation" title="9. Content Moderation and Removal">
+        <Section id="moderation" title="10. Content Moderation and Removal">
           <p>
             ExtenSilica reserves the right — but not the obligation — to review,
             moderate, and remove content that violates these Terms or that we
@@ -310,7 +332,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="immutability" title="10. Version Immutability">
+        <Section id="immutability" title="11. Version Immutability">
           <p>
             Once a package version is successfully published it cannot be overwritten.
             You may publish a new version to supersede an older one, or yank a version
@@ -320,7 +342,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="termination" title="11. Account Suspension and Termination">
+        <Section id="termination" title="12. Account Suspension and Termination">
           <p>
             We reserve the right to suspend or terminate accounts that violate these
             Terms, engage in abusive behavior, or that have been inactive for an
@@ -337,7 +359,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="disclaimer" title="12. Disclaimer of Warranties">
+        <Section id="disclaimer" title="13. Disclaimer of Warranties">
           <p>
             The Service is provided <Strong>&ldquo;as is&rdquo;</Strong> and{" "}
             <Strong>&ldquo;as available&rdquo;</Strong> without warranty of any kind,
@@ -364,7 +386,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="liability" title="13. Limitation of Liability">
+        <Section id="liability" title="14. Limitation of Liability">
           <p>
             To the maximum extent permitted by applicable law, ExtenSilica and its
             contributors, maintainers, and operators shall not be liable for any
@@ -383,7 +405,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="indemnification" title="14. Indemnification">
+        <Section id="indemnification" title="15. Indemnification">
           <p>
             You agree to indemnify, defend, and hold harmless ExtenSilica and its
             contributors from and against any claims, damages, obligations, losses,
@@ -393,7 +415,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="changes" title="15. Changes to These Terms">
+        <Section id="changes" title="16. Changes to These Terms">
           <p>
             We may update these Terms from time to time. When we make material changes
             we will update the &ldquo;Last updated&rdquo; date at the top of this page
@@ -403,7 +425,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="governing-law" title="16. Governing Law">
+        <Section id="governing-law" title="17. Governing Law">
           <p>
             These Terms shall be governed by and construed in accordance with
             applicable law. Any disputes arising under these Terms shall be resolved
@@ -412,7 +434,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="contact" title="17. Contact">
+        <Section id="contact" title="18. Contact">
           <p>
             Questions, abuse reports, and takedown requests can be sent to{" "}
             <a

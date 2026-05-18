@@ -198,10 +198,25 @@ export function HomeIndex() {
             <span className="text-riscv-light">extensions</span>
           </h1>
 
-          <p className="mb-8 text-lg text-muted-foreground">
+          <p className="mb-4 text-lg text-muted-foreground">
             Reproducible{" "}
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">.xsil</code>{" "}
             packages for simulator, toolchain, and optional FPGA/RTL evaluation.
+          </p>
+          <p className="mb-8 text-sm text-muted-foreground">
+            Operated as an open registry and interim technical steward — not a marketplace.
+            We coordinate publication and technical work; we do not hold funds or process payments.{" "}
+            <Link href="/governance" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Governance
+            </Link>
+            {" · "}
+            <Link href="/adoption" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Adoption
+            </Link>
+            {" · "}
+            <Link href="/contributing" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Contributing
+            </Link>
           </p>
 
           {/* Search bar */}
@@ -484,7 +499,12 @@ export function HomeIndex() {
             <code className="rounded bg-muted px-1.5 font-mono text-sm">
               xsil publish
             </code>
-            . Publish is gated until every declared dependency is verified.
+            . Publish is gated until every declared dependency is verified. Need help
+            coordinating an implementation? Use{" "}
+            <Link href="/requests" className="text-foreground underline-offset-4 hover:underline">
+              open requests
+            </Link>{" "}
+            — funding stays off-platform.
           </p>
           <div className="inline-flex flex-col gap-1.5 rounded-lg border border-border/80 bg-[hsl(222_30%_8%)] px-5 py-3 text-left font-mono text-sm text-gray-200 shadow-lg dark:bg-[hsl(222_40%_6%)]">
             <p>

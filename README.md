@@ -204,6 +204,14 @@ Packages use [Semantic Versioning](https://semver.org): `MAJOR.MINOR.PATCH`.
 
 ---
 
+## License
+
+Platform code in this repository (registry API, website, deploy scripts) is licensed under the [Apache License, Version 2.0](LICENSE). Contributions require the [Individual CLA](docs/CLA.md); see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Published `.xsil` packages remain under their upstream SPDX licenses chosen by publishers.
+
+---
+
 ## Documentation
 
 - [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) — package format (public repo)

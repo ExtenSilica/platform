@@ -801,6 +801,52 @@ const GROUPS: FaqGroup[] = [
       },
     ],
   },
+  {
+    title: "Governance & stewardship",
+    id: "governance",
+    items: [
+      {
+        q: "Who operates ExtenSilica?",
+        a: (
+          <>
+            ExtenSilica Ltda. operates the public registry and <C>.xsil</C> packaging
+            platform as an <strong>interim technical steward</strong>, with a stated goal
+            of neutral long-term governance (including possible transfer to RISC-V
+            International or an affiliated foundation). ExtenSilica is{" "}
+            <strong>not affiliated with RISC-V International</strong>. See{" "}
+            <Link href="/governance" className="text-primary underline">
+              Governance
+            </Link>
+            .
+          </>
+        ),
+      },
+      {
+        q: "Does ExtenSilica process payments or hold funds?",
+        a: (
+          <>
+            No. The registry is free to use and has no paid tiers, wallets, escrow, or
+            payout flows in the platform schema. Implementation requests may list an
+            optional off-platform funding contact; that is not an offer, contract, or
+            payment rail operated by ExtenSilica.
+          </>
+        ),
+      },
+      {
+        q: "Where can I see adoption metrics?",
+        a: (
+          <>
+            Public page-view and download aggregates are on the{" "}
+            <Link href="/adoption" className="text-primary underline">
+              Adoption
+            </Link>{" "}
+            dashboard (<C>GET /stats/adoption</C>). They support transparency for
+            stewards and contributors, not billing.
+          </>
+        ),
+      },
+    ],
+  },
 ];
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
