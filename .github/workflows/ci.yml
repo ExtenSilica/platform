@@ -13,6 +13,16 @@ env:
   NODE_VERSION: "20"
 
 jobs:
+  # ── Anti-financial schema drift (PR-G8) ───────────────────────────────────────
+  no-financial-drift:
+    name: Policy — no financial schema drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run check-no-financial-drift.sh
+        run: bash scripts/check-no-financial-drift.sh
+
   # ── Backend ───────────────────────────────────────────────────────────────────
   backend-check:
     name: Backend — typecheck + lint
