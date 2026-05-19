@@ -12,6 +12,13 @@ import {
   type PortStatus,
 } from "@/lib/types";
 import { fetchPackages } from "@/lib/api";
+import {
+  hasStructuredFilters,
+  parseSearchParams,
+  searchParamsCacheKey,
+  toListPackagesQuery,
+  type ParsedSearchParams,
+} from "@/lib/search-params";
 import { PackageCard } from "@/components/package-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -20,72 +27,57 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { RefreshCcw, WifiOff, SlidersHorizontal } from "lucide-react";
 
-function parseStatuses(raw: string): StandardStatus[] {
-  if (!raw) return [];
-  return raw
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter((s): s is StandardStatus =>
-      (STANDARD_STATUS_VALUES as string[]).includes(s),
-    );
-}
-
-function parsePortStatuses(raw: string): PortStatus[] {
-  if (!raw) return [];
-  return raw
-    .split(",")
-    .map((s) => s.trim().toLowerCase().replace(/-/g, "_"))
-    .filter((s): s is PortStatus =>
-      (PORT_STATUS_VALUES as string[]).includes(s),
-    );
-}
+export type SearchResultsProps = {
+  initialPackages: RegistryPackage[];
+  initialError: string | null;
+  initialSearchKey: string;
+  initialParsed: ParsedSearchParams;
+};
 
 function CardSkeleton() {
   return <div className="h-44 animate-pulse rounded-lg border bg-muted/40" />;
 }
 
-export function SearchResults() {
+export function SearchResults({
+  initialPackages,
+  initialError,
+  initialSearchKey,
+  initialParsed,
+}: SearchResultsProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const spKey = searchParams.toString();
 
-  const query = searchParams.get("q") ?? "";
-  const author = searchParams.get("author") ?? "";
-  const org = searchParams.get("org") ?? "";
-  const level = searchParams.get("level") ?? "";
-  const standardStatusRaw = searchParams.get("standardStatus") ?? "";
-  const portStatusRaw = searchParams.get("portStatus") ?? "";
-  const sort = searchParams.get("sort") ?? "created";
-  const order = searchParams.get("order") ?? "desc";
-
-  const activeStatuses = useMemo(
-    () => parseStatuses(standardStatusRaw),
-    [standardStatusRaw],
+  const parsedFromUrl = useMemo(
+    () => parseSearchParams(searchParams),
+    [searchParams],
   );
-  const activePortStatuses = useMemo(
-    () => parsePortStatuses(portStatusRaw),
-    [portStatusRaw],
-  );
+  const currentSearchKey = searchParamsCacheKey(parsedFromUrl);
 
-  const [packages, setPackages] = useState<RegistryPackage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const parsed =
+    currentSearchKey === initialSearchKey ? initialParsed : parsedFromUrl;
+
+  const {
+    query,
+    author,
+    org,
+    level,
+    activeStatuses,
+    activePortStatuses,
+    sort,
+    order,
+  } = parsed;
+
+  const [packages, setPackages] = useState<RegistryPackage[]>(initialPackages);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(initialError);
 
   const load = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const data = await fetchPackages({
-        q: query || undefined,
-        author: author || undefined,
-        org: org || undefined,
-        level: level || undefined,
-        standardStatus: activeStatuses.length ? activeStatuses : undefined,
-        portStatus: activePortStatuses.length ? activePortStatuses : undefined,
-        sort: sort === "downloads" ? "downloads" : "created",
-        order: order === "asc" ? "asc" : "desc",
-      });
+      const data = await fetchPackages(toListPackagesQuery(parsedFromUrl));
       setPackages(data);
     } catch (err) {
       console.error(err);
@@ -93,11 +85,23 @@ export function SearchResults() {
     } finally {
       setLoading(false);
     }
-  }, [query, author, org, level, activeStatuses, activePortStatuses, sort, order]);
+  }, [parsedFromUrl]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (currentSearchKey === initialSearchKey) {
+      setPackages(initialPackages);
+      setError(initialError);
+      setLoading(false);
+      return;
+    }
+    void load();
+  }, [
+    currentSearchKey,
+    initialSearchKey,
+    initialPackages,
+    initialError,
+    load,
+  ]);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -148,9 +152,7 @@ export function SearchResults() {
     router.replace(`/search${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
-  const hasStructuredFilters = Boolean(
-    author || org || level || activeStatuses.length || activePortStatuses.length,
-  );
+  const structuredFilters = hasStructuredFilters(parsed);
 
   return (
     <div className="container max-w-6xl px-4 py-10">
@@ -346,7 +348,7 @@ export function SearchResults() {
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold">
-          {query || hasStructuredFilters ? (
+          {query || structuredFilters ? (
             <>
               {query ? (
                 <>
@@ -356,7 +358,7 @@ export function SearchResults() {
               ) : (
                 <span>Registry</span>
               )}
-              {hasStructuredFilters && (
+              {structuredFilters && (
                 <span className="mt-1 block text-sm font-normal text-muted-foreground">
                   {[
                     author && `Author: ${author}`,
@@ -409,7 +411,7 @@ export function SearchResults() {
       ) : packages.length === 0 ? (
         <div className="rounded-lg border border-dashed bg-muted/20 py-20 text-center">
           <p className="font-medium text-foreground">No packages found</p>
-          {query || hasStructuredFilters ? (
+          {query || structuredFilters ? (
             <p className="mt-2 text-sm text-muted-foreground">
               Try different keywords or filters, or{" "}
               <button
