@@ -13,6 +13,7 @@ import {
 import { fetchPackages, apiCatalogStats } from "@/lib/api";
 import { pickDiverseHomePackages } from "@/lib/home-packages";
 import { PackageCard } from "@/components/package-card";
+import { HeroTerminal } from "@/components/hero-terminal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,20 +69,6 @@ const FEATURES = [
     description:
       "xsil run, xsil install, and xsil test work with registry slugs, local .xsil files, or unpacked directories.",
   },
-];
-
-type ExampleCommand = {
-  label: string;
-  cmd: string;
-  comment?: string;
-  kind?: "setup" | "usage";
-};
-
-const EXAMPLE_COMMANDS: ExampleCommand[] = [
-  { label: "setup", cmd: "cargo install xsil", comment: "one-time", kind: "setup" },
-  { label: "install", cmd: "xsil install rvv-demo" },
-  { label: "run", cmd: "xsil run rvv-demo" },
-  { label: "publish", cmd: "xsil publish ./my-extension/" },
 ];
 
 export function HomeIndex() {
@@ -294,54 +281,7 @@ export function HomeIndex() {
             <p className="mb-2.5 text-base font-semibold text-foreground sm:text-[1.0625rem]">
               Try a runnable extension in one command.
             </p>
-            <div className="relative">
-              {/* edge glow */}
-              <div
-                className="pointer-events-none absolute -inset-1 rounded-2xl opacity-70 blur-md sm:-inset-1.5"
-                style={{
-                  background:
-                    "linear-gradient(145deg, hsl(var(--riscv-accent) / 0.22), transparent 42%, hsl(var(--riscv) / 0.12))",
-                }}
-                aria-hidden
-              />
-              <div className="relative overflow-hidden rounded-xl border border-border/90 text-left font-mono text-[0.9375rem] leading-relaxed shadow-[0_4px_6px_-1px_rgb(0_0_0_/_0.2),0_20px_50px_-12px_rgb(0_0_0_/_0.45),0_0_0_1px_rgb(0_0_0_/_0.08)] ring-1 ring-riscv-accent/25 ring-offset-2 ring-offset-[hsl(222_32%_97%)] transition-all duration-200 ease-out will-change-transform hover:-translate-y-0.5 hover:border-riscv-accent/45 hover:shadow-[0_8px_12px_-2px_rgb(0_0_0_/_0.22),0_24px_56px_-12px_rgb(0_0_0_/_0.48)] dark:border-border/60 dark:ring-riscv-accent/20 dark:ring-offset-background dark:hover:border-riscv-accent/35 sm:text-base sm:leading-relaxed">
-              {/* terminal title bar */}
-              <div className="flex items-center gap-2 border-b border-white/10 bg-muted/85 px-5 py-2.5 dark:border-white/5 dark:bg-muted/50">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-red-400/75 shadow-[0_0_8px_rgb(248_113_113_/_0.35)]" />
-                  <span className="h-3 w-3 rounded-full bg-amber-400/75 shadow-[0_0_8px_rgb(251_191_36_/_0.3)]" />
-                  <span className="h-3 w-3 rounded-full bg-emerald-400/70 shadow-[0_0_8px_rgb(52_211_153_/_0.3)]" />
-                </div>
-                <p className="ml-1 select-none text-[11px] font-medium uppercase tracking-wider text-muted-foreground sm:text-xs">
-                  quickstart — xsil
-                </p>
-              </div>
-              {/* terminal body */}
-              <div className="bg-[hsl(222_32%_7%)] px-5 py-5 text-[#e8edf5] shadow-[inset_0_1px_0_rgb(255_255_255_/_0.04)] dark:bg-[hsl(222_38%_5%)] dark:text-[#eef2f8] sm:px-6 sm:py-6">
-              {EXAMPLE_COMMANDS.map(({ cmd, comment, kind }, idx) => {
-                const isSetup = kind === "setup";
-                const nextIsUsage =
-                  isSetup && EXAMPLE_COMMANDS[idx + 1]?.kind !== "setup";
-                return (
-                  <div key={cmd}>
-                    <p className="leading-8 tracking-tight sm:leading-9">
-                      <span className="select-none font-medium text-emerald-400/95">$ </span>
-                      <span className={isSetup ? "text-amber-200/95" : "text-[#f1f5f9]"}>
-                        {cmd}
-                      </span>
-                      {comment ? (
-                        <span className="ml-3 select-none text-[#9aa6b8]"># {comment}</span>
-                      ) : null}
-                    </p>
-                    {nextIsUsage ? (
-                      <div className="my-1.5 h-px bg-white/5" aria-hidden />
-                    ) : null}
-                  </div>
-                );
-              })}
-              </div>
-            </div>
-            </div>
+            <HeroTerminal />
             <p className="mt-3 text-sm text-muted-foreground">
               The{" "}
               <a
