@@ -128,13 +128,24 @@ function TerminalLineView({ line }: { line: TerminalLine }) {
   );
 }
 
+/** Fits the full quickstart transcript so the hero layout never grows mid-animation. */
+const TERMINAL_BODY_CLASS =
+  "h-[23.5rem] overflow-hidden bg-[hsl(222_32%_7%)] px-5 py-5 text-[#e8edf5] shadow-[inset_0_1px_0_rgb(255_255_255_/_0.04)] dark:bg-[hsl(222_38%_5%)] dark:text-[#eef2f8] sm:h-[24.5rem] sm:px-6 sm:py-6";
+
 export function HeroTerminal() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inView = useInView(rootRef);
   const reduceMotion = usePrefersReducedMotion();
   const [lines, setLines] = useState<TerminalLine[]>([]);
   const [typing, setTyping] = useState<TypingState | null>(null);
   const [cursorOn, setCursorOn] = useState(true);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [lines, typing]);
 
   const runScene = useCallback(async (signal: AbortSignal) => {
     const typeCommand = async (
@@ -257,32 +268,38 @@ export function HeroTerminal() {
             quickstart — xsil
           </p>
         </div>
-        <div
-          className="min-h-[15.5rem] bg-[hsl(222_32%_7%)] px-5 py-5 text-[#e8edf5] shadow-[inset_0_1px_0_rgb(255_255_255_/_0.04)] dark:bg-[hsl(222_38%_5%)] dark:text-[#eef2f8] sm:min-h-[16.5rem] sm:px-6 sm:py-6"
-          aria-live={reduceMotion ? "off" : "polite"}
-        >
-          {lines.map((line, i) => (
-            <TerminalLineView key={`${line.kind}-${i}`} line={line} />
-          ))}
-          {typing ? (
-            <p className="leading-8 tracking-tight sm:leading-9">
-              <span className="select-none font-medium text-emerald-400/95">$ </span>
-              <span className={typing.setup ? "text-amber-200/95" : "text-[#f1f5f9]"}>
-                {typing.text.slice(0, typing.revealed)}
-              </span>
-              {typing.comment && typing.revealed >= typing.text.length ? (
-                <span className="ml-3 select-none text-[#9aa6b8]">
-                  # {typing.comment}
-                </span>
+        <div className={TERMINAL_BODY_CLASS} aria-live={reduceMotion ? "off" : "polite"}>
+          <div
+            ref={scrollRef}
+            className="h-full overflow-y-auto overflow-x-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <div className="flex min-h-full flex-col justify-end">
+              {lines.map((line, i) => (
+                <TerminalLineView key={`${line.kind}-${i}`} line={line} />
+              ))}
+              {typing ? (
+                <p className="leading-8 tracking-tight sm:leading-9">
+                  <span className="select-none font-medium text-emerald-400/95">$ </span>
+                  <span
+                    className={typing.setup ? "text-amber-200/95" : "text-[#f1f5f9]"}
+                  >
+                    {typing.text.slice(0, typing.revealed)}
+                  </span>
+                  {typing.comment && typing.revealed >= typing.text.length ? (
+                    <span className="ml-3 select-none text-[#9aa6b8]">
+                      # {typing.comment}
+                    </span>
+                  ) : null}
+                  <span
+                    className={`ml-0.5 inline-block h-[1.05em] w-[0.55em] translate-y-[0.12em] bg-emerald-400/90 ${
+                      showCursor ? "opacity-100" : "opacity-0"
+                    }`}
+                    aria-hidden
+                  />
+                </p>
               ) : null}
-              <span
-                className={`ml-0.5 inline-block h-[1.05em] w-[0.55em] translate-y-[0.12em] bg-emerald-400/90 ${
-                  showCursor ? "opacity-100" : "opacity-0"
-                }`}
-                aria-hidden
-              />
-            </p>
-          ) : null}
+            </div>
+          </div>
         </div>
       </div>
     </div>
