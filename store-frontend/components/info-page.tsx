@@ -10,11 +10,13 @@ interface InfoPageProps {
   title: string;
   subtitle?: string;
   updated: string;
+  /** Optional banner below the header (e.g. early-adoption context). */
+  note?: string;
   current: string;
   children: React.ReactNode;
 }
 
-export function InfoPage({ title, subtitle, updated, current, children }: InfoPageProps) {
+export function InfoPage({ title, subtitle, updated, note, current, children }: InfoPageProps) {
   return (
     <div className="min-h-screen">
       <div className="border-b bg-muted/10">
@@ -27,6 +29,11 @@ export function InfoPage({ title, subtitle, updated, current, children }: InfoPa
             <p className="mt-2 max-w-2xl text-muted-foreground">{subtitle}</p>
           ) : null}
           <p className="mt-3 text-xs text-muted-foreground">Last updated: {updated}</p>
+          {note ? (
+            <p className="mt-3 max-w-2xl rounded-md border border-border/80 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+              {note}
+            </p>
+          ) : null}
         </div>
 
         <div className="container max-w-6xl px-4">

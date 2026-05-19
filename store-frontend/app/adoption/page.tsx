@@ -3,12 +3,19 @@ import Link from "next/link";
 import { InfoPage, InfoSection, InfoStrong } from "@/components/info-page";
 import { AdoptionDailyChart } from "@/components/adoption-daily-chart";
 import { fetchAdoptionStats } from "@/lib/api";
+import {
+  formatPackageListLabel,
+  packageNamesDiffer,
+} from "@/lib/package-display";
 
 export const metadata: Metadata = {
   title: "Adoption — ExtenSilica",
   description:
     "Public registry adoption metrics: package page views, downloads, and trending packages.",
 };
+
+const EARLY_ADOPTION_NOTE =
+  "The registry opened publicly in May 2026. Totals are still early — metrics will become more meaningful as community usage grows.";
 
 function fmtNum(n: number) {
   return n.toLocaleString();
@@ -28,11 +35,20 @@ function StatCard({ label, value }: { label: string; value: string }) {
 export default async function AdoptionPage() {
   const stats = await fetchAdoptionStats(30);
 
+  const viewsWindow = stats?.views.windowTotal ?? 0;
+  const views7 = stats?.views.last7Days ?? 0;
+  const views30 = stats?.views.last30Days ?? 0;
+  const showSeparateViewWindows =
+    stats != null && (views7 !== viewsWindow || views30 !== viewsWindow);
+
+  const topPackages = (stats?.topPackagesByViews ?? []).slice(0, 5);
+
   return (
     <InfoPage
       title="Adoption"
       subtitle="Transparent registry usage for stewards, contributors, and foundation discussions."
       updated="May 2026"
+      note={EARLY_ADOPTION_NOTE}
       current="/adoption"
     >
       <div className="space-y-10">
@@ -68,34 +84,31 @@ export default async function AdoptionPage() {
               <h2 className="text-lg font-semibold">
                 Snapshot — last {stats.days} days
               </h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <StatCard
                   label="Packages in catalog"
                   value={fmtNum(stats.totalPackages)}
                 />
                 <StatCard
-                  label="Page views (window)"
-                  value={fmtNum(stats.views.windowTotal)}
+                  label={`Page views (${stats.days}d)`}
+                  value={fmtNum(viewsWindow)}
                 />
                 <StatCard
-                  label="Downloads (window)"
+                  label={`Downloads (${stats.days}d)`}
                   value={fmtNum(stats.downloads.windowTotal)}
                 />
-                <StatCard
-                  label="Views (30d)"
-                  value={fmtNum(stats.views.last30Days)}
-                />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <StatCard
-                  label="Views (7d)"
-                  value={fmtNum(stats.views.last7Days)}
-                />
-                <StatCard
-                  label="Downloads (7d)"
-                  value={fmtNum(stats.downloads.last7Days)}
-                />
-              </div>
+              {showSeparateViewWindows ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <StatCard label="Views (7d)" value={fmtNum(views7)} />
+                  <StatCard label="Views (30d)" value={fmtNum(views30)} />
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  All recorded views in this window fall within the last {stats.days}{" "}
+                  days since public launch.
+                </p>
+              )}
             </section>
 
             <section className="space-y-4">
@@ -114,13 +127,11 @@ export default async function AdoptionPage() {
               />
             </section>
 
-            {stats.topPackagesByViews.length > 0 && (
+            {topPackages.length > 0 && (
               <section className="space-y-4">
-                <h2 className="text-lg font-semibold">
-                  Most viewed packages (window)
-                </h2>
+                <h2 className="text-lg font-semibold">Recently viewed packages</h2>
                 <ul className="divide-y rounded-lg border">
-                  {stats.topPackagesByViews.map((row) => (
+                  {topPackages.map((row) => (
                     <li
                       key={row.slug}
                       className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
@@ -129,14 +140,18 @@ export default async function AdoptionPage() {
                         href={`/package/${row.slug}`}
                         className="min-w-0 font-medium hover:underline"
                       >
-                        {row.name}
-                        <span className="ml-2 font-mono text-xs text-muted-foreground">
-                          {row.slug}
-                        </span>
+                        {formatPackageListLabel(row.name, row.slug)}
+                        {packageNamesDiffer(row.name, row.slug) ? (
+                          <span className="ml-2 font-mono text-xs text-muted-foreground">
+                            {row.slug}
+                          </span>
+                        ) : null}
                       </Link>
-                      <span className="shrink-0 tabular-nums text-muted-foreground">
-                        {fmtNum(row.viewsInWindow)} views
-                      </span>
+                      {row.viewsInWindow > 1 ? (
+                        <span className="shrink-0 tabular-nums text-muted-foreground">
+                          {fmtNum(row.viewsInWindow)} views
+                        </span>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

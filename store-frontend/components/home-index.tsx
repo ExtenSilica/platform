@@ -11,6 +11,7 @@ import {
   type StandardStatus,
 } from "@/lib/types";
 import { fetchPackages, apiCatalogStats } from "@/lib/api";
+import { pickDiverseHomePackages } from "@/lib/home-packages";
 import { PackageCard } from "@/components/package-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -98,10 +99,10 @@ export function HomeIndex() {
     setLoading(true);
     try {
       const [data, statsData] = await Promise.all([
-        fetchPackages({ limit: 6, sort: "downloads", order: "desc" }),
+        fetchPackages({ limit: 80, sort: "created", order: "desc" }),
         apiCatalogStats().catch(() => null),
       ]);
-      setPackages(data);
+      setPackages(pickDiverseHomePackages(data, 6));
       setStats(statsData);
     } catch (err) {
       console.error(err);
@@ -208,10 +209,6 @@ export function HomeIndex() {
             We coordinate publication and technical work; we do not hold funds or process payments.{" "}
             <Link href="/governance" className="font-medium text-foreground underline-offset-4 hover:underline">
               Governance
-            </Link>
-            {" · "}
-            <Link href="/adoption" className="font-medium text-foreground underline-offset-4 hover:underline">
-              Adoption
             </Link>
             {" · "}
             <Link href="/contributing" className="font-medium text-foreground underline-offset-4 hover:underline">
