@@ -1,16 +1,28 @@
 # Contributing to ExtenSilica (platform)
 
-Thank you for helping improve the registry API, website, and operational tooling in this repository.
+Thank you for helping improve the registry API, website, and operational tooling in **this repository** (pull requests to the private platform codebase).
 
 The public **`.xsil` format and `xsil` CLI** live in [github.com/ExtenSilica/xsil](https://github.com/ExtenSilica/xsil). Follow that repository's contribution process for spec and CLI changes.
 
-## Before you start
+## Registry packages (`.xsil`) — not this document
+
+**Publishing on the registry does not go through this repo and does not require the CLA below.**
+
+| What users do | Where |
+|---------------|--------|
+| Publish / install packages | `xsil publish`, `xsil install`, registry API |
+| Package metadata & license | Inside the `.xsil` / `manifest.json` (upstream SPDX) |
+| Link to source code | Optional `repository` URL in the manifest (e.g. GitHub) — that project keeps its own license and contribution rules |
+
+For publishing, ownership claims, implementation requests, and citations, see [Contributing on the public site](https://extensilica.com/contributing).
+
+## Before you start (platform code only)
 
 1. Read [docs/implementation-plan-rvi-2026.md](docs/implementation-plan-rvi-2026.md) — we do **not** add payment, wallet, escrow, or marketplace schema to the platform.
 2. Read [Governance](https://extensilica.com/governance) on the public site for stewardship boundaries.
-3. For registry packages (`.xsil` publishes), see [Contributing on the site](https://extensilica.com/contributing) — that path is separate from platform code here.
-
 ## Contributor License Agreement (CLA)
+
+Applies only to **pull requests in this platform repository**, not to `.xsil` publishes.
 
 Contributions to **this repository** require accepting the [Individual Contributor License Agreement](docs/CLA.md).
 
