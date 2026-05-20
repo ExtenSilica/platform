@@ -118,11 +118,11 @@ The following files contain intentional references to removed concepts as part o
 
 | File | Reason |
 |------|--------|
-| `docs/pivot-baseline.md` | v1 baseline snapshot; documents what was removed |
-| `docs/pivot-v2.md` | v2 pivot record; explains rationale for removing pay-per-flash |
-| `docs/pivot-v3-baseline.md` | v3 baseline snapshot; explicitly lists what changed |
+| `docs/history/pivot-baseline.md` | v1 baseline snapshot; documents what was removed |
+| `docs/history/pivot-v2.md` | v2 pivot record; explains rationale for removing pay-per-flash |
+| `docs/history/pivot-v3-baseline.md` | v3 baseline snapshot; explicitly lists what changed |
 | `docs/README.md` | Changelog of the docs folder across pivots |
-| `docs/license-wrapper.md` | Historical record of the v1 commercial model |
+| `docs/history/license-wrapper.md` | Historical record of the v1 commercial model |
 | `store-backend/prisma/migrations/` | SQL migration history; old column names in `ALTER/DROP` statements are correct archaeology |
 
 ---

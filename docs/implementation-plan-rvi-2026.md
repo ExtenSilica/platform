@@ -39,7 +39,7 @@
 | CLI | `xsil` 0.2.2 (crates.io) |
 | Downloads | `DownloadEvent`, `recordDownload` em `analytics.ts` |
 | Perfil user | `GET /users/:username`, `app/users/[username]/page.tsx` |
-| Legal pivot | Sem pay-per-flash (`docs/license-wrapper.md`) |
+| Legal pivot | Sem pay-per-flash (`docs/history/license-wrapper.md`) |
 
 **Gap:** licença do backend `ISC` em `package.json` → alinhar Apache-2.0 (PR-G4).
 

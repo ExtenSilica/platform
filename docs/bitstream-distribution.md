@@ -32,7 +32,7 @@ Primary execution is **`xsil run`** using the manifest **`entry`** and **`target
 - **Build the CPU / RTL** — Design and implement the RISC-V core and any custom ISA extensions.
 - **Synthesize bitstreams** — Run the FPGA toolchain to produce bitstreams for **hardware they name** in their manifest.
 - **Package as .xsil** — Assemble `manifest.json`, optional `bitstream/`, `toolchain/`, `tests/`, `docs/`, etc.; set `targets` and any optional per-manifest `boards` / FPGA metadata; compute `payloadHash` and sign as required.
-- **Publish** — Upload the `.xsil` and register version metadata (see [publishing.md](./publishing.md)).
+- **Publish** — Upload the `.xsil` and register version metadata (see [developer-publishing.md](./developer-publishing.md)).
 
 ### Platform (ExtenSilica)
 

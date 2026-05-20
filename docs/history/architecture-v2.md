@@ -64,7 +64,7 @@ End-to-end path for **`xsil run`** with a package specifier:
 Typical loop for someone **publishing** an extension:
 
 1. **Author** RTL, toolchain, sim scripts, tests — layout under a package root matching **[spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md)**.
-2. **Write `manifest.json`** — Required fields, `entry`, `targets`, integrity fields after hashing (see [publishing.md](./publishing.md)).
+2. **Write `manifest.json`** — Required fields, `entry`, `targets`, integrity fields after hashing (see [developer-publishing.md](../developer-publishing.md)).
 3. **Build** — Produce a `.xsil` archive (`xsil build` when implemented, or equivalent packing).
 4. **Publish** — Upload the blob and register the new version with the metadata registry (`xsil publish` when implemented) so clients receive a stable URL and semver record.
 5. **Document** — Keep `docs/` accurate so users and CI can reproduce behavior.
@@ -92,7 +92,7 @@ Local development can point **`xsil run`** at a **directory** (e.g. [examples/rv
 |----------|--------|
 | [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) | Normative `.xsil` layout and manifest |
 | [execution-model.md](./execution-model.md) | Simulator vs FPGA; no platform board catalog |
-| [publishing.md](./publishing.md) | Build/publish intent |
+| [developer-publishing.md](../developer-publishing.md) | Publish workflow |
 | [reproducibility.md](./reproducibility.md) | Why XSIL + executability matter |
 | [security-model.md](./security-model.md) | Hashes and optional signatures |
 | [README.md](./README.md) | Documentation index |

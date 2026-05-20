@@ -41,12 +41,12 @@ const FINAL_LINES: TerminalLine[] = [
   { kind: "output", text: "    Installing xsil v0.2.3 …" },
   { kind: "success", text: "    Installed xsil v0.2.3" },
   { kind: "divider" },
-  { kind: "command", text: "xsil install rvv-demo" },
-  { kind: "output", text: "    Resolving rvv-demo@latest …" },
-  { kind: "output", text: "    Downloaded rvv-demo-1.0.0.xsil (sha256 verified)" },
-  { kind: "success", text: "    Ready — run: xsil run rvv-demo" },
+  { kind: "command", text: "xsil install rvx-demo" },
+  { kind: "output", text: "    Resolving rvx-demo@latest …" },
+  { kind: "output", text: "    Downloaded rvx-demo-1.0.0.xsil (sha256 verified)" },
+  { kind: "success", text: "    Ready — run: xsil run rvx-demo" },
   { kind: "divider" },
-  { kind: "command", text: "xsil run rvv-demo" },
+  { kind: "command", text: "xsil run rvx-demo" },
   { kind: "output", text: "    [sim] spike --isa=rv64gc +rvv …" },
   { kind: "success", text: "    PASS  examples/demo.S (3 cycles)" },
 ];
@@ -188,18 +188,18 @@ export function HeroTerminal() {
     ]);
     await appendDivider();
 
-    await typeCommand("xsil install rvv-demo");
+    await typeCommand("xsil install rvx-demo");
     await appendOutputs([
-      { kind: "output", text: "    Resolving rvv-demo@latest …" },
+      { kind: "output", text: "    Resolving rvx-demo@latest …" },
       {
         kind: "output",
-        text: "    Downloaded rvv-demo-1.0.0.xsil (sha256 verified)",
+        text: "    Downloaded rvx-demo-1.0.0.xsil (sha256 verified)",
       },
-      { kind: "success", text: "    Ready — run: xsil run rvv-demo" },
+      { kind: "success", text: "    Ready — run: xsil run rvx-demo" },
     ]);
     await appendDivider();
 
-    await typeCommand("xsil run rvv-demo");
+    await typeCommand("xsil run rvx-demo");
     await appendOutputs([
       { kind: "output", text: "    [sim] spike --isa=rv64gc +rvv …" },
       { kind: "success", text: "    PASS  examples/demo.S (3 cycles)" },
@@ -247,7 +247,7 @@ export function HeroTerminal() {
     <div
       ref={rootRef}
       className="relative"
-      aria-label="Animated terminal demo: install xsil, install rvv-demo, and run it"
+      aria-label="Animated terminal demo: install xsil, install rvx-demo, and run it"
     >
       <div
         className="pointer-events-none absolute -inset-1 rounded-2xl opacity-70 blur-md sm:-inset-1.5"

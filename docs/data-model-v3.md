@@ -3,7 +3,7 @@
 **Status:** Canonical target definition  
 **Date:** March 2026  
 **Branch:** `pivot/npmjs-like-xsil-registry`  
-**Related:** [backend-v3.md](./backend-v3.md), [product-architecture-v3.md](./product-architecture-v3.md)
+**Related:** [backend-v3.md](./backend-v3.md), [platform-features.md](./platform-features.md)
 
 This document is the single source of truth for the database schema of the ExtenSilica registry backend. It defines every entity, every field, all relationships, all indexes, and the constraints that enforce registry invariants.
 

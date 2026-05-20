@@ -5,7 +5,9 @@
 **Date:** March 2026  
 **Base URL:** `https://api.extensilica.com`  
 **Branch:** `pivot/npmjs-like-xsil-registry`  
-**Related:** [backend-v3.md](./backend-v3.md), [data-model-v3.md](./data-model-v3.md), [auth-v3.md](./auth-v3.md)
+**Related:** [platform-features.md](./platform-features.md), [backend-v3.md](./backend-v3.md), [data-model-v3.md](./data-model-v3.md), [auth-v3.md](./auth-v3.md)
+
+> API examples use the fictional slug `rvv-demo` for brevity. The production reference demo is **`rvx-demo`** ([hero-packages.md](./hero-packages.md)).
 
 ---
 
@@ -904,4 +906,4 @@ The API responds to all origins (`Access-Control-Allow-Origin: *`) for `GET` end
 
 ## Versioning
 
-This document describes API v3. There is no version prefix in the URL path. Breaking changes will be communicated via the changelog and the `PATCH` notes in the respective architecture documents. The legacy `/extensions` and `/api/extensions` aliases from v2 remain alive for backward CLI compatibility and will be removed in a future release.
+This document describes API v3. There is no version prefix in the URL path. Breaking changes will be communicated via the changelog and the `PATCH` notes in the respective architecture documents. Legacy v2 `/extensions` routes were removed in the v3 pivot.

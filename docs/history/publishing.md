@@ -127,4 +127,4 @@ Declare capabilities in **`targets`** (see **[spec/xsil.md §5](https://github.c
 - **[spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md)** — Normative format (layout, manifest, targets, toolchain).
 - **[execution-model.md](./execution-model.md)** — How `xsil run` picks simulator vs FPGA.
 - **[reproducibility.md](./reproducibility.md)** — Why packaged, hashed, runnable artifacts matter.
-- **[developer-publishing.md](./developer-publishing.md)** — Broader narrative (RTL, synthesis, signing); may overlap—**spec + this doc** take precedence for layout and commands.
+- **[developer-publishing.md](../developer-publishing.md)** — Broader narrative (RTL, synthesis, signing); may overlap—**spec + this doc** take precedence for layout and commands.

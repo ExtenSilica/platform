@@ -83,4 +83,4 @@ When the user runs `xsil run <package>` **without** forcing FPGA:
 ## Related
 
 - [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) — `entry`, `targets`, `sim/`, `toolchain/`, optional `bitstream/`
-- [extensilica-architecture.md](./extensilica-architecture.md) — system context
+- [extensilica-architecture-v3.md](./extensilica-architecture-v3.md) — system context

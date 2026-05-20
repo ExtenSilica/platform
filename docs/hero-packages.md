@@ -78,12 +78,6 @@ Environment:
 | `REGISTRY_URL` | `https://api.extensilica.com` | API base (no trailing slash) |
 | `REQUIRE_PRIMARY` | unset | If `1`, fail when `rvx-demo` is missing |
 
-## Homepage vs heroes
-
-The marketing homepage still shows example commands with `rvv-demo` (historical
-slug in copy). **Operational demos should use the slugs in this file** until
-homepage copy is aligned.
-
 ## Updating heroes
 
 - Add a slug here only after `xsil run` passes against production.

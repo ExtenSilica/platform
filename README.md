@@ -214,9 +214,10 @@ Published `.xsil` packages remain under their upstream SPDX licenses chosen by p
 
 ## Documentation
 
+- [docs/platform-features.md](docs/platform-features.md) — **feature reference** (website + API + CLI)
+- [docs/README.md](docs/README.md) — full doc index
 - [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) — package format (public repo)
 - [docs/REPOS_AND_PUBLIC_XSIL.md](docs/REPOS_AND_PUBLIC_XSIL.md) — private vs public split
-- [docs/publishing.md](docs/publishing.md) — full publishing workflow
+- [docs/developer-publishing.md](docs/developer-publishing.md) — publishing workflow
+- [docs/extensilica-architecture-v3.md](docs/extensilica-architecture-v3.md) — system architecture
 - [docs/reproducibility.md](docs/reproducibility.md) — why reproducibility matters
-- [docs/architecture-v2.md](docs/architecture-v2.md) — system architecture
-- [docs/pivot-v3-baseline.md](docs/pivot-v3-baseline.md) — pivot v3 scope and plan

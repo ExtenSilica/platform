@@ -4,7 +4,7 @@
 **Date:** March 2026  
 **Branch:** `pivot/npmjs-like-xsil-registry`
 
-This document is the single authoritative reference for the ExtenSilica v3 platform. It supersedes `extensilica-architecture.md`, `product-architecture-v3.md`, and all earlier architecture sketches.
+This document is the single authoritative reference for the ExtenSilica v3 platform architecture and flows. For a concise feature checklist (web + CLI + API), see [platform-features.md](./platform-features.md). Superseded docs live in [history/](./history/).
 
 ---
 

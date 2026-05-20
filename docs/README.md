@@ -1,64 +1,71 @@
-# ExtenSilica Documentation
+# ExtenSilica documentation
 
-## Platform Overview
+**Start here:** **[platform-features.md](./platform-features.md)** — complete feature reference for the **website**, **registry API**, and **`xsil` CLI**.
 
-**ExtenSilica** is a **standard for publishing reproducible RISC-V extensions**.
+## Product
 
-Product positioning and the single **readiness (RL)** scale are summarized in **[pre-silicon-bridge.md](./pre-silicon-bridge.md)**; the full checklist and vocabulary are in **[pre-silicon-bridge-readiness.md](./pre-silicon-bridge-readiness.md)**.
+| Document | Description |
+|----------|-------------|
+| [platform-features.md](./platform-features.md) | **Canonical** feature list (web + CLI + API summary) |
+| [REPOS_AND_PUBLIC_XSIL.md](./REPOS_AND_PUBLIC_XSIL.md) | Private platform repo vs public `ExtenSilica/xsil` |
+| [extensilica-architecture-v3.md](./extensilica-architecture-v3.md) | End-to-end architecture and flows |
+| [pre-silicon-bridge.md](./pre-silicon-bridge.md) | Product positioning (RL scale overview) |
+| [pre-silicon-bridge-readiness.md](./pre-silicon-bridge-readiness.md) | Readiness levels RL1–5 (full reference) |
+| [execution-model.md](./execution-model.md) | How `xsil run` picks simulator vs FPGA |
+| [reproducibility.md](./reproducibility.md) | Why XSIL + reproducible runs matter |
+| [implementation-plan-rvi-2026.md](./implementation-plan-rvi-2026.md) | 2026 roadmap (coordination, governance; no payments) |
 
-**Core:** `.xsil` format (standard) + **`xsil` CLI** (public [ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)) + **registry** (this private repo: hosted API + website).
+## Registry API & backend
 
-See **[REPOS_AND_PUBLIC_XSIL.md](./REPOS_AND_PUBLIC_XSIL.md)** for the split between this **private** platform repository and the **public** `xsil` tooling repo.
+| Document | Description |
+|----------|-------------|
+| [api-v3.md](./api-v3.md) | REST API reference |
+| [auth-v3.md](./auth-v3.md) | Tokens, sessions |
+| [backend-v3.md](./backend-v3.md) | Service layout |
+| [data-model-v3.md](./data-model-v3.md) | Prisma schema |
+| [publishing-flow-v3.md](./publishing-flow-v3.md) | Publish HTTP flow |
+| [versioning-v3.md](./versioning-v3.md) | Semver, yank, `latest` |
+| [analytics-v3.md](./analytics-v3.md) | Download tracking |
+| [reviews-v3.md](./reviews-v3.md) | Package reviews |
+| [name-policy-v3.md](./name-policy-v3.md) | Naming and squatting |
 
-See **[architecture-v2.md](./architecture-v2.md)** for the consolidated architecture (format, CLI, registry, flows). Historical pivot notes: **[pivot-v2.md](./pivot-v2.md)**.
+## CLI & publishing
 
-`.xsil` packages are primarily for **pre-silicon evaluation**: simulators (Spike, QEMU), declared toolchains, tests, and optional FPGA/RTL metadata—so teams can reproduce runs and compare artifacts before heavier RTL or ASIC investment.
+| Document | Description |
+|----------|-------------|
+| [cli-v3.md](./cli-v3.md) | Pointer to CLI reference (canonical copy in public `xsil` repo) |
+| [developer-publishing.md](./developer-publishing.md) | Human publisher guide |
+| [hero-packages.md](./hero-packages.md) | Production demo slugs + smoke script |
+| [agent-publish-extension.md](./agent-publish-extension.md) | Agent playbook (RL≥2) |
+| [catalog-seed/catalog.md](./catalog-seed/catalog.md) | Extension catalog seed (102 rows) |
+| [catalog-seed/agent-prompt.md](./catalog-seed/agent-prompt.md) | RL1 catalog-seed agent |
 
-A typical extension package (`.xsil`) may include:
+## OAuth (website)
 
-- **Simulation / emulation assets** and declared **targets** (e.g. Spike, QEMU)
-- **Optional FPGA bitstreams** or RTL references when the author ships them (paths/ids per package)
-- **Custom or bundled GCC/toolchain** for the extended ISA when included
-- **Example software**, **tests**, and **metadata** (including checksums for integrity)
+| Document | Description |
+|----------|-------------|
+| [oauth-v1.md](./oauth-v1.md) | OAuth design index |
+| [oauth-config.md](./oauth-config.md) | Environment variables |
+| [github-oauth-flow.md](./github-oauth-flow.md), [google-oauth-flow.md](./google-oauth-flow.md) | Provider flows |
+| [frontend-oauth-ui.md](./frontend-oauth-ui.md), [frontend-auth-callback.md](./frontend-auth-callback.md) | UI integration |
+| [cli-auth-v2.md](./cli-auth-v2.md) | CLI stays on API tokens |
+| [oauth-launch-checklist.md](./oauth-launch-checklist.md) | OAuth pre-launch checks |
 
-**Primary user command:**
+## Operations & legal
 
-```bash
-xsil run <package>
-```
+| Document | Description |
+|----------|-------------|
+| [deploy-runbook.md](./deploy-runbook.md) | Production deployment |
+| [launch-checklist-v3.md](./launch-checklist-v3.md) | Launch readiness |
+| [CLA.md](./CLA.md) | Contributor license (platform PRs only) |
+| [security-model.md](./security-model.md) | Integrity model |
+| [bitstream-distribution.md](./bitstream-distribution.md) | FPGA responsibilities |
+| [zenodo-doi.md](./zenodo-doi.md), [zenodo-automation.md](./zenodo-automation.md) | DOI workflows |
+| [cleanup-v3.md](./cleanup-v3.md) | v3 removal audit |
 
-## Registry API vocabulary (readiness)
+## Other
 
-Package summaries returned by **GET `/orgs/:slug`**, **GET `/users/:username`** (profile packages), and **admin** package list/detail include:
-
-- **`readinessLevel`** — integer **RL 1–5** (preferred field name; matches UI “Readiness”).
-- **`maturityLevel`** — **same integer**, kept for **backward compatibility** with older clients. New integrations should use **`readinessLevel`** only.
-
-## Examples
-
-- **Public `xsil` repo** — `xsil init`, `examples/rvx-demo`, and the normative spec: **[github.com/ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)**.
-- **Publisher workflow** in this repo’s docs still applies; for scaffolding see the copy of [developer-publishing.md](./developer-publishing.md) in the public tree (or clone `ExtenSilica/xsil` and open `docs/developer-publishing.md` there).
-
-## Documents
-
-- **[pre-silicon-bridge.md](./pre-silicon-bridge.md)** — Short platform page: **pre-silicon bridge** claim, RL1–5 table, where it appears (webapp + `xsil info`), link to the full reference below.
-- **[pre-silicon-bridge-readiness.md](./pre-silicon-bridge-readiness.md)** — Reference doc: **“pre-silicon bridge”** positioning, **single** readiness scale (RL), capabilities vocabulary, and the implementation TODO list for webapp + backend + `xsil`.
-- **[deploy-runbook.md](./deploy-runbook.md)** — **Production deploy:** target host setup (DB, TLS, DNS, env vars), backend + frontend rollout, post-deploy checks. Pair with **[launch-checklist-v3.md](./launch-checklist-v3.md)** §12.
-- **[architecture-v2.md](./architecture-v2.md)** — XSIL standard architecture: format, CLI, registry, execution / developer / user flows.
-- **[publishing.md](./publishing.md)** — Minimal publishing workflow: `xsil build`, `xsil publish`; package structure, required files, `entry`, simulator vs FPGA targets.
-- **[agent-publish-extension.md](./agent-publish-extension.md)** — Canonical playbook for an autonomous coding agent (Claude / Codex / Cursor) to take one row from the catalog and produce a **reproducible RL ≥ 2** `.xsil` (working simulator, runnable tests, pinned toolchain). Updated for `cargo install xsil`, the `xsil new` wizard, and native `xsil publish --dry-run`. Successor to the ad-hoc prompt used for `riscv-zbkb v1.0.0`.
-- **[catalog-seed/agent-prompt.md](./catalog-seed/agent-prompt.md)** + **[catalog-seed/catalog.md](./catalog-seed/catalog.md)** — Lightweight cousin of the playbook above, used to seed the registry with **RL 1 spec-derived scaffolds** one row at a time. The agent fetches upstream, extracts only the encodings it can read with confidence, scaffolds via `xsil new`, and publishes (or honestly skips). 91 rows tracked in `catalog.md`.
-- **[../LICENSE](../LICENSE)** — Apache-2.0 for platform code in this repository.
-- **[../CONTRIBUTING.md](../CONTRIBUTING.md)** — How to contribute to the registry API and website.
-- **[CLA.md](./CLA.md)** — Individual Contributor License Agreement for platform repository PRs.
-- **[implementation-plan-rvi-2026.md](./implementation-plan-rvi-2026.md)** — **6-month implementation plan:** registry polish, ownership claims, implementation requests (technical coordination only, no payments), adoption metrics, governance/CLA — structured as PRs with rationale; target path toward neutral foundation stewardship.
-- **[zenodo-doi.md](./zenodo-doi.md)** — Manual Zenodo DOI workflow for citable `.xsil` releases (PR-G6a); no per-publish automation until G6b.
-- **[zenodo-automation.md](./zenodo-automation.md)** — Future Zenodo deposit automation (PR-G6b, not implemented).
-- **[reproducibility.md](./reproducibility.md)** — Why many RISC-V extension artifacts are not reproducible today; how XSIL + `xsil run` establish a reproducibility foundation; example *paper → xsil → xsil run*.
-- **[execution-model.md](./execution-model.md)** — How `xsil run` selects simulator (default) vs FPGA (optional); automatic target selection.
-- **[pivot-v2.md](./pivot-v2.md)** — Pivot v2: previous vs new model; what is removed (marketplace, licensing, monetization, Web3); what remains (xsil, CLI, registry).
-- **[extensilica-architecture.md](./extensilica-architecture.md)** — System architecture (CLI, registry, optional API/UI; no monetization).
-- **[pivot-baseline.md](./pivot-baseline.md)** — Snapshot of repo state and terminology before the RISC-V bitstream pivot (historical reference).
-- **[Architectural Fidelity Risk in RISC-V Emulation.md](./Architectural%20Fidelity%20Risk%20in%20RISC-V%20Emulation.md)** — Technical whitepaper on LR/SC coherence granularity and verification assurance in RISC-V tooling.
-- **[security-model.md](./security-model.md)** — Integrity and optional signatures (technical trust only).
-- **[license-wrapper.md](./license-wrapper.md)** — Historical note; commercial runtime license model removed.
+| Document | Description |
+|----------|-------------|
+| [Architectural Fidelity Risk in RISC-V Emulation.md](./Architectural%20Fidelity%20Risk%20in%20RISC-V%20Emulation.md) | Technical whitepaper |
+| [history/](./history/) | Superseded pivot/architecture docs |
