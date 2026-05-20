@@ -6,21 +6,6 @@ Thank you for your interest in contributing to ExtenSilica platform software (th
 
 This agreement applies to contributions to the **private platform repository** (registry API, website, deploy tooling). It does **not** replace upstream licenses on `.xsil` packages published by third parties on the registry.
 
-## What this CLA does **not** cover
-
-**Publishing a `.xsil` package on the registry does not require this CLA.**
-
-The public product accepts versioned **`.xsil` archives** via `xsil publish` (and related API flows). That is separate from git pull requests to the platform codebase:
-
-| Activity | Requires this CLA? |
-|----------|-------------------|
-| `xsil publish` / upload a `.xsil` package | **No** |
-| Package license in `manifest.json` / files inside the `.xsil` | Your upstream SPDX license |
-| Optional `repository` URL pointing at GitHub (or elsewhere) | Governed by **that** repo, not ExtenSilica |
-| Pull request to the **ExtenSilica platform** repository (API, website, ops) | **Yes** |
-
-If you only publish packages, follow [Contributing on the site](https://extensilica.com/contributing) and your package license. Sign this CLA only when you intend to contribute **platform source code** in the private repository.
-
 ## 1. Definitions
 
 - **"You"** means the individual or legal entity submitting a contribution.

@@ -31,33 +31,6 @@ export default function ContributingPage() {
           </p>
         </InfoSection>
 
-        <InfoSection id="registry-vs-platform" title="Registry vs platform code">
-          <p>
-            The registry accepts <InfoStrong>.xsil packages</InfoStrong> via{" "}
-            <InfoC>xsil publish</InfoC> — not git commits or pull requests to ExtenSilica’s
-            private platform repository.
-          </p>
-          <InfoUl>
-            <li>
-              <InfoStrong>Publishing a package</InfoStrong> does{" "}
-              <InfoStrong>not</InfoStrong> require ExtenSilica’s Contributor License
-              Agreement (CLA). Your package stays under the SPDX license you declare in the
-              manifest and archive.
-            </li>
-            <li>
-              An optional <InfoC>repository</InfoC> URL in the manifest (for example GitHub)
-              points readers to <em>your</em> upstream project; we do not take ownership of
-              that repo by listing the package.
-            </li>
-            <li>
-              The <InfoStrong>CLA</InfoStrong> applies only if you contribute{" "}
-              <InfoStrong>platform source code</InfoStrong> (API, website, deploy tooling) via
-              pull request to the private ExtenSilica platform repository — a separate path
-              from publishing.
-            </li>
-          </InfoUl>
-        </InfoSection>
-
         <InfoSection id="packages" title="Publish a package">
           <InfoUl>
             <li>
@@ -121,10 +94,9 @@ export default function ContributingPage() {
           </p>
         </InfoSection>
 
-        <InfoSection id="platform" title="Platform code (optional)">
+        <InfoSection id="platform" title="Platform code">
           <p>
-            The registry web app, API, and tooling live in a{" "}
-            <InfoStrong>private</InfoStrong> platform repository under the{" "}
+            The registry web app, API, and tooling live in the{" "}
             <a
               href="https://github.com/ExtenSilica"
               target="_blank"
@@ -133,14 +105,9 @@ export default function ContributingPage() {
             >
               ExtenSilica GitHub organization
             </a>
-            . Most contributors only publish <InfoC>.xsil</InfoC> packages and never touch
-            that codebase.
-          </p>
-          <p>
-            If you open a <InfoStrong>pull request to the platform repository</InfoStrong>{" "}
-            (not a package publish), you must accept the{" "}
-            <InfoStrong>Individual Contributor License Agreement (CLA)</InfoStrong> and
-            contribute under Apache-2.0 — see{" "}
+            . Contributions to the platform repository require the{" "}
+            <InfoStrong>Individual Contributor License Agreement (CLA)</InfoStrong>{" "}
+            and are licensed under Apache-2.0 — see{" "}
             <a
               href="https://github.com/ExtenSilica/ExtenSilica/blob/main/docs/CLA.md"
               target="_blank"
