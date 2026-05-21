@@ -6,6 +6,7 @@ import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { AuthProvider } from "@/lib/auth";
+import { Web3Provider } from "@/providers/Web3Provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <AuthProvider>
+        <Web3Provider>
           <div className="flex min-h-screen flex-col">
             <Suspense
               fallback={
@@ -45,6 +47,7 @@ export default function RootLayout({
             <div className="flex flex-1 flex-col">{children}</div>
             <Footer />
           </div>
+        </Web3Provider>
         </AuthProvider>
         </ThemeProvider>
       </body>

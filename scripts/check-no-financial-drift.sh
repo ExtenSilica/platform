@@ -57,6 +57,10 @@ ALLOW_GLOBS=(
   '!store-frontend/components/token/**'
   '!store-backend/src/lib/governancePoints.ts'
   '!store-backend/src/controllers/governanceController.ts'
+  '!store-backend/src/controllers/walletController.ts'
+  '!store-backend/src/lib/walletVerification.ts'
+  '!store-frontend/providers/**'
+  '!store-frontend/components/token/connect-wallet-modal.tsx'
   '!docs/spec-xsil-governance-token.md'
   '!scripts/check-no-financial-drift.sh'
 )

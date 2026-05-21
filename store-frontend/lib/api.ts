@@ -1492,10 +1492,11 @@ export type GovernancePublic = {
 };
 
 export type GovernanceLedgerRow = {
-  id: number;
+  id: string;
   reason: string;
   points: number;
   referenceKey: string;
+  status?: string;
   createdAt: string;
 };
 
@@ -1504,6 +1505,7 @@ export type GovernanceMe = {
   totalPoints: number;
   pendingPoints: number;
   onChainPoints: number;
+  totalEarned?: number;
   recentLedger: GovernanceLedgerRow[];
   linkedEvmAddress: string | null;
   linkedAt: string | null;
@@ -1571,4 +1573,74 @@ export async function apiGetGovernanceClaim(token: string): Promise<GovernanceCl
     );
   }
   return payload as GovernanceClaimStatus;
+}
+
+/* ─── Wallet link (RainbowKit + EIP-191 sign, no gas) ─ */
+
+export type WalletMessageChallenge = {
+  message: string;
+  nonce: string;
+  address: string;
+};
+
+export type WalletLinkResult = {
+  walletAddress: string | null;
+  pendingXsil: number;
+  claimedXsil?: number;
+  totalEarned?: number;
+};
+
+export async function apiGetWalletMessage(
+  token: string,
+  address: string,
+): Promise<WalletMessageChallenge> {
+  const params = new URLSearchParams({ address });
+  const res = await fetch(`${API_BASE}/auth/me/wallet/message?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      (payload as { error?: string }).error ?? res.statusText,
+      res.status,
+    );
+  }
+  return payload as WalletMessageChallenge;
+}
+
+export async function apiPostWallet(
+  token: string,
+  body: { address: string; signature: string; message: string },
+): Promise<WalletLinkResult> {
+  const res = await fetch(`${API_BASE}/auth/me/wallet`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      (payload as { error?: string }).error ?? res.statusText,
+      res.status,
+    );
+  }
+  return payload as WalletLinkResult;
+}
+
+export async function apiDeleteWallet(token: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_BASE}/auth/me/wallet`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      (payload as { error?: string }).error ?? res.statusText,
+      res.status,
+    );
+  }
+  return payload as { ok: boolean };
 }

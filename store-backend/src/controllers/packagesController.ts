@@ -575,21 +575,21 @@ export const createPackage = async (req: Request, res: Response) => {
       include: { versions: true },
     });
 
-    const { awardGovernancePoints } = await import('../lib/governancePoints');
+    const { awardTokenGrant } = await import('../lib/governancePoints');
     if (ownedBefore === 0) {
-      void awardGovernancePoints(
-        user.id,
-        'first_package_published',
-        `package:${finalSlug}`,
-        500,
-      ).catch((e) => console.error('[governance/first_package_published]', e));
+      void awardTokenGrant({
+        userId: user.id,
+        reason: 'FIRST_PACKAGE_PUBLISH',
+        referenceId: `package:${finalSlug}`,
+        amount: 500,
+      }).catch((e) => console.error('[token/FIRST_PACKAGE_PUBLISH]', e));
     } else {
-      void awardGovernancePoints(
-        user.id,
-        'package_registered',
-        `package:${finalSlug}`,
-        200,
-      ).catch((e) => console.error('[governance/package_registered]', e));
+      void awardTokenGrant({
+        userId: user.id,
+        reason: 'PACKAGE_PUBLISH',
+        referenceId: `package:${finalSlug}`,
+        amount: 200,
+      }).catch((e) => console.error('[token/PACKAGE_PUBLISH]', e));
     }
 
     res.status(201).json(mapPackage(pkg));

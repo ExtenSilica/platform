@@ -1,0 +1,1 @@
+ALTER TABLE "TokenBalance" ADD COLUMN IF NOT EXISTS "evmLinkNonce" TEXT;

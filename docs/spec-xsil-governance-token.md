@@ -29,8 +29,8 @@ The 2026 implementation plan forbids **payment wallets, escrow, USDC, payouts**.
 
 ### Data model
 
-- `GovernancePointLedger` — immutable accrual rows (`reason`, `points`, `referenceKey`, unique per user).
-- `GovernanceAddressLink` — one optional EVM address per user for claim.
+- `TokenBalance` — per-user `pendingXsil`, `claimedXsil`, `totalEarned`, optional `linkedEvmAddress`.
+- `TokenGrant` — accrual rows with `TokenGrantReason`, `TokenGrantStatus` (`PENDING` → `APPROVED` → `CLAIMED`), idempotent on `(userId, reason, referenceId)`.
 
 ### Accrual rules (config in code)
 
@@ -52,6 +52,14 @@ The 2026 implementation plan forbids **payment wallets, escrow, USDC, payouts**.
 ### Web
 
 - `/token` — explainer, disclaimer, balance (logged in), link address (MetaMask or paste), claim status
+
+### Wallet link (RainbowKit + EIP-191)
+
+- `GET /auth/me/wallet/message?address=0x…` — sign-in challenge (auth)
+- `POST /auth/me/wallet` — `{ address, signature, message }` → `{ walletAddress, pendingXsil }` (auth)
+- `DELETE /auth/me/wallet` — disconnect (auth)
+
+Frontend: RainbowKit + wagmi (`base` + `mainnet` read). Env: `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`, `NEXT_PUBLIC_CHAIN_ID`, `NEXT_PUBLIC_XSIL_CONTRACT_ADDRESS`.
 
 ## 3. Phase 2 — Aragon
 

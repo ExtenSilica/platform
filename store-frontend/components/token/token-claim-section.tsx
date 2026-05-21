@@ -6,14 +6,14 @@ import { useAuth } from "@/lib/auth";
 import {
   apiGetGovernanceMe,
   apiGetGovernanceClaim,
-  apiPatchGovernanceAddress,
+  apiDeleteWallet,
   type GovernanceMe,
   type GovernanceClaimStatus,
 } from "@/lib/api";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ConnectWalletModal } from "@/components/token/connect-wallet-modal";
 
 function truncateAddress(addr: string): string {
   if (addr.length < 12) return addr;
@@ -25,7 +25,6 @@ export function TokenClaimSection() {
   const [me, setMe] = useState<GovernanceMe | null>(null);
   const [claim, setClaim] = useState<GovernanceClaimStatus | null>(null);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
-  const [addressInput, setAddressInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -39,7 +38,6 @@ export function TokenClaimSection() {
     const [m, c] = await Promise.all([apiGetGovernanceMe(token), apiGetGovernanceClaim(token)]);
     setMe(m);
     setClaim(c);
-    if (m.linkedEvmAddress) setAddressInput(m.linkedEvmAddress);
   }, [token]);
 
   useEffect(() => {
@@ -52,60 +50,12 @@ export function TokenClaimSection() {
     refresh().catch((e) => setError(e instanceof Error ? e.message : "Failed to load"));
   }, [authLoading, user, token, refresh]);
 
-  async function connectBrowserProvider() {
-    setError(null);
-    setMessage(null);
-    const eth = (
-      window as unknown as {
-        ethereum?: { request: (args: { method: string }) => Promise<string[]> };
-      }
-    ).ethereum;
-    if (!eth) {
-      setError("No browser Ethereum provider found. Paste a 0x address below instead.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const accounts = await eth.request({ method: "eth_requestAccounts" });
-      const addr = accounts[0];
-      if (!addr) throw new Error("No account returned.");
-      setAddressInput(addr);
-      if (token) {
-        await apiPatchGovernanceAddress(token, addr);
-        await refresh();
-        setMessage("Wallet connected.");
-        setWalletModalOpen(false);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not connect provider.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function savePastedAddress() {
-    if (!token) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await apiPatchGovernanceAddress(token, addressInput.trim());
-      await refresh();
-      setMessage("Wallet linked.");
-      setWalletModalOpen(false);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to link address.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function disconnectWallet() {
     if (!token) return;
     setBusy(true);
     setError(null);
     try {
-      await apiPatchGovernanceAddress(token, null);
-      setAddressInput("");
+      await apiDeleteWallet(token);
       await refresh();
       setMessage("Wallet disconnected.");
     } catch (e) {
@@ -200,39 +150,14 @@ export function TokenClaimSection() {
         </div>
       )}
 
-      {walletModalOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setWalletModalOpen(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-lg border bg-background p-6 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold">Connect wallet</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              For governance claim only — not for payments on ExtenSilica.
-            </p>
-            <div className="mt-4 flex flex-col gap-3">
-              <Button type="button" variant="outline" disabled={busy} onClick={connectBrowserProvider}>
-                Use browser provider (MetaMask, etc.)
-              </Button>
-              <Input
-                value={addressInput}
-                onChange={(e) => setAddressInput(e.target.value)}
-                placeholder="0x…"
-                className="font-mono text-sm"
-                spellCheck={false}
-              />
-              <Button type="button" disabled={busy || !addressInput.trim()} onClick={savePastedAddress}>
-                Save address
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConnectWalletModal
+        open={walletModalOpen}
+        onOpenChange={setWalletModalOpen}
+        onLinked={() => {
+          setMessage("Wallet connected and verified.");
+          void refresh();
+        }}
+      />
 
       {error ? (
         <Alert variant="destructive" className="mt-4">

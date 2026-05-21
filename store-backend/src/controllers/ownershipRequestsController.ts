@@ -529,13 +529,13 @@ export async function adminApproveRequest(
     result.claimantOrg,
   );
 
-  const { awardGovernancePoints } = await import('../lib/governancePoints');
-  void awardGovernancePoints(
-    result.userId,
-    'ownership_approved',
-    `ownership:${result.id}`,
-    1000,
-  ).catch((e) => console.error('[governance/ownership_approved]', e));
+  const { awardTokenGrant } = await import('../lib/governancePoints');
+  void awardTokenGrant({
+    userId: result.userId,
+    reason: 'OWNERSHIP_CLAIM_APPROVED',
+    referenceId: `ownership:${result.id}`,
+    amount: 1000,
+  }).catch((e) => console.error('[token/OWNERSHIP_CLAIM_APPROVED]', e));
 
   res.json({ request: serializeRequest(result) });
 }
