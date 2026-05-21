@@ -8,6 +8,10 @@ import {
   listMyImplementationRequests,
   listMyImplementationSubmissions,
 } from '../controllers/implementationRequestsController';
+import {
+  patchGovernanceAddress,
+  getGovernanceClaimHandler,
+} from '../controllers/governanceController';
 
 const router = Router();
 
@@ -24,5 +28,8 @@ router.post(
 
 router.get('/implementation-requests', requireAuth, listMyImplementationRequests);
 router.get('/implementation-submissions', requireAuth, listMyImplementationSubmissions);
+
+router.patch('/governance-address', requireAuth, patchGovernanceAddress);
+router.get('/governance-claim', requireAuth, getGovernanceClaimHandler);
 
 export default router;

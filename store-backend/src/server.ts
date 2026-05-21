@@ -9,6 +9,7 @@ import fs from 'fs';
 import swaggerUi from 'swagger-ui-express';
 import { authenticate } from './middleware/auth';
 import authRoutes from './routes/auth';
+import governanceRoutes from './routes/governance';
 import packageRoutes from './routes/packages';
 import statsRoutes from './routes/stats';
 import orgRoutes from './routes/orgs';
@@ -140,6 +141,10 @@ app.get('/health', (_req: Request, res: Response) => {
 // GET  /auth/me        — current user      (requires auth)
 app.use('/auth', authRoutes);
 app.use('/api/auth', authRoutes);
+
+// ── XSIL governance points (off-chain ledger; optional EVM link for Aragon claim) ──
+app.use('/governance', governanceRoutes);
+app.use('/api/governance', governanceRoutes);
 
 // ── Analytics / stats ──────────────────────────────────────────
 // GET /stats/packages/:name, GET /stats/adoption

@@ -1464,3 +1464,111 @@ export async function fetchPackageCitation(
   if (!res.ok) return null;
   return (await res.json()) as PackageCitation;
 }
+
+/* ─── XSIL governance points (off-chain; optional EVM link for Aragon claim) ─ */
+
+export type GovernancePublic = {
+  disclaimer: string;
+  tokenSupply: {
+    allocation: string;
+    amount: string;
+    pct: string;
+    notes: string;
+    total?: boolean;
+  }[];
+  earnRules: {
+    action: string;
+    xsil: string;
+    notes: string;
+    automated?: boolean;
+  }[];
+  aragon: {
+    configured: boolean;
+    daoAddress: string | null;
+    governanceTokenAddress: string | null;
+    claimContractAddress: string | null;
+  };
+  aragonUrl: string | null;
+};
+
+export type GovernanceLedgerRow = {
+  id: number;
+  reason: string;
+  points: number;
+  referenceKey: string;
+  createdAt: string;
+};
+
+export type GovernanceMe = {
+  disclaimer: string;
+  totalPoints: number;
+  pendingPoints: number;
+  onChainPoints: number;
+  recentLedger: GovernanceLedgerRow[];
+  linkedEvmAddress: string | null;
+  linkedAt: string | null;
+  claimedAt: string | null;
+  claimTxHash: string | null;
+};
+
+export type GovernanceClaimStatus = {
+  phase: "link_address" | "pending" | "ready" | "claimed";
+  disclaimer: string;
+  totalPoints: number;
+  pendingPoints?: number;
+  onChainPoints?: number;
+  linkedEvmAddress?: string | null;
+  claimTxHash?: string | null;
+  claimedAt?: string | null;
+  message: string;
+  aragon: GovernancePublic["aragon"];
+};
+
+export async function apiGetGovernancePublic(): Promise<GovernancePublic> {
+  const res = await fetch(`${API_BASE}/governance`);
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      (payload as { error?: string }).error ?? res.statusText,
+      res.status,
+    );
+  }
+  return payload as GovernancePublic;
+}
+
+export async function apiGetGovernanceMe(token: string): Promise<GovernanceMe> {
+  const res = await fetch(`${API_BASE}/governance/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      (payload as { error?: string }).error ?? res.statusText,
+      res.status,
+    );
+  }
+  return payload as GovernanceMe;
+}
+
+export function apiPatchGovernanceAddress(
+  token: string,
+  linkedEvmAddress: string | null,
+): Promise<GovernanceMe> {
+  return apiWrite<GovernanceMe>("PATCH", "/me/governance-address", token, {
+    linkedEvmAddress,
+  });
+}
+
+export async function apiGetGovernanceClaim(token: string): Promise<GovernanceClaimStatus> {
+  const res = await fetch(`${API_BASE}/me/governance-claim`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      (payload as { error?: string }).error ?? res.statusText,
+      res.status,
+    );
+  }
+  return payload as GovernanceClaimStatus;
+}

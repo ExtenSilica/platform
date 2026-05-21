@@ -548,6 +548,8 @@ export const createPackage = async (req: Request, res: Response) => {
       return;
     }
 
+    const ownedBefore = await prisma.extension.count({ where: { ownerId: user.id } });
+
     const pkg = await prisma.extension.create({
       data: {
         slug: finalSlug,
@@ -572,6 +574,23 @@ export const createPackage = async (req: Request, res: Response) => {
       },
       include: { versions: true },
     });
+
+    const { awardGovernancePoints } = await import('../lib/governancePoints');
+    if (ownedBefore === 0) {
+      void awardGovernancePoints(
+        user.id,
+        'first_package_published',
+        `package:${finalSlug}`,
+        500,
+      ).catch((e) => console.error('[governance/first_package_published]', e));
+    } else {
+      void awardGovernancePoints(
+        user.id,
+        'package_registered',
+        `package:${finalSlug}`,
+        200,
+      ).catch((e) => console.error('[governance/package_registered]', e));
+    }
 
     res.status(201).json(mapPackage(pkg));
   } catch (error) {

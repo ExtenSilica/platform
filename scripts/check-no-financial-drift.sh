@@ -53,6 +53,11 @@ ALLOW_GLOBS=(
   '!store-frontend/app/legal/**'
   '!store-frontend/app/faq/**'
   '!store-frontend/components/request-implementation-card.tsx'
+  '!store-frontend/app/token/**'
+  '!store-frontend/components/token/**'
+  '!store-backend/src/lib/governancePoints.ts'
+  '!store-backend/src/controllers/governanceController.ts'
+  '!docs/spec-xsil-governance-token.md'
   '!scripts/check-no-financial-drift.sh'
 )
 

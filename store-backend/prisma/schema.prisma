@@ -47,6 +47,51 @@ model User {
   verificationRuns               VerificationRun[]          @relation("VerificationRunVerifier")
   portStatusDecisions            Extension[]                @relation("PortStatusDecider")
   externalCitationsCreated       ExternalCitation[]         @relation("ExternalCitationCreator")
+  governancePointLedger          GovernancePointLedger[]
+  governanceAddressLink          GovernanceAddressLink?
+}
+
+/// Off-chain XSIL governance points (no monetary value). See docs/spec-xsil-governance-token.md.
+model GovernancePointLedger {
+  id           Int                   @id @default(autoincrement())
+  userId       Int
+  reason       GovernancePointReason
+  points       Int
+  /// Idempotency key, e.g. `version:rvx-demo@1.0.0`.
+  referenceKey String
+  createdAt    DateTime              @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reason, referenceKey])
+  @@index([userId, createdAt])
+}
+
+/// Optional EVM address for future Aragon claim (not a payment account).
+model GovernanceAddressLink {
+  id               Int       @id @default(autoincrement())
+  userId           Int       @unique
+  linkedEvmAddress String
+  linkedAt         DateTime  @default(now())
+  claimTxHash      String?
+  claimedAt        DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum GovernancePointReason {
+  email_verified
+  package_registered
+  version_published
+  first_package_published
+  ownership_approved
+  implementation_verified
+  verification_run_passed
+  external_citation_verified
+  cli_contribution_merged
+  vendor_official_claim
+  security_issue_reported
+  admin_grant
 }
 
 /// Named API credential. Each user may hold N independent tokens (web sessions,

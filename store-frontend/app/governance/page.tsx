@@ -53,6 +53,12 @@ export default function GovernancePage() {
             </li>
             <li>Readiness levels, provenance labels, and adoption metrics</li>
             <li>
+              <Link href="/token" className="text-primary underline">
+                XSIL governance points
+              </Link>{" "}
+              — non-monetary contribution ledger (optional EVM link for future Aragon claim)
+            </li>
+            <li>
               External citations and canonical CFF / BibTeX on each package page for
               academic reuse
             </li>

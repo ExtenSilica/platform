@@ -1,0 +1,202 @@
+import Link from "next/link";
+import { InfoPage, InfoSection } from "@/components/info-page";
+import type { GovernancePublic } from "@/lib/api";
+import {
+  TOKEN_EARN_ROWS,
+  TOKEN_SUPPLY_ROWS,
+  WHAT_IS_XSIL,
+  XSIL_DISCLAIMER_FULL,
+} from "@/lib/token-page-data";
+import { TokenHeroActions } from "@/components/token/token-hero-actions";
+import { TokenClaimSection } from "@/components/token/token-claim-section";
+import { TokenIcon } from "@/components/token/token-icon";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  governance: GovernancePublic | null;
+};
+
+export function TokenPageContent({ governance }: Props) {
+  const disclaimer = governance?.disclaimer ?? XSIL_DISCLAIMER_FULL;
+  const supply = governance?.tokenSupply ?? TOKEN_SUPPLY_ROWS;
+  const earn = governance?.earnRules ?? TOKEN_EARN_ROWS;
+  const aragonUrl = governance?.aragonUrl ?? null;
+
+  return (
+    <InfoPage
+      title="XSIL — The ExtenSilica Contributor Token"
+      subtitle="Governance participation for people who help build the RISC-V extension ecosystem."
+      updated="May 2026"
+      current="/token"
+      note="No monetary value · Governance only · Earn by contributing"
+    >
+      <div className="space-y-16">
+        <section className="-mt-4 space-y-6">
+          <Badge variant="outline" className="text-xs font-normal">
+            No monetary value · Governance only · Earn by contributing
+          </Badge>
+          <TokenHeroActions />
+        </section>
+
+        <InfoSection id="what-is" title="What is XSIL">
+          <div className="grid gap-6 md:grid-cols-3">
+            {WHAT_IS_XSIL.map((item) => (
+              <div key={item.title} className="rounded-lg border bg-card p-5">
+                <TokenIcon name={item.icon} className="mb-3 h-6 w-6 text-riscv-accent" />
+                <h3 className="font-semibold">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </InfoSection>
+
+        <InfoSection id="tokenomics" title="Token Supply">
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead>
+                <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">Allocation</th>
+                  <th className="px-4 py-3 font-medium">Amount</th>
+                  <th className="px-4 py-3 font-medium">%</th>
+                  <th className="px-4 py-3 font-medium">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {supply.map((row) => (
+                  <tr
+                    key={row.allocation}
+                    className={`border-b last:border-0 ${"total" in row && row.total ? "bg-muted/20 font-semibold" : ""}`}
+                  >
+                    <td className="px-4 py-3">{row.allocation}</td>
+                    <td className="px-4 py-3 font-mono tabular-nums">{row.amount}</td>
+                    <td className="px-4 py-3 font-mono">{row.pct}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.notes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            No tokens are sold. No ICO. Tokens are earned through contribution or held in reserve
+            for future community decisions.
+          </p>
+        </InfoSection>
+
+        <InfoSection id="earn" title="Earn XSIL by contributing">
+          <div className="space-y-3">
+            {earn.map((row) => (
+              <div
+                key={row.action}
+                className="flex flex-col gap-2 rounded-lg border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex items-start gap-3">
+                  <TokenIcon
+                    name={
+                      row.action.includes("package")
+                        ? "package"
+                        : row.action.includes("ownership")
+                          ? "shield"
+                          : row.action.includes("implementation")
+                            ? "code"
+                            : row.action.includes("verification")
+                              ? "check"
+                              : row.action.includes("Paper")
+                                ? "book"
+                                : row.action.includes("CLI")
+                                  ? "terminal"
+                                  : row.action.includes("Vendor")
+                                    ? "building"
+                                    : "alert"
+                    }
+                    className="mt-0.5 h-5 w-5 shrink-0"
+                  />
+                  <div>
+                    <p className="font-medium">{row.action}</p>
+                    <p className="text-xs text-muted-foreground">{row.notes}</p>
+                  </div>
+                </div>
+                <span className="shrink-0 font-mono text-lg font-semibold tabular-nums text-riscv-accent sm:text-right">
+                  {row.xsil}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Token grants are reviewed and confirmed before minting. Gaming or duplicate actions are
+            disqualified.
+          </p>
+        </InfoSection>
+
+        <TokenClaimSection />
+
+        <InfoSection id="governance-dao" title="Participate in governance">
+          <p className="leading-relaxed text-muted-foreground">
+            ExtenSilica is governed by XSIL token holders via Aragon DAO. Token holders vote on
+            platform decisions including feature priorities, registry policies, and future token
+            distribution.
+          </p>
+          <p className="mt-3 leading-relaxed text-muted-foreground">
+            Governance is active when meaningful decisions require community input. Early-stage
+            votes focus on registry policies and prioritization.
+          </p>
+          <div className="mt-6 flex flex-col gap-4 rounded-lg border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                Aragon
+              </p>
+              <h3 className="mt-1 text-lg font-semibold">ExtenSilica DAO on Aragon</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                View proposals · Cast votes · Delegate
+              </p>
+            </div>
+            {aragonUrl ? (
+              <a
+                href={aragonUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(buttonVariants())}
+              >
+                Open Aragon DAO →
+              </a>
+            ) : (
+              <Button disabled variant="outline">
+                DAO link coming soon
+              </Button>
+            )}
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Voting requires XSIL tokens on-chain. Connect your wallet and claim your tokens to
+            participate.
+          </p>
+        </InfoSection>
+
+        <InfoSection id="documentation" title="Token Documentation">
+          <div className="rounded-lg border bg-card p-6">
+            <h3 className="font-semibold">XSIL Token Documentation v1.0</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Full tokenomics, governance model, contribution criteria, legal disclaimers, and
+              future roadmap.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href="/token/documentation" className={cn(buttonVariants())}>
+                Read documentation →
+              </Link>
+              <Link
+                href="/token/documentation#download"
+                className={cn(buttonVariants({ variant: "outline" }))}
+              >
+                Download PDF →
+              </Link>
+            </div>
+          </div>
+          <div className="mt-8 rounded-md border border-amber-500/30 bg-amber-500/5 p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-wide">Disclaimer</h3>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{disclaimer}</p>
+          </div>
+        </InfoSection>
+      </div>
+    </InfoPage>
+  );
+}
