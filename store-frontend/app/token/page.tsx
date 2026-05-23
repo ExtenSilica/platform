@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     url: `${site}/token`,
     siteName: "ExtenSilica",
     type: "website",
-    images: [{ url: `${site}/logo.svg`, alt: "ExtenSilica" }],
+    images: [{ url: `${site}/logo.png`, width: 512, height: 512, alt: "ExtenSilica" }],
   },
   twitter: {
     card: "summary",
