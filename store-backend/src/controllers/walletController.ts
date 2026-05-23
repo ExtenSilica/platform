@@ -29,8 +29,8 @@ export async function getWalletMessage(req: Request, res: Response): Promise<voi
     return;
   }
 
-  const queryAddr = typeof req.query.address === 'string' ? req.query.address : undefined;
-  const rawAddress = addressParam ?? queryAddr;
+  const rawAddress =
+    typeof req.query.address === 'string' ? req.query.address : undefined;
 
   if (!rawAddress?.trim()) {
     res.status(400).json({ error: 'address query parameter is required.' });
