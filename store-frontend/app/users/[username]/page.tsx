@@ -16,6 +16,10 @@ import {
 } from "lucide-react";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
 import { ImplementationRequestStatusBadge } from "@/components/implementation-request-status-badge";
+import {
+  UserProfileXsilBadges,
+  UserProfileXsilSection,
+} from "@/components/user-profile-xsil";
 
 export async function generateMetadata({
   params,
@@ -81,6 +85,7 @@ export default async function UserProfilePage({
         </div>
         <div>
           <h1 className="text-2xl font-bold">@{user.username}</h1>
+          {user.xsil ? <UserProfileXsilBadges xsil={user.xsil} /> : null}
           {user.bio && (
             <p className="mt-1 text-muted-foreground">{user.bio}</p>
           )}
@@ -183,8 +188,14 @@ export default async function UserProfilePage({
       </section>
 
       {hasContributions && contributions && (
-        <ContributionsSection contributions={contributions} fmt={fmt} />
+        <ContributionsSection
+          contributions={contributions}
+          fmt={fmt}
+          showXsilLink={Boolean(user.xsil && user.xsil.totalEarned > 0)}
+        />
       )}
+
+      {user.xsil ? <UserProfileXsilSection xsil={user.xsil} /> : null}
     </div>
   );
 }
@@ -192,15 +203,26 @@ export default async function UserProfilePage({
 function ContributionsSection({
   contributions,
   fmt,
+  showXsilLink,
 }: {
   contributions: UserContributions;
   fmt: (d: string) => string;
+  showXsilLink?: boolean;
 }) {
   return (
     <section className="mt-12 border-t pt-10">
       <ContributionsHeader />
       <p className="mb-6 text-sm text-muted-foreground">
         Public technical coordination on ExtenSilica — cite this profile URL on a CV or grant.
+        {showXsilLink ? (
+          <>
+            {" "}
+            <a href="#xsil-grants" className="text-primary underline">
+              View XSIL governance grants
+            </a>
+            .
+          </>
+        ) : null}
       </p>
 
       {contributions.requestsCreated.length > 0 && (

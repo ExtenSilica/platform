@@ -264,6 +264,23 @@ export interface UserContributions {
   verifications: UserContributionVerification[];
 }
 
+export interface UserProfileXsilGrant {
+  id: string;
+  amount: number;
+  reason: string;
+  reasonLabel?: string;
+  referenceId: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface UserProfileXsil {
+  totalEarned: number;
+  claimedOnChain: number;
+  pendingClaim: number;
+  grants: UserProfileXsilGrant[];
+}
+
 export interface UserProfile {
   id: number;
   username: string;
@@ -272,6 +289,7 @@ export interface UserProfile {
   implementerGithubUrl?: string | null;
   implementerBio?: string | null;
   createdAt: string;
+  xsil?: UserProfileXsil;
   packages: Array<{
     slug: string;
     name: string;
