@@ -11,9 +11,9 @@
 - Users **earn points on-platform** (email/OAuth account). **Linking an EVM address** is optional and only used to **claim** points on-chain when Aragon is live.
 - Login remains email/OAuth. Web3 is optional for claim only.
 
-**Disclaimer (required on `/token`, claim UI, and API):**
+**Disclaimer (required on `/token`, claim UI, dashboard, docs, grant emails, Aragon description, and API):**
 
-> XSIL governance points have no monetary value today and may never have. They do not represent equity, revenue share, or a right to payment.
+> XSIL tokens have no monetary value today and may never have. They are not securities, investments, or financial instruments. They represent governance participation and contribution history only. No financial return is promised or implied.
 
 ## 1. Boundary vs financial anti-drift policy
 
@@ -59,15 +59,40 @@ The 2026 implementation plan forbids **payment wallets, escrow, USDC, payouts**.
 - `POST /auth/me/wallet` — `{ address, signature, message }` → `{ walletAddress, pendingXsil }` (auth)
 - `DELETE /auth/me/wallet` — disconnect (auth)
 
-Frontend: RainbowKit + wagmi (`base` + `mainnet` read). Env: `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`, `NEXT_PUBLIC_CHAIN_ID`, `NEXT_PUBLIC_XSIL_CONTRACT_ADDRESS`.
+Frontend: RainbowKit + wagmi (`base` + `mainnet` read). Env template: `store-frontend/.env.local.example` (`NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`, `NEXT_PUBLIC_CHAIN_ID`, `NEXT_PUBLIC_XSIL_CONTRACT_ADDRESS`, `NEXT_PUBLIC_API_URL`).
+
+### Token documentation (section 7)
+
+- `/token/documentation` — SSR whitepaper v1.0 (10 sections). Export via browser Print → Save as PDF (`print` CSS hides chrome).
+- Copy: `store-frontend/lib/token-documentation-content.ts`.
+
+### Smart contract (section 5)
+
+- Source: `contracts/src/XSILToken.sol` (Foundry + OpenZeppelin v5).
+- ERC-20, ERC20Permit, AccessControl, Pausable; `MAX_SUPPLY = 10M * 1e18`; founder 3M minted at deploy.
+- `mint(to, amount, grantIds)` — `MINTER_ROLE` only; backend uses `lib/blockchain.ts` + `xsilAbi.ts`.
+
+### Grant flow (section 4)
+
+- Hooks call `createTokenGrantSafe` — `PENDING` by default, `autoApprove: true` for automated actions.
+- `GET /auth/me/token-balance`, `POST /auth/me/token-claim` (mint when `XSIL_CONTRACT_ADDRESS` + minter key or `XSIL_CLAIM_STUB=true`).
+- Admin: `GET /admin/token-grants`, `POST …/approve`, `POST …/reject`, `POST …/manual`.
 
 ## 3. Phase 2 — Aragon
 
-Env (production):
+Env (production) — see `store-backend/.env.example`:
 
+- `ARAGON_DAO_PUBLIC_URL` — public DAO link on `/token` (`GET /governance` → `aragonUrl`). **Not** `NEXT_PUBLIC_ARAGON_DAO_URL`.
 - `ARAGON_DAO_ADDRESS`
 - `ARAGON_GOVERNANCE_TOKEN_ADDRESS`
 - `ARAGON_CLAIM_CONTRACT_ADDRESS` (optional)
+- `ARAGON_DAO_DESCRIPTION` (optional)
+
+On-chain claim / mint — same file:
+
+- `XSIL_CONTRACT_ADDRESS`, `XSIL_MINTER_PRIVATE_KEY`, `XSIL_RPC_URL`, `CHAIN_ID`
+- `XSIL_CLAIM_STUB=true` (dev only)
+- Foundry deploy uses `ADMIN_ADDRESS` + `MINTER_ADDRESS` (not `XSIL_ADMIN_ADDRESS`)
 
 Flow:
 

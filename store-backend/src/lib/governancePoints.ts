@@ -1,8 +1,8 @@
-import type { Prisma, TokenGrantReason, TokenGrantStatus } from '@prisma/client';
+import type { Prisma, TokenGrantReason } from '@prisma/client';
 import { prisma } from '../db';
+import { XSIL_LEGAL_DISCLAIMER, aragonDaoDescription } from './xsilDisclaimer';
 
-export const GOVERNANCE_DISCLAIMER =
-  'XSIL tokens are contribution and governance participation records on the ExtenSilica platform. They have no monetary value today and may never have. XSIL is not an investment, security, or payment instrument. Holding XSIL does not entitle you to profits, revenue, dividends, or any financial return. Any future liquidity, transferability, or economic use would require a separate community governance decision via the ExtenSilica Aragon DAO. ExtenSilica Ltda. makes no promise that XSIL will ever be tradeable or redeemable for money.';
+export const GOVERNANCE_DISCLAIMER = XSIL_LEGAL_DISCLAIMER;
 
 export const TOKEN_ACCRUAL_AMOUNTS: Partial<Record<TokenGrantReason, number>> = {
   FIRST_PACKAGE_PUBLISH: 500,
@@ -24,7 +24,7 @@ export const TOKEN_EARN_ROWS = [
   { action: 'Publish each additional package', xsil: '200', notes: 'Per new package', automated: true },
   { action: 'Claim upstream ownership (approved)', xsil: '1,000', notes: 'After admin approval', automated: true },
   { action: 'Submit implementation (accepted)', xsil: '2,000', notes: 'After verifier approval', automated: true },
-  { action: 'Complete verification run (pass)', xsil: '1,500', notes: 'As verifier', automated: false },
+  { action: 'Complete verification run (pass)', xsil: '1,500', notes: 'As verifier', automated: true },
   { action: 'Paper citing ExtenSilica (documented)', xsil: '3,000', notes: 'Admin-verified citation', automated: false },
   { action: 'Contribute code to xsil CLI (merged PR)', xsil: '1,000–5,000', notes: 'Discretionary, admin-assigned', automated: false },
   { action: 'Vendor official claim (approved)', xsil: '5,000', notes: 'Org-level, not per-user', automated: false },
@@ -51,88 +51,20 @@ export async function ensureTokenBalanceForUser(
   });
 }
 
-async function bumpBalanceOnApprove(
-  userId: number,
-  amount: number,
-  tx: Prisma.TransactionClient,
-): Promise<void> {
-  await ensureTokenBalanceForUser(userId, tx);
-  await tx.tokenBalance.update({
-    where: { userId },
-    data: {
-      pendingXsil: { increment: amount },
-      totalEarned: { increment: amount },
-    },
-  });
-}
-
-export type AwardTokenGrantInput = {
+/** @deprecated Use createTokenGrantSafe from tokenGrants.ts */
+export function awardTokenGrant(input: {
   userId: number;
   reason: TokenGrantReason;
   referenceId: string;
-  amount: number;
-  note?: string;
-  /** Auto-accrual from platform hooks — immediately APPROVED. */
+  amount?: number;
   autoApprove?: boolean;
-};
-
-export async function awardTokenGrant(
-  input: AwardTokenGrantInput,
-): Promise<{ awarded: boolean; totalPoints: number }> {
-  const referenceId = input.referenceId.trim().slice(0, 200);
-  const amount = input.amount;
-  if (!referenceId || amount <= 0) {
-    const totalPoints = await getTotalPoints(input.userId);
-    return { awarded: false, totalPoints };
-  }
-
-  const status: TokenGrantStatus = input.autoApprove !== false ? 'APPROVED' : 'PENDING';
-  const approvedAt = status === 'APPROVED' ? new Date() : null;
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      await tx.tokenGrant.create({
-        data: {
-          userId: input.userId,
-          xsilAmount: amount,
-          reason: input.reason,
-          referenceId,
-          note: input.note ?? null,
-          status,
-          approvedAt,
-        },
-      });
-      if (status === 'APPROVED') {
-        await bumpBalanceOnApprove(input.userId, amount, tx);
-      }
+}): void {
+  void import('./tokenGrants').then(({ createTokenGrantSafe }) => {
+    createTokenGrantSafe(input.userId, input.reason, input.referenceId, {
+      autoApprove: input.autoApprove ?? true,
+      amount: input.amount,
     });
-    const totalPoints = await getTotalPoints(input.userId);
-    return { awarded: true, totalPoints };
-  } catch (err: unknown) {
-    const code = (err as { code?: string })?.code;
-    if (code === 'P2002') {
-      const totalPoints = await getTotalPoints(input.userId);
-      return { awarded: false, totalPoints };
-    }
-    throw err;
-  }
-}
-
-/** @deprecated Use awardTokenGrant — kept for hook call sites during rename. */
-export async function awardGovernancePoints(
-  userId: number,
-  reason: TokenGrantReason,
-  referenceKey: string,
-  points: number,
-): Promise<{ awarded: boolean; total: number }> {
-  const result = await awardTokenGrant({
-    userId,
-    reason,
-    referenceId: referenceKey,
-    amount: points,
-    autoApprove: true,
   });
-  return { awarded: result.awarded, total: result.totalPoints };
 }
 
 export async function getTotalPoints(userId: number): Promise<number> {
@@ -195,6 +127,7 @@ export function aragonConfig() {
     daoAddress: dao,
     governanceTokenAddress: token,
     claimContractAddress: claim,
+    description: aragonDaoDescription(),
   };
 }
 

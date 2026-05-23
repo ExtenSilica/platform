@@ -548,8 +548,6 @@ export const createPackage = async (req: Request, res: Response) => {
       return;
     }
 
-    const ownedBefore = await prisma.extension.count({ where: { ownerId: user.id } });
-
     const pkg = await prisma.extension.create({
       data: {
         slug: finalSlug,
@@ -574,23 +572,6 @@ export const createPackage = async (req: Request, res: Response) => {
       },
       include: { versions: true },
     });
-
-    const { awardTokenGrant } = await import('../lib/governancePoints');
-    if (ownedBefore === 0) {
-      void awardTokenGrant({
-        userId: user.id,
-        reason: 'FIRST_PACKAGE_PUBLISH',
-        referenceId: `package:${finalSlug}`,
-        amount: 500,
-      }).catch((e) => console.error('[token/FIRST_PACKAGE_PUBLISH]', e));
-    } else {
-      void awardTokenGrant({
-        userId: user.id,
-        reason: 'PACKAGE_PUBLISH',
-        referenceId: `package:${finalSlug}`,
-        amount: 200,
-      }).catch((e) => console.error('[token/PACKAGE_PUBLISH]', e));
-    }
 
     res.status(201).json(mapPackage(pkg));
   } catch (error) {
@@ -827,6 +808,12 @@ export const publishVersion = async (req: Request, res: Response) => {
     });
 
     await syncExtensionLatestReadiness(pkg.id);
+
+    const { createTokenGrantSafe, checkFirstPublishGrant } = await import('../lib/tokenGrants');
+    createTokenGrantSafe(user.id, 'PACKAGE_PUBLISH', `version:${pkg.id}:${version}`, {
+      autoApprove: true,
+    });
+    checkFirstPublishGrant(user.id, pkg.id);
 
     res.status(201).json(mapVersion(newVersion));
   } catch (error) {

@@ -31,6 +31,7 @@ import {
   getWalletMessage,
   postWallet,
 } from '../controllers/walletController';
+import { getMyTokenBalance, postMyTokenClaim } from '../controllers/tokenController';
 import { requireAuth } from '../middleware/auth';
 
 /**
@@ -410,6 +411,9 @@ router.delete('/me/tokens/:id', requireAuth, revokeMyToken);
 router.get('/me/wallet/message', requireAuth, getWalletMessage);
 router.post('/me/wallet', requireAuth, postWallet);
 router.delete('/me/wallet', requireAuth, deleteWallet);
+
+router.get('/me/token-balance', requireAuth, getMyTokenBalance);
+router.post('/me/token-claim', requireAuth, postMyTokenClaim);
 
 router.delete('/me', requireAuth, deleteAccount);
 

@@ -1197,6 +1197,19 @@ export async function createVerificationRun(
     return created;
   });
 
+  if (outcome === 'pass') {
+    const { createTokenGrantSafe } = await import('../lib/tokenGrants');
+    createTokenGrantSafe(
+      submission.submittedById,
+      'IMPLEMENTATION_SUBMISSION_ACCEPTED',
+      `submission:${submissionId}`,
+      { autoApprove: true },
+    );
+    createTokenGrantSafe(req.user!.id, 'VERIFICATION_RUN_COMPLETED', `verification:${run.id}`, {
+      autoApprove: true,
+    });
+  }
+
   if (outcome === 'fail') {
     const verifier = await prisma.user.findUnique({
       where: { id: req.user!.id },

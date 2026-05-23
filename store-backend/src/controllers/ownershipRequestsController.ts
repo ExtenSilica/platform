@@ -529,13 +529,10 @@ export async function adminApproveRequest(
     result.claimantOrg,
   );
 
-  const { awardTokenGrant } = await import('../lib/governancePoints');
-  void awardTokenGrant({
-    userId: result.userId,
-    reason: 'OWNERSHIP_CLAIM_APPROVED',
-    referenceId: `ownership:${result.id}`,
-    amount: 1000,
-  }).catch((e) => console.error('[token/OWNERSHIP_CLAIM_APPROVED]', e));
+  const { createTokenGrantSafe } = await import('../lib/tokenGrants');
+  createTokenGrantSafe(result.userId, 'OWNERSHIP_CLAIM_APPROVED', `ownership:${result.id}`, {
+    autoApprove: true,
+  });
 
   res.json({ request: serializeRequest(result) });
 }
