@@ -29,6 +29,11 @@ store-backend/node_modules/.prisma/
 store-frontend/.next/
 store-frontend/out/
 
+# Foundry (XSIL contracts)
+contracts/out/
+contracts/cache/
+contracts/lib/
+
 # Misc
 *.log
 .DS_Store
