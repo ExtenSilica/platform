@@ -1487,6 +1487,7 @@ export type GovernancePublic = {
     daoAddress: string | null;
     governanceTokenAddress: string | null;
     claimContractAddress: string | null;
+    description: string;
   };
   aragonUrl: string | null;
 };
@@ -1628,6 +1629,106 @@ export async function apiPostWallet(
     );
   }
   return payload as WalletLinkResult;
+}
+
+export type TokenGrantRow = {
+  id: string;
+  userId: number;
+  amount: number;
+  reason: string;
+  referenceId: string;
+  note: string | null;
+  status: string;
+  approvedById: number | null;
+  approvedAt: string | null;
+  claimTxHash: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: { id: number; username: string; email: string };
+};
+
+export type AdminTokenGrantsResponse = {
+  grants: TokenGrantRow[];
+};
+
+export type TokenBalanceResponse = {
+  pendingXsil: number;
+  claimedXsil: number;
+  totalEarned: number;
+  walletAddress: string | null;
+  recentGrants: TokenGrantRow[];
+};
+
+export async function apiGetTokenBalance(token: string): Promise<TokenBalanceResponse> {
+  const res = await fetch(`${API_BASE}/auth/me/token-balance`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      (payload as { error?: string }).error ?? res.statusText,
+      res.status,
+    );
+  }
+  return payload as TokenBalanceResponse;
+}
+
+export async function apiPostTokenClaim(
+  token: string,
+): Promise<{ txHash: string; amount: number }> {
+  const res = await fetch(`${API_BASE}/auth/me/token-claim`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      (payload as { error?: string }).error ?? res.statusText,
+      res.status,
+    );
+  }
+  return payload as { txHash: string; amount: number };
+}
+
+export async function apiAdminListTokenGrants(
+  token: string,
+  status: "PENDING" | "APPROVED" | "CLAIMED" | "REJECTED",
+): Promise<AdminTokenGrantsResponse> {
+  const q = new URLSearchParams({ status });
+  return apiFetch<AdminTokenGrantsResponse>(`/admin/token-grants?${q}`, token);
+}
+
+export async function apiAdminApproveTokenGrant(
+  token: string,
+  grantId: string,
+  amount?: number,
+): Promise<{ grant: TokenGrantRow | null }> {
+  return apiWrite("POST", `/admin/token-grants/${grantId}/approve`, token, {
+    ...(amount != null ? { amount } : {}),
+  });
+}
+
+export async function apiAdminRejectTokenGrant(
+  token: string,
+  grantId: string,
+  reason?: string,
+): Promise<{ grant: TokenGrantRow | null }> {
+  return apiWrite("POST", `/admin/token-grants/${grantId}/reject`, token, {
+    ...(reason ? { reason } : {}),
+  });
+}
+
+export async function apiAdminCreateManualTokenGrant(
+  token: string,
+  input: {
+    userId: number;
+    amount: number;
+    reason: string;
+    note?: string;
+    referenceId?: string;
+  },
+): Promise<{ grant: TokenGrantRow | null }> {
+  return apiWrite("POST", "/admin/token-grants/manual", token, input);
 }
 
 export async function apiDeleteWallet(token: string): Promise<{ ok: boolean }> {
