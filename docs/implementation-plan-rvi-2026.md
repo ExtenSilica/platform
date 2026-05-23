@@ -434,7 +434,7 @@ USDC, wallets, escrow, payouts, fee, `funded`/`paid`, `targetAmount`, Sponsor DB
 
 ## Texto base `/governance` (rascunho)
 
-> ExtenSilica is operated by ExtenSilica Ltda. as interim technical steward of the public RISC-V extension registry and `.xsil` packaging format. Our goal is neutral, long-term governance — including transfer to RISC-V International or an affiliated foundation when ready.
+> ExtenSilica operates as interim technical steward of the public RISC-V extension registry and `.xsil` packaging format. Our goal is neutral, long-term governance — including transfer to RISC-V International or an affiliated foundation when ready.
 >
 > We coordinate **open technical work** (package publication, ownership claims, implementation requests, verification). We **do not** hold funds, process payments, set prices, or broker contracts. Optional funding contact fields point to off-platform arrangements only.
 >

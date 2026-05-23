@@ -176,6 +176,8 @@ SMTP_USER=noreply@extensilica.com
 SMTP_PASS=SMTP_PASS
 SMTP_FROM="ExtenSilica <noreply@extensilica.com>"
 
+CONTACT_EMAIL=contact@extensilica.com
+SUPPORT_EMAIL=support@extensilica.com
 LEGAL_EMAIL=legal@extensilica.com
 LEGAL_EMAIL_PASS=
 

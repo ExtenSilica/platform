@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage, Section, Ul, C, Strong } from "@/components/legal-page";
+import { LEGAL_EMAIL, SUPPORT_EMAIL } from "@/lib/site-contact";
+import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — ExtenSilica",
@@ -365,14 +367,25 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section id="contact" title="11. Contact">
+        <Section id="xsil-governance" title="11. XSIL governance tokens & wallet linking">
           <p>
-            Privacy questions and data requests can be directed to{" "}
-            <a
-              href="mailto:legal@extensilica.com"
-              className="text-primary underline"
-            >
-              legal@extensilica.com
+            If you participate in the optional XSIL contributor program, we store off-chain grant
+            records (amount, reason, reference, status) and aggregate balances tied to your account.
+            If you choose to link an Ethereum-compatible wallet, we store the verified address and
+            link timestamp for claim workflows. We do not custody private keys.
+          </p>
+          <XsilDisclaimerNotice variant="box" className="mt-4" />
+        </Section>
+
+        <Section id="contact" title="12. Contact">
+          <p>
+            Privacy questions:{" "}
+            <a href={`mailto:${LEGAL_EMAIL}`} className="text-primary underline">
+              {LEGAL_EMAIL}
+            </a>
+            . Account and data requests:{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary underline">
+              {SUPPORT_EMAIL}
             </a>
             {" "}or submitted via the project&rsquo;s{" "}
             <a

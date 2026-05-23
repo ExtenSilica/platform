@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage, Section, Ul, Strong } from "@/components/legal-page";
+import { LEGAL_EMAIL } from "@/lib/site-contact";
 import DmcaForm from "./dmca-form";
 
 export const metadata: Metadata = {
@@ -114,10 +115,10 @@ export default function DmcaPage() {
             If your content was removed in response to a DMCA claim you believe was
             filed in error or misidentified, you may submit a counter-notice to{" "}
             <a
-              href="mailto:legal@extensilica.com"
+              href={`mailto:${LEGAL_EMAIL}`}
               className="text-primary underline"
             >
-              legal@extensilica.com
+              {LEGAL_EMAIL}
             </a>
             {" "}with the following information:
           </p>
@@ -158,10 +159,10 @@ export default function DmcaPage() {
             Complete the form below. All fields marked <Strong>*</Strong> are
             required. You can also email{" "}
             <a
-              href="mailto:legal@extensilica.com"
+              href={`mailto:${LEGAL_EMAIL}`}
               className="text-primary underline"
             >
-              legal@extensilica.com
+              {LEGAL_EMAIL}
             </a>
             {" "}directly if you prefer.
           </p>

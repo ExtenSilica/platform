@@ -7,6 +7,7 @@ import {
   InfoC,
   InfoStrong,
 } from "@/components/info-page";
+import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 
 export const metadata: Metadata = {
   title: "Governance — ExtenSilica",
@@ -25,8 +26,8 @@ export default function GovernancePage() {
       <div className="space-y-10">
         <InfoSection id="steward" title="Interim steward">
           <p>
-            ExtenSilica is operated by <InfoStrong>ExtenSilica Ltda.</InfoStrong> as
-            interim technical steward of the public RISC-V extension registry and the{" "}
+            <InfoStrong>ExtenSilica</InfoStrong> operates as interim technical steward of the
+            public RISC-V extension registry and the{" "}
             <InfoC>.xsil</InfoC> packaging format. Our goal is neutral, long-term
             governance — including transfer to{" "}
             <InfoStrong>RISC-V International</InfoStrong> or an affiliated foundation
@@ -91,6 +92,17 @@ export default function GovernancePage() {
             When governance moves to a foundation, registry packages remain under their
             upstream licenses; only platform code and operational runbooks transfer.
           </p>
+        </InfoSection>
+
+        <InfoSection id="xsil" title="XSIL governance tokens">
+          <p>
+            <Link href="/token" className="text-primary underline">
+              XSIL
+            </Link>{" "}
+            records verified contribution and future governance participation. It is not a payment
+            instrument or investment product on this platform.
+          </p>
+          <XsilDisclaimerNotice variant="box" className="mt-4" />
         </InfoSection>
 
         <InfoSection id="contribute" title="Get involved">

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/legal-page";
+import { CONTACT_EMAIL, LEGAL_EMAIL, SUPPORT_EMAIL } from "@/lib/site-contact";
+import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 
 export const metadata: Metadata = {
   title: "FAQ — ExtenSilica",
@@ -635,10 +637,10 @@ const GROUPS: FaqGroup[] = [
             <p className="mt-3">
               For <strong>malware, abuse, or policy violations</strong>, email{" "}
               <a
-                href="mailto:legal@extensilica.com"
+                href={`mailto:${LEGAL_EMAIL}`}
                 className="text-primary underline"
               >
-                legal@extensilica.com
+                {LEGAL_EMAIL}
               </a>
               {" "}or open an issue on the project&rsquo;s{" "}
               <a
@@ -739,10 +741,10 @@ const GROUPS: FaqGroup[] = [
             <p>
               Yes. Email{" "}
               <a
-                href="mailto:legal@extensilica.com"
+                href={`mailto:${SUPPORT_EMAIL}`}
                 className="text-primary underline"
               >
-                legal@extensilica.com
+                {SUPPORT_EMAIL}
               </a>
               {" "}or open an issue on{" "}
               <a
@@ -809,7 +811,7 @@ const GROUPS: FaqGroup[] = [
         q: "Who operates ExtenSilica?",
         a: (
           <>
-            ExtenSilica Ltda. operates the public registry and <C>.xsil</C> packaging
+            ExtenSilica operates the public registry and <C>.xsil</C> packaging
             platform as an <strong>interim technical steward</strong>, with a stated goal
             of neutral long-term governance (including possible transfer to RISC-V
             International or an affiliated foundation). ExtenSilica is{" "}
@@ -842,6 +844,24 @@ const GROUPS: FaqGroup[] = [
             </Link>{" "}
             dashboard (<C>GET /stats/adoption</C>). They support transparency for
             stewards and contributors, not billing.
+          </>
+        ),
+      },
+      {
+        q: "What are XSIL tokens? Do they have monetary value?",
+        a: (
+          <>
+            <Link href="/token" className="text-primary underline">
+              XSIL
+            </Link>{" "}
+            is the contributor governance token for ExtenSilica. It records verified contribution
+            and may be used for platform governance via the Aragon DAO when on-chain voting is
+            active. See also{" "}
+            <Link href="/token/documentation" className="text-primary underline">
+              Token Documentation
+            </Link>
+            .
+            <XsilDisclaimerNotice variant="box" className="mt-4" />
           </>
         ),
       },
@@ -899,14 +919,18 @@ export default function FaqPage() {
       <div className="mt-14 rounded-lg border bg-muted/20 p-6 text-center">
         <p className="font-semibold">Still have questions?</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          Email us at{" "}
-          <a
-            href="mailto:legal@extensilica.com"
-            className="text-primary underline"
-          >
-            legal@extensilica.com
+          <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary underline">
+            {CONTACT_EMAIL}
           </a>
-          , open an issue on{" "}
+          {" "}(general),{" "}
+          <a href={`mailto:${LEGAL_EMAIL}`} className="text-primary underline">
+            {LEGAL_EMAIL}
+          </a>
+          {" "}(legal), or{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary underline">
+            {SUPPORT_EMAIL}
+          </a>
+          {" "}(support). You can also open an issue on{" "}
           <a
             href="https://github.com/ExtenSilica/xsil"
             target="_blank"

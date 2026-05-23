@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage, Section, Ul, C, Strong } from "@/components/legal-page";
+import { LEGAL_EMAIL } from "@/lib/site-contact";
+import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 
 export const metadata: Metadata = {
   title: "Terms of Service — ExtenSilica",
@@ -56,7 +58,7 @@ export default function TermsPage() {
 
         <Section id="stewardship" title="3. Stewardship and technical coordination">
           <p>
-            ExtenSilica Ltda. operates the Service as interim technical steward of the
+            ExtenSilica operates the Service as interim technical steward of the
             public registry and <C>.xsil</C> format. We coordinate open technical work
             (publication, ownership claims, implementation requests, verification) and
             publish adoption metrics. We do <Strong>not</Strong> hold user funds, process
@@ -434,14 +436,33 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="contact" title="18. Contact">
+        <Section id="xsil-tokens" title="18. XSIL governance tokens">
+          <p>
+            The Service may award <Strong>XSIL</Strong> governance points for verified technical
+            contributions. XSIL is not sold on the Service, is not a payment method, and does not
+            entitle holders to revenue, dividends, or any financial return. Optional wallet linking
+            is used only to verify address ownership and, when enabled, to claim previously awarded
+            points on-chain. See the{" "}
+            <a href="/token" className="text-primary underline">
+              XSIL token page
+            </a>{" "}
+            and{" "}
+            <a href="/token/documentation" className="text-primary underline">
+              Token Documentation
+            </a>
+            .
+          </p>
+          <XsilDisclaimerNotice variant="box" className="mt-4" />
+        </Section>
+
+        <Section id="contact" title="19. Contact">
           <p>
             Questions, abuse reports, and takedown requests can be sent to{" "}
             <a
-              href="mailto:legal@extensilica.com"
+              href={`mailto:${LEGAL_EMAIL}`}
               className="text-primary underline"
             >
-              legal@extensilica.com
+              {LEGAL_EMAIL}
             </a>
             {" "}or submitted via the project&rsquo;s{" "}
             <a

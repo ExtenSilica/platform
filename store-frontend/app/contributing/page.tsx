@@ -7,6 +7,7 @@ import {
   InfoC,
   InfoStrong,
 } from "@/components/info-page";
+import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 
 export const metadata: Metadata = {
   title: "Contributing — ExtenSilica",
@@ -134,6 +135,18 @@ export default function ContributingPage() {
             </Link>
             ; do not open public issues for undisclosed vulnerabilities.
           </p>
+        </InfoSection>
+
+        <InfoSection id="xsil" title="XSIL contribution tokens">
+          <p>
+            Eligible registry work may earn{" "}
+            <Link href="/token" className="text-primary underline">
+              XSIL
+            </Link>{" "}
+            governance points. Grants are reviewed before they count toward your balance; linking a
+            wallet is optional and only used for on-chain claim when enabled.
+          </p>
+          <XsilDisclaimerNotice variant="box" className="mt-4" />
         </InfoSection>
 
         <InfoSection id="governance" title="Governance & metrics">

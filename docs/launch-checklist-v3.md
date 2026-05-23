@@ -151,7 +151,7 @@
 | 8.3 | FAQ — 25 questions in 5 thematic groups | ✅ done | `app/faq/page.tsx` |
 | 8.4 | Shared `LegalPage` layout component — tabbed nav, consistent styling | ✅ done | `components/legal-page.tsx` |
 | 8.5 | Footer links to Terms, Privacy, FAQ on every page | ✅ done | |
-| 8.6 | Dedicated contact email referenced in legal pages | ✅ done | `legal@extensilica.com` mailbox active (Zoho Mail); linked in Privacy §11, Terms §15, FAQ "delete account", FAQ "report abuse", and FAQ footer CTA |
+| 8.6 | Dedicated contact email referenced in legal pages | ✅ done | `contact@`, `support@`, and `legal@extensilica.com` (Zoho Mail); linked in Privacy, Terms, FAQ, and About |
 | 8.7 | DMCA / takedown request process | ✅ done | `/legal/dmca` page with full form; `POST /api/legal/dmca` backend (rate-limited 5/hr); emails `legal@extensilica.com`; counter-notice process documented; ToS §7 + FAQ updated to link there |
 
 ---
