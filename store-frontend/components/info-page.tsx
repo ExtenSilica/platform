@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 export const INFO_NAV = [
+  { href: "/about", label: "About" },
   { href: "/governance", label: "Governance" },
   { href: "/token", label: "XSIL Token" },
   { href: "/adoption", label: "Adoption" },

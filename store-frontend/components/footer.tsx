@@ -13,7 +13,12 @@ export function Footer() {
             </div>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
               Public registry for reproducible RISC-V extensions, operated as interim
-              technical steward by ExtenSilica Ltda.
+              technical steward by ExtenSilica.
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              <Link href="/about" className="hover:text-riscv-accent transition-colors">
+                São Paulo, Brazil
+              </Link>
             </p>
             <div className="mt-3 flex items-center gap-3">
               <a
@@ -61,6 +66,11 @@ export function Footer() {
             </p>
             <ul className="space-y-2 text-sm">
               <li>
+                <Link href="/about" className="text-muted-foreground transition-colors hover:text-riscv-accent">
+                  About
+                </Link>
+              </li>
+              <li>
                 <Link href="/faq" className="text-muted-foreground transition-colors hover:text-riscv-accent">
                   FAQ
                 </Link>
@@ -103,7 +113,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} ExtenSilica Ltda. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} ExtenSilica. All rights reserved.</p>
           <p className="mt-1 text-[10px] text-muted-foreground/60">
             ExtenSilica is an independent project and is not affiliated with RISC-V International.
           </p>
