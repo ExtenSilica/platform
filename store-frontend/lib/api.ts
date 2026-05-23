@@ -403,11 +403,15 @@ export async function fetchAdoptionStats(
   days = 30,
 ): Promise<AdoptionStats | null> {
   const clamped = Math.min(90, Math.max(1, days));
-  const res = await fetch(`${API_BASE}/stats/adoption?days=${clamped}`, {
-    next: { revalidate: 300 },
-  });
-  if (!res.ok) return null;
-  return (await res.json()) as AdoptionStats;
+  try {
+    const res = await fetch(`${API_BASE}/stats/adoption?days=${clamped}`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as AdoptionStats;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchPackage(
