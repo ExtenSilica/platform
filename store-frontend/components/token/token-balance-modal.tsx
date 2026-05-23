@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { apiGetGovernanceMe, type GovernanceMe } from "@/lib/api";
+import { apiGetTokenBalance, type TokenBalanceResponse } from "@/lib/api";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ type Props = {
 
 export function TokenBalanceModal({ open, onOpenChange }: Props) {
   const { user, token } = useAuth();
-  const [me, setMe] = useState<GovernanceMe | null>(null);
+  const [me, setMe] = useState<TokenBalanceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -23,7 +23,7 @@ export function TokenBalanceModal({ open, onOpenChange }: Props) {
       setMe(null);
       return;
     }
-    const data = await apiGetGovernanceMe(token);
+    const data = await apiGetTokenBalance(token);
     setMe(data);
   }, [token]);
 
@@ -86,21 +86,21 @@ export function TokenBalanceModal({ open, onOpenChange }: Props) {
         ) : (
           <div className="mt-6 space-y-4">
             <p className="font-mono text-4xl font-bold tabular-nums text-riscv-accent">
-              {me?.totalPoints ?? "…"}
+              {me ? me.pendingXsil + me.claimedXsil : "…"}
               <span className="ml-2 text-base font-normal text-muted-foreground">XSIL</span>
             </p>
-            {me && me.pendingPoints > 0 ? (
+            {me && me.pendingXsil > 0 ? (
               <p className="text-sm text-muted-foreground">
-                {me.pendingPoints} XSIL pending on-chain claim
-                {me.linkedEvmAddress ? "" : " — connect a wallet below to claim when available"}.
+                {me.pendingXsil} XSIL pending on-chain claim
+                {me.walletAddress ? "" : " — connect a wallet below to claim when available"}.
               </p>
             ) : null}
-            {me?.recentLedger && me.recentLedger.length > 0 ? (
+            {me?.recentGrants && me.recentGrants.length > 0 ? (
               <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
-                {me.recentLedger.map((row) => (
+                {me.recentGrants.map((row) => (
                   <li key={row.id} className="flex justify-between gap-2">
-                    <span className="truncate">{row.referenceKey}</span>
-                    <span className="shrink-0 font-mono text-foreground">+{row.points}</span>
+                    <span className="truncate">{row.referenceId}</span>
+                    <span className="shrink-0 font-mono text-foreground">+{row.amount}</span>
                   </li>
                 ))}
               </ul>

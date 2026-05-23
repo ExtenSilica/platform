@@ -1,6 +1,6 @@
 /** Static copy for SSR `/token` page (spec May 2026). */
 
-export const XSIL_DISCLAIMER_FULL = `XSIL tokens are contribution and governance participation records on the ExtenSilica platform. They have no monetary value today and may never have. XSIL is not an investment, security, or payment instrument. Holding XSIL does not entitle you to profits, revenue, dividends, or any financial return. Any future liquidity, transferability, or economic use would require a separate community governance decision via the ExtenSilica Aragon DAO. ExtenSilica Ltda. makes no promise that XSIL will ever be tradeable or redeemable for money.`;
+export { XSIL_DISCLAIMER_FULL, XSIL_LEGAL_DISCLAIMER } from "@/lib/xsil-disclaimer";
 
 export const TOKEN_SUPPLY_ROWS = [
   { allocation: "Founder (vesting)", amount: "3,000,000", pct: "30%", notes: "4-year vest, 1-year cliff" },
@@ -15,7 +15,7 @@ export const TOKEN_EARN_ROWS = [
   { action: "Publish each additional package", xsil: "200", notes: "Per new package", icon: "package" as const },
   { action: "Claim upstream ownership (approved)", xsil: "1,000", notes: "After admin approval", icon: "shield" as const },
   { action: "Submit implementation (accepted)", xsil: "2,000", notes: "After verifier approval", icon: "code" as const },
-  { action: "Complete verification run (pass)", xsil: "1,500", notes: "As verifier", icon: "check" as const },
+  { action: "Complete verification run (pass)", xsil: "1,500", notes: "As verifier", icon: "check" as const, automated: true },
   { action: "Paper citing ExtenSilica (documented)", xsil: "3,000", notes: "Admin-verified citation", icon: "book" as const },
   { action: "Contribute code to xsil CLI (merged PR)", xsil: "1,000–5,000", notes: "Discretionary, admin-assigned", icon: "terminal" as const },
   { action: "Vendor official claim (approved)", xsil: "5,000", notes: "Org-level, not per-user", icon: "building" as const },
@@ -35,7 +35,7 @@ export const WHAT_IS_XSIL = [
   },
   {
     title: "No monetary value today",
-    body: "XSIL tokens have no monetary value today and may never have. They are not an investment. Any future liquidity event would require a separate community governance decision.",
+    body: "XSIL tokens have no monetary value today and may never have. They are not securities or investments. They record governance participation and contribution history only.",
     icon: "info" as const,
   },
 ] as const;

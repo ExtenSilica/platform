@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { InfoPage, InfoSection } from "@/components/info-page";
 import type { GovernancePublic } from "@/lib/api";
-import {
-  TOKEN_EARN_ROWS,
-  TOKEN_SUPPLY_ROWS,
-  WHAT_IS_XSIL,
-  XSIL_DISCLAIMER_FULL,
-} from "@/lib/token-page-data";
+import { TOKEN_EARN_ROWS, TOKEN_SUPPLY_ROWS, WHAT_IS_XSIL } from "@/lib/token-page-data";
+import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 import { TokenHeroActions } from "@/components/token/token-hero-actions";
 import { TokenClaimSection } from "@/components/token/token-claim-section";
 import { TokenIcon } from "@/components/token/token-icon";
@@ -19,7 +15,7 @@ type Props = {
 };
 
 export function TokenPageContent({ governance }: Props) {
-  const disclaimer = governance?.disclaimer ?? XSIL_DISCLAIMER_FULL;
+  const aragonDescription = governance?.aragon?.description ?? null;
   const supply = governance?.tokenSupply ?? TOKEN_SUPPLY_ROWS;
   const earn = governance?.earnRules ?? TOKEN_EARN_ROWS;
   const aragonUrl = governance?.aragonUrl ?? null;
@@ -37,6 +33,7 @@ export function TokenPageContent({ governance }: Props) {
           <Badge variant="outline" className="text-xs font-normal">
             No monetary value · Governance only · Earn by contributing
           </Badge>
+          <XsilDisclaimerNotice variant="box" className="max-w-3xl" />
           <TokenHeroActions />
         </section>
 
@@ -150,6 +147,11 @@ export function TokenPageContent({ governance }: Props) {
               <p className="mt-1 text-sm text-muted-foreground">
                 View proposals · Cast votes · Delegate
               </p>
+              {aragonDescription ? (
+                <p className="mt-3 max-w-xl text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
+                  {aragonDescription}
+                </p>
+              ) : null}
             </div>
             {aragonUrl ? (
               <a
@@ -177,25 +179,23 @@ export function TokenPageContent({ governance }: Props) {
             <h3 className="font-semibold">XSIL Token Documentation v1.0</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Full tokenomics, governance model, contribution criteria, legal disclaimers, and
-              future roadmap.
+              future roadmap. Use &quot;Save as PDF / Print&quot; on the documentation page to export.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link href="/token/documentation" className={cn(buttonVariants())}>
                 Read documentation →
               </Link>
-              <Link
-                href="/token/documentation#download"
-                className={cn(buttonVariants({ variant: "outline" }))}
-              >
+              <Link href="/token/documentation" className={cn(buttonVariants({ variant: "outline" }))}>
                 Download PDF →
               </Link>
             </div>
           </div>
-          <div className="mt-8 rounded-md border border-amber-500/30 bg-amber-500/5 p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-wide">Disclaimer</h3>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{disclaimer}</p>
-          </div>
+          <XsilDisclaimerNotice variant="box" title="Legal disclaimer" />
         </InfoSection>
+
+        <footer className="border-t pt-8">
+          <XsilDisclaimerNotice variant="inline" />
+        </footer>
       </div>
     </InfoPage>
   );

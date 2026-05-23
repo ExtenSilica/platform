@@ -104,3 +104,39 @@
   0%   { background-position: 0 350%; }
   100% { background-position: 0 -350%; }
 }
+
+/* XSIL token documentation — print / Save as PDF */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .token-documentation {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .token-documentation h1,
+  .token-documentation h2,
+  .token-documentation h3,
+  .token-documentation p,
+  .token-documentation li,
+  .token-documentation td,
+  .token-documentation th {
+    color: black !important;
+  }
+
+  .token-documentation table {
+    break-inside: avoid;
+  }
+
+  .token-documentation section {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+}
