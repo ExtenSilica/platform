@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LegalPage } from "@/components/legal-page";
 import { CONTACT_EMAIL, LEGAL_EMAIL, SUPPORT_EMAIL } from "@/lib/site-contact";
 import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
+import { ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
 
 export const metadata: Metadata = {
   title: "FAQ — ExtenSilica",
@@ -855,8 +856,16 @@ const GROUPS: FaqGroup[] = [
               XSIL
             </Link>{" "}
             is the contributor governance token for ExtenSilica. It records verified contribution
-            and may be used for platform governance via the Aragon DAO when on-chain voting is
-            active. See also{" "}
+            and is used for platform governance via the{" "}
+            <a
+              href={ARAGON_DAO_PUBLIC_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              ExtenSilica DAO on Aragon
+            </a>
+            . See also{" "}
             <Link href="/token/documentation" className="text-primary underline">
               Token Documentation
             </Link>

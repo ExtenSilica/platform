@@ -27,8 +27,6 @@ export const TOKEN_OVERVIEW_ROWS = [
   { property: "Total supply", value: "10,000,000 XSIL" },
   { property: "Standard", value: "ERC-20 (permit, pausable, AccessControl mint)" },
   { property: "Governance DAO", value: "ExtenSilica DAO on Aragon (Base)" },
-  { property: "DAO app", value: ARAGON_DAO_PUBLIC_URL },
-  { property: "DAO contract", value: ARAGON_DAO_ADDRESS },
   { property: "Monetary value", value: "None today" },
 ] as const;
 

@@ -8,8 +8,7 @@ import {
   InfoStrong,
 } from "@/components/info-page";
 import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
-import { resolveAragonPublicUrl } from "@/lib/aragon-dao";
-import { fetchGovernancePublicServer } from "@/lib/governance-server";
+import { ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -20,9 +19,6 @@ export const metadata: Metadata = {
 };
 
 export default async function GovernancePage() {
-  const governance = await fetchGovernancePublicServer();
-  const aragonUrl = resolveAragonPublicUrl(governance?.aragonUrl);
-
   return (
     <InfoPage
       title="Governance"
@@ -114,7 +110,7 @@ export default async function GovernancePage() {
             Proposals and votes run on the ExtenSilica DAO on Aragon (Base).
           </p>
           <a
-            href={aragonUrl}
+            href={ARAGON_DAO_PUBLIC_URL}
             target="_blank"
             rel="noopener noreferrer"
             className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-3 inline-flex")}

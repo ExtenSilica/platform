@@ -14,7 +14,7 @@ import { TokenIcon } from "@/components/token/token-icon";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ARAGON_DAO_ADDRESS, resolveAragonPublicUrl } from "@/lib/aragon-dao";
+import { ARAGON_DAO_ADDRESS, ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
 import {
   getXsilBasescanUrl,
   getXsilContractAddress,
@@ -31,8 +31,7 @@ export function TokenPageContent({ governance }: Props) {
   const aragonDescription = governance?.aragon?.description ?? null;
   const supply = governance?.tokenSupply ?? TOKEN_SUPPLY_ROWS;
   const earn = governance?.earnRules ?? TOKEN_EARN_ROWS;
-  const aragonUrl = resolveAragonPublicUrl(governance?.aragonUrl);
-  const aragonConfigured = governance?.aragon?.configured ?? false;
+  const aragonUrl = ARAGON_DAO_PUBLIC_URL;
   const xsilContract =
     governance?.xsilContractAddress?.trim() ||
     getXsilContractAddress() ||

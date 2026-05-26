@@ -129,18 +129,36 @@ export function TokenDocumentationArticle() {
             headers={["Property", "Value"]}
             rows={TOKEN_OVERVIEW_ROWS.map((r) => [r.property, r.value])}
           />
-          <div className="rounded-lg border bg-muted/20 p-4 text-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Contract (Base)
-            </p>
-            <a
-              href={XSIL_BASESCAN_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 block font-mono text-xs break-all text-primary underline"
-            >
-              {XSIL_CONTRACT_ADDRESS}
-            </a>
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-muted/20 p-4 text-sm">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Contract (Base)
+              </p>
+              <a
+                href={XSIL_BASESCAN_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 block font-mono text-xs break-all text-primary underline"
+              >
+                {XSIL_CONTRACT_ADDRESS}
+              </a>
+            </div>
+            <div className="rounded-lg border bg-muted/20 p-4 text-sm">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Governance DAO (Aragon)
+              </p>
+              <a
+                href={ARAGON_DAO_PUBLIC_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 block text-sm text-primary underline break-all"
+              >
+                {ARAGON_DAO_PUBLIC_URL}
+              </a>
+              <p className="mt-2 font-mono text-xs text-muted-foreground">
+                DAO on Base: {ARAGON_DAO_ADDRESS}
+              </p>
+            </div>
           </div>
         </DocSection>
 
@@ -157,8 +175,16 @@ export function TokenDocumentationArticle() {
           <div>
             <h3 className="font-semibold text-foreground">3.2 Governance participation</h3>
             <p className="mt-2">
-              Token holders participate in ExtenSilica governance via the ExtenSilica DAO on Aragon.
-              Decisions include feature priorities, registry policies, and future token
+              Token holders participate in ExtenSilica governance via the{" "}
+              <a
+                href={ARAGON_DAO_PUBLIC_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                ExtenSilica DAO on Aragon
+              </a>
+              . Decisions include feature priorities, registry policies, and future token
               distribution.
             </p>
           </div>
