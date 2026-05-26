@@ -4,7 +4,11 @@
  */
 
 import { ARAGON_DAO_ADDRESS, ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
-import { getXsilBasescanUrl, getXsilContractAddress, XSIL_CHAIN_ID } from "@/lib/xsil-contract";
+import {
+  XSIL_BASESCAN_URL,
+  XSIL_CHAIN_ID,
+  XSIL_CONTRACT_ADDRESS,
+} from "@/lib/xsil-contract";
 import {
   TOKEN_EARN_ROWS,
   TOKEN_SUPPLY_FOOTNOTE,
@@ -15,17 +19,12 @@ import { XSIL_LEGAL_DISCLAIMER_LINES } from "@/lib/xsil-disclaimer";
 export const TOKEN_DOC_VERSION = "1.0";
 export const TOKEN_DOC_DATE = "May 2026";
 
-const xsilContract = getXsilContractAddress();
-const xsilBasescan = getXsilBasescanUrl(xsilContract);
-
 export const TOKEN_OVERVIEW_ROWS = [
   { property: "Name", value: "ExtenSilica Governance Token" },
   { property: "Symbol", value: "XSIL" },
   { property: "Network", value: "Base (Ethereum L2)" },
   { property: "Chain ID", value: String(XSIL_CHAIN_ID) },
   { property: "Total supply", value: "10,000,000 XSIL" },
-  { property: "Contract", value: xsilContract },
-  { property: "Block explorer", value: xsilBasescan },
   { property: "Standard", value: "ERC-20 (permit, pausable, AccessControl mint)" },
   { property: "Governance DAO", value: "ExtenSilica DAO on Aragon (Base)" },
   { property: "DAO app", value: ARAGON_DAO_PUBLIC_URL },

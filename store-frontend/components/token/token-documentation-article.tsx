@@ -15,7 +15,7 @@ import {
 } from "@/lib/token-documentation-content";
 import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 import { ARAGON_DAO_ADDRESS, ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
-import { getXsilBasescanUrl } from "@/lib/xsil-contract";
+import { XSIL_BASESCAN_URL, XSIL_CONTRACT_ADDRESS } from "@/lib/xsil-contract";
 import { ARAGON_DAO_DESCRIPTION_DEFAULT } from "@/lib/xsil-disclaimer";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -129,16 +129,19 @@ export function TokenDocumentationArticle() {
             headers={["Property", "Value"]}
             rows={TOKEN_OVERVIEW_ROWS.map((r) => [r.property, r.value])}
           />
-          <p>
+          <div className="rounded-lg border bg-muted/20 p-4 text-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Contract (Base)
+            </p>
             <a
-              href={getXsilBasescanUrl()}
+              href={XSIL_BASESCAN_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary underline"
+              className="mt-2 block font-mono text-xs break-all text-primary underline"
             >
-              View XSIL contract on Basescan →
+              {XSIL_CONTRACT_ADDRESS}
             </a>
-          </p>
+          </div>
         </DocSection>
 
         <DocSection id="purpose" title="3. Token Purpose">

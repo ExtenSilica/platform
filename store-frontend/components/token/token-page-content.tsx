@@ -18,7 +18,9 @@ import { ARAGON_DAO_ADDRESS, resolveAragonPublicUrl } from "@/lib/aragon-dao";
 import {
   getXsilBasescanUrl,
   getXsilContractAddress,
+  XSIL_BASESCAN_URL,
   XSIL_CHAIN_ID,
+  XSIL_CONTRACT_ADDRESS,
 } from "@/lib/xsil-contract";
 
 type Props = {
@@ -32,8 +34,11 @@ export function TokenPageContent({ governance }: Props) {
   const aragonUrl = resolveAragonPublicUrl(governance?.aragonUrl);
   const aragonConfigured = governance?.aragon?.configured ?? false;
   const xsilContract =
-    governance?.xsilContractAddress ?? getXsilContractAddress();
-  const xsilBasescan = governance?.xsilBasescanUrl ?? getXsilBasescanUrl(xsilContract);
+    governance?.xsilContractAddress?.trim() ||
+    getXsilContractAddress() ||
+    XSIL_CONTRACT_ADDRESS;
+  const xsilBasescan =
+    governance?.xsilBasescanUrl?.trim() || getXsilBasescanUrl() || XSIL_BASESCAN_URL;
 
   return (
     <InfoPage
@@ -69,15 +74,24 @@ export function TokenPageContent({ governance }: Props) {
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               XSILToken on Base (chain {XSIL_CHAIN_ID})
             </p>
-            <p className="mt-2 font-mono text-xs break-all text-foreground">{xsilContract}</p>
             <a
               href={xsilBasescan}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-block text-primary underline"
+              className="mt-2 block font-mono text-xs break-all text-primary underline hover:text-primary/90"
             >
-              View on Basescan →
+              {xsilContract}
             </a>
+            <p className="mt-2 text-xs text-muted-foreground">
+              <a
+                href={xsilBasescan}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                View on Basescan →
+              </a>
+            </p>
           </div>
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full min-w-[520px] text-sm">
