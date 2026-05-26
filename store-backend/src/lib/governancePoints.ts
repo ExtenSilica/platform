@@ -1,6 +1,7 @@
 import type { Prisma, TokenGrantReason } from '@prisma/client';
 import { prisma } from '../db';
 import { XSIL_LEGAL_DISCLAIMER, aragonDaoDescription } from './xsilDisclaimer';
+import { getXsilContractAddress } from './xsilContract';
 
 export const GOVERNANCE_DISCLAIMER = XSIL_LEGAL_DISCLAIMER;
 
@@ -12,11 +13,31 @@ export const TOKEN_ACCRUAL_AMOUNTS: Partial<Record<TokenGrantReason, number>> = 
 };
 
 export const TOKEN_SUPPLY_ROWS = [
-  { allocation: 'Founder (vesting)', amount: '3,000,000', pct: '30%', notes: '4-year vest, 1-year cliff' },
-  { allocation: 'Contributors', amount: '4,000,000', pct: '40%', notes: 'Earned via platform actions' },
-  { allocation: 'Early Community', amount: '2,000,000', pct: '20%', notes: 'First 12 months of activity' },
-  { allocation: 'Reserve / Future DAO', amount: '1,000,000', pct: '10%', notes: 'Future governance decision' },
-  { allocation: 'Total', amount: '10,000,000', pct: '100%', notes: '', total: true },
+  {
+    allocation: 'Maximum supply (cap)',
+    amount: '10,000,000',
+    pct: '100%',
+    notes: 'MAX_SUPPLY in XSILToken — hard cap',
+  },
+  {
+    allocation: 'Minted at deployment',
+    amount: '3,000,000',
+    pct: '30%',
+    notes: 'Single constructor mint to admin; no on-chain vesting',
+  },
+  {
+    allocation: 'Mintable via platform',
+    amount: 'Up to 7,000,000',
+    pct: '70%',
+    notes: 'MINTER_ROLE — contributor claims after off-chain grant approval',
+  },
+  {
+    allocation: 'Total cap',
+    amount: '10,000,000',
+    pct: '100%',
+    notes: 'Further mints cannot exceed MAX_SUPPLY',
+    total: true,
+  },
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
@@ -124,7 +145,10 @@ const ARAGON_DAO_ADDRESS_DEFAULT = '0x1FcE7Ae8B7c2fB4bf756801A270c1de237BF7c33';
 export function aragonConfig() {
   const dao =
     process.env.ARAGON_DAO_ADDRESS?.trim() || ARAGON_DAO_ADDRESS_DEFAULT;
-  const token = process.env.ARAGON_GOVERNANCE_TOKEN_ADDRESS?.trim() || null;
+  const token =
+    process.env.ARAGON_GOVERNANCE_TOKEN_ADDRESS?.trim() ||
+    process.env.XSIL_CONTRACT_ADDRESS?.trim() ||
+    getXsilContractAddress();
   const claim = process.env.ARAGON_CLAIM_CONTRACT_ADDRESS?.trim() || null;
   return {
     configured: Boolean(dao && token),

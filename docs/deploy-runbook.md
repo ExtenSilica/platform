@@ -184,8 +184,8 @@ LEGAL_EMAIL_PASS=
 # Aragon DAO (published May 2026 — defaults in code if omitted; set token address when XSIL is deployed)
 # ARAGON_DAO_PUBLIC_URL=https://app.aragon.org/dao/base-mainnet/0x1FcE7Ae8B7c2fB4bf756801A270c1de237BF7c33/
 # ARAGON_DAO_ADDRESS=0x1FcE7Ae8B7c2fB4bf756801A270c1de237BF7c33
-# ARAGON_GOVERNANCE_TOKEN_ADDRESS=0x…
-# XSIL_CONTRACT_ADDRESS=0x…
+# ARAGON_GOVERNANCE_TOKEN_ADDRESS=0xCD64A7A8AB098Cd16E9b31E1139d8dD83530c0D8
+# XSIL_CONTRACT_ADDRESS=0xCD64A7A8AB098Cd16E9b31E1139d8dD83530c0D8
 # XSIL_MINTER_PRIVATE_KEY=0x…
 # CHAIN_ID=8453
 
@@ -261,7 +261,10 @@ curl -sS https://api.extensilica.com/packages | head -c 200
 
 ```bash
 cd /opt/extensilica/store-frontend
-printf '%s\n' 'NEXT_PUBLIC_API_URL=https://api.extensilica.com/api' > .env.production
+printf '%s\n' \
+  'NEXT_PUBLIC_API_URL=https://api.extensilica.com/api' \
+  'NEXT_PUBLIC_XSIL_CONTRACT_ADDRESS=0xCD64A7A8AB098Cd16E9b31E1139d8dD83530c0D8' \
+  > .env.production
 npm ci
 npm run build
 test -f .next/BUILD_ID && echo "Next build OK"

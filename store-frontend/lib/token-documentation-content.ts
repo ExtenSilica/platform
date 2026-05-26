@@ -4,37 +4,32 @@
  */
 
 import { ARAGON_DAO_ADDRESS, ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
+import { getXsilBasescanUrl, getXsilContractAddress, XSIL_CHAIN_ID } from "@/lib/xsil-contract";
 import { TOKEN_EARN_ROWS, TOKEN_SUPPLY_ROWS } from "@/lib/token-page-data";
 import { XSIL_LEGAL_DISCLAIMER_LINES } from "@/lib/xsil-disclaimer";
 
 export const TOKEN_DOC_VERSION = "1.0";
 export const TOKEN_DOC_DATE = "May 2026";
 
+const xsilContract = getXsilContractAddress();
+const xsilBasescan = getXsilBasescanUrl(xsilContract);
+
 export const TOKEN_OVERVIEW_ROWS = [
   { property: "Name", value: "ExtenSilica Governance Token" },
   { property: "Symbol", value: "XSIL" },
   { property: "Network", value: "Base (Ethereum L2)" },
-  { property: "Total Supply", value: "10,000,000 XSIL" },
-  {
-    property: "Contract",
-    value:
-      process.env.NEXT_PUBLIC_XSIL_CONTRACT_ADDRESS?.trim() ||
-      "Published after deploy on Base (see extensilica.com/token)",
-  },
-  { property: "Standard", value: "ERC-20 (permit, pausable)" },
+  { property: "Chain ID", value: String(XSIL_CHAIN_ID) },
+  { property: "Maximum supply", value: "10,000,000 XSIL (on-chain cap)" },
+  { property: "Contract", value: xsilContract },
+  { property: "Block explorer", value: xsilBasescan },
+  { property: "Standard", value: "ERC-20 (permit, pausable, AccessControl mint)" },
   { property: "Governance DAO", value: "ExtenSilica DAO on Aragon (Base)" },
   { property: "DAO app", value: ARAGON_DAO_PUBLIC_URL },
   { property: "DAO contract", value: ARAGON_DAO_ADDRESS },
   { property: "Monetary value", value: "None today" },
 ] as const;
 
-/** Spec §4 distribution table (vesting column). */
-export const TOKEN_DISTRIBUTION_ROWS = [
-  { allocation: "Founder", amount: "3,000,000", pct: "30%", vesting: "4-year linear, 1-year cliff" },
-  { allocation: "Contributors", amount: "4,000,000", pct: "40%", vesting: "Earned via contribution" },
-  { allocation: "Early Community", amount: "2,000,000", pct: "20%", vesting: "First 12 months" },
-  { allocation: "Reserve", amount: "1,000,000", pct: "10%", vesting: "DAO decision" },
-] as const;
+export const ON_CHAIN_SUPPLY_NOTE = `The deployed XSILToken contract does not implement vesting schedules, cliffs, or reserved allocation buckets (no 40% / 20% / 10% splits on-chain). At deployment, 3,000,000 XSIL were minted once to the admin address. Additional tokens are minted only through addresses holding MINTER_ROLE (the platform minter used for approved contributor claims), up to the 10,000,000 cap.`;
 
 export const GOVERNANCE_VOTING_PARAMS = [
   { param: "Voting weight", value: "1 XSIL = 1 vote" },
@@ -55,7 +50,7 @@ export const CLAIM_STEPS = [
   "Sign in at extensilica.com.",
   "Connect an Ethereum-compatible wallet (MetaMask, Coinbase Wallet, WalletConnect, etc.).",
   "Sign a free message to verify wallet ownership (no gas).",
-  "Claim pending tokens — a mint transaction is submitted on the Base network.",
+  "Claim pending tokens — a mint transaction is submitted on the Base network to the XSIL contract.",
   "Tokens appear in your connected wallet.",
 ] as const;
 

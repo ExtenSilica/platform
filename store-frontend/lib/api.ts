@@ -1486,6 +1486,9 @@ export type GovernancePublic = {
     notes: string;
     automated?: boolean;
   }[];
+  xsilContractAddress: string;
+  xsilBasescanUrl: string;
+  xsilChainId: number;
   aragon: {
     configured: boolean;
     daoAddress: string | null;

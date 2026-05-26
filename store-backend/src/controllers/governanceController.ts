@@ -11,6 +11,11 @@ import {
   linkGovernanceAddress,
   unlinkGovernanceAddress,
 } from '../lib/governancePoints';
+import {
+  XSIL_CHAIN_ID_DEFAULT,
+  getXsilBasescanUrl,
+  getXsilContractAddress,
+} from '../lib/xsilContract';
 
 export async function getGovernancePublic(_req: Request, res: Response): Promise<void> {
   res.json({
@@ -19,6 +24,9 @@ export async function getGovernancePublic(_req: Request, res: Response): Promise
     earnRules: TOKEN_EARN_ROWS,
     aragon: aragonConfig(),
     aragonUrl: aragonPublicUrl(),
+    xsilContractAddress: getXsilContractAddress(),
+    xsilBasescanUrl: getXsilBasescanUrl(),
+    xsilChainId: XSIL_CHAIN_ID_DEFAULT,
   });
 }
 

@@ -10,6 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ARAGON_DAO_ADDRESS, resolveAragonPublicUrl } from "@/lib/aragon-dao";
+import {
+  getXsilBasescanUrl,
+  getXsilContractAddress,
+  XSIL_CHAIN_ID,
+} from "@/lib/xsil-contract";
 
 type Props = {
   governance: GovernancePublic | null;
@@ -21,6 +26,9 @@ export function TokenPageContent({ governance }: Props) {
   const earn = governance?.earnRules ?? TOKEN_EARN_ROWS;
   const aragonUrl = resolveAragonPublicUrl(governance?.aragonUrl);
   const aragonConfigured = governance?.aragon?.configured ?? false;
+  const xsilContract =
+    governance?.xsilContractAddress ?? getXsilContractAddress();
+  const xsilBasescan = governance?.xsilBasescanUrl ?? getXsilBasescanUrl(xsilContract);
 
   return (
     <InfoPage
@@ -51,12 +59,26 @@ export function TokenPageContent({ governance }: Props) {
           </div>
         </InfoSection>
 
-        <InfoSection id="tokenomics" title="Token Supply">
+        <InfoSection id="tokenomics" title="On-chain supply">
+          <div className="mb-6 rounded-lg border bg-muted/20 p-4 text-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              XSILToken on Base (chain {XSIL_CHAIN_ID})
+            </p>
+            <p className="mt-2 font-mono text-xs break-all text-foreground">{xsilContract}</p>
+            <a
+              href={xsilBasescan}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-block text-primary underline"
+            >
+              View on Basescan →
+            </a>
+          </div>
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full min-w-[520px] text-sm">
               <thead>
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Allocation</th>
+                  <th className="px-4 py-3 font-medium">Element</th>
                   <th className="px-4 py-3 font-medium">Amount</th>
                   <th className="px-4 py-3 font-medium">%</th>
                   <th className="px-4 py-3 font-medium">Notes</th>
@@ -78,8 +100,9 @@ export function TokenPageContent({ governance }: Props) {
             </table>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            No tokens are sold. No ICO. Tokens are earned through contribution or held in reserve
-            for future community decisions.
+            The contract does not enforce vesting cliffs or 40/20/10 allocation buckets — only a
+            10M cap, a one-time 3M deploy mint, and further mints via <code className="text-xs">MINTER_ROLE</code>{" "}
+            for approved contributor claims. No tokens are sold. No ICO.
           </p>
         </InfoSection>
 
@@ -166,11 +189,6 @@ export function TokenPageContent({ governance }: Props) {
           </div>
           <p className="mt-3 font-mono text-xs text-muted-foreground">
             DAO on Base: {governance?.aragon?.daoAddress ?? ARAGON_DAO_ADDRESS}
-            {!aragonConfigured ? (
-              <span className="block font-sans text-muted-foreground">
-                On-chain claim and governance token wiring are still being finalized in production.
-              </span>
-            ) : null}
           </p>
           <p className="mt-4 text-sm text-muted-foreground">
             Voting requires XSIL tokens on-chain. Connect your wallet and claim your tokens to

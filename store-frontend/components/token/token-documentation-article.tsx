@@ -5,7 +5,8 @@ import {
   GOVERNANCE_SCOPE_ITEMS,
   GOVERNANCE_VOTING_PARAMS,
   LEGAL_DISCLAIMER_WHITEPAPER,
-  TOKEN_DISTRIBUTION_ROWS,
+  ON_CHAIN_SUPPLY_NOTE,
+  TOKEN_SUPPLY_ROWS,
   TOKEN_DOC_CONTACT,
   TOKEN_DOC_DATE,
   TOKEN_DOC_VERSION,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/token-documentation-content";
 import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 import { ARAGON_DAO_ADDRESS, ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
+import { getXsilBasescanUrl } from "@/lib/xsil-contract";
 import { ARAGON_DAO_DESCRIPTION_DEFAULT } from "@/lib/xsil-disclaimer";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -92,7 +94,7 @@ export function TokenDocumentationArticle() {
             ["introduction", "1. Introduction"],
             ["overview", "2. Token Overview"],
             ["purpose", "3. Token Purpose"],
-            ["distribution", "4. Token Distribution"],
+            ["distribution", "4. On-chain supply"],
             ["contributions", "5. Contribution Criteria"],
             ["governance", "6. Governance"],
             ["claim", "7. Claim Process"],
@@ -127,6 +129,16 @@ export function TokenDocumentationArticle() {
             headers={["Property", "Value"]}
             rows={TOKEN_OVERVIEW_ROWS.map((r) => [r.property, r.value])}
           />
+          <p>
+            <a
+              href={getXsilBasescanUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              View XSIL contract on Basescan →
+            </a>
+          </p>
         </DocSection>
 
         <DocSection id="purpose" title="3. Token Purpose">
@@ -149,15 +161,11 @@ export function TokenDocumentationArticle() {
           </div>
         </DocSection>
 
-        <DocSection id="distribution" title="4. Token Distribution">
+        <DocSection id="distribution" title="4. On-chain supply">
+          <p>{ON_CHAIN_SUPPLY_NOTE}</p>
           <DataTable
-            headers={["Allocation", "Amount", "%", "Vesting"]}
-            rows={TOKEN_DISTRIBUTION_ROWS.map((r) => [
-              r.allocation,
-              r.amount,
-              r.pct,
-              r.vesting,
-            ])}
+            headers={["Element", "Amount", "%", "Notes"]}
+            rows={TOKEN_SUPPLY_ROWS.map((r) => [r.allocation, r.amount, r.pct, r.notes])}
           />
         </DocSection>
 
