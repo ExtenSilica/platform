@@ -181,6 +181,14 @@ SUPPORT_EMAIL=support@extensilica.com
 LEGAL_EMAIL=legal@extensilica.com
 LEGAL_EMAIL_PASS=
 
+# Aragon DAO (published May 2026 — defaults in code if omitted; set token address when XSIL is deployed)
+# ARAGON_DAO_PUBLIC_URL=https://app.aragon.org/dao/base-mainnet/0x1FcE7Ae8B7c2fB4bf756801A270c1de237BF7c33/
+# ARAGON_DAO_ADDRESS=0x1FcE7Ae8B7c2fB4bf756801A270c1de237BF7c33
+# ARAGON_GOVERNANCE_TOKEN_ADDRESS=0x…
+# XSIL_CONTRACT_ADDRESS=0x…
+# XSIL_MINTER_PRIVATE_KEY=0x…
+# CHAIN_ID=8453
+
 # Optional later:
 # STORAGE_DRIVER=s3
 # S3_BUCKET=...

@@ -7,8 +7,9 @@ import { TokenHeroActions } from "@/components/token/token-hero-actions";
 import { TokenClaimSection } from "@/components/token/token-claim-section";
 import { TokenIcon } from "@/components/token/token-icon";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ARAGON_DAO_ADDRESS, resolveAragonPublicUrl } from "@/lib/aragon-dao";
 
 type Props = {
   governance: GovernancePublic | null;
@@ -18,7 +19,8 @@ export function TokenPageContent({ governance }: Props) {
   const aragonDescription = governance?.aragon?.description ?? null;
   const supply = governance?.tokenSupply ?? TOKEN_SUPPLY_ROWS;
   const earn = governance?.earnRules ?? TOKEN_EARN_ROWS;
-  const aragonUrl = governance?.aragonUrl ?? null;
+  const aragonUrl = resolveAragonPublicUrl(governance?.aragonUrl);
+  const aragonConfigured = governance?.aragon?.configured ?? false;
 
   return (
     <InfoPage
@@ -153,24 +155,35 @@ export function TokenPageContent({ governance }: Props) {
                 </p>
               ) : null}
             </div>
-            {aragonUrl ? (
-              <a
-                href={aragonUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(buttonVariants())}
-              >
-                Open Aragon DAO →
-              </a>
-            ) : (
-              <Button disabled variant="outline">
-                DAO link coming soon
-              </Button>
-            )}
+            <a
+              href={aragonUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(buttonVariants())}
+            >
+              Open Aragon DAO →
+            </a>
           </div>
+          <p className="mt-3 font-mono text-xs text-muted-foreground">
+            DAO on Base: {governance?.aragon?.daoAddress ?? ARAGON_DAO_ADDRESS}
+            {!aragonConfigured ? (
+              <span className="block font-sans text-muted-foreground">
+                On-chain claim and governance token wiring are still being finalized in production.
+              </span>
+            ) : null}
+          </p>
           <p className="mt-4 text-sm text-muted-foreground">
             Voting requires XSIL tokens on-chain. Connect your wallet and claim your tokens to
-            participate.
+            participate. View proposals and cast votes on{" "}
+            <a
+              href={aragonUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              Aragon
+            </a>
+            .
           </p>
         </InfoSection>
 

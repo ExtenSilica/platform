@@ -118,8 +118,12 @@ export async function getGovernanceMe(userId: number) {
   };
 }
 
+/** On-chain DAO plugin address (Base). Override with ARAGON_DAO_ADDRESS. */
+const ARAGON_DAO_ADDRESS_DEFAULT = '0x1FcE7Ae8B7c2fB4bf756801A270c1de237BF7c33';
+
 export function aragonConfig() {
-  const dao = process.env.ARAGON_DAO_ADDRESS?.trim() || null;
+  const dao =
+    process.env.ARAGON_DAO_ADDRESS?.trim() || ARAGON_DAO_ADDRESS_DEFAULT;
   const token = process.env.ARAGON_GOVERNANCE_TOKEN_ADDRESS?.trim() || null;
   const claim = process.env.ARAGON_CLAIM_CONTRACT_ADDRESS?.trim() || null;
   return {
@@ -131,9 +135,13 @@ export function aragonConfig() {
   };
 }
 
-export function aragonPublicUrl(): string | null {
+/** Published ExtenSilica DAO on Aragon (Base mainnet). Override with ARAGON_DAO_PUBLIC_URL. */
+const ARAGON_DAO_PUBLIC_URL_DEFAULT =
+  'https://app.aragon.org/dao/base-mainnet/0x1FcE7Ae8B7c2fB4bf756801A270c1de237BF7c33/';
+
+export function aragonPublicUrl(): string {
   const url = process.env.ARAGON_DAO_PUBLIC_URL?.trim();
-  return url || null;
+  return url || ARAGON_DAO_PUBLIC_URL_DEFAULT;
 }
 
 export async function linkGovernanceAddress(userId: number, linkedEvmAddress: string) {

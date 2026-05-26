@@ -8,6 +8,10 @@ import {
   InfoStrong,
 } from "@/components/info-page";
 import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
+import { resolveAragonPublicUrl } from "@/lib/aragon-dao";
+import { fetchGovernancePublicServer } from "@/lib/governance-server";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Governance — ExtenSilica",
@@ -15,7 +19,10 @@ export const metadata: Metadata = {
     "How ExtenSilica is stewarded today and our path toward neutral, long-term governance of the public RISC-V extension registry.",
 };
 
-export default function GovernancePage() {
+export default async function GovernancePage() {
+  const governance = await fetchGovernancePublicServer();
+  const aragonUrl = resolveAragonPublicUrl(governance?.aragonUrl);
+
   return (
     <InfoPage
       title="Governance"
@@ -103,6 +110,17 @@ export default function GovernancePage() {
             instrument or investment product on this platform.
           </p>
           <XsilDisclaimerNotice variant="box" className="mt-4" />
+          <p className="mt-4 text-sm text-muted-foreground">
+            Proposals and votes run on the ExtenSilica DAO on Aragon (Base).
+          </p>
+          <a
+            href={aragonUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-3 inline-flex")}
+          >
+            Open ExtenSilica DAO on Aragon →
+          </a>
         </InfoSection>
 
         <InfoSection id="contribute" title="Get involved">

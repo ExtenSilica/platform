@@ -13,7 +13,10 @@ import {
   TOKEN_OVERVIEW_ROWS,
 } from "@/lib/token-documentation-content";
 import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
+import { ARAGON_DAO_ADDRESS, ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
 import { ARAGON_DAO_DESCRIPTION_DEFAULT } from "@/lib/xsil-disclaimer";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function DocSection({
   id,
@@ -171,7 +174,29 @@ export function TokenDocumentationArticle() {
 
         <DocSection id="governance" title="6. Governance">
           <p>
-            ExtenSilica is governed via the ExtenSilica DAO on Aragon (Base network).
+            ExtenSilica is governed via the{" "}
+            <a
+              href={ARAGON_DAO_PUBLIC_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              ExtenSilica DAO on Aragon
+            </a>{" "}
+            (Base network). XSIL is the governance token for proposals and votes in that DAO.
+          </p>
+          <p>
+            <a
+              href={ARAGON_DAO_PUBLIC_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "no-print")}
+            >
+              Open Aragon DAO →
+            </a>
+          </p>
+          <p className="font-mono text-xs text-muted-foreground">
+            DAO contract (Base): {ARAGON_DAO_ADDRESS}
           </p>
           <p className="whitespace-pre-line text-sm">{ARAGON_DAO_DESCRIPTION_DEFAULT}</p>
           <h3 className="font-semibold text-foreground">Voting parameters</h3>

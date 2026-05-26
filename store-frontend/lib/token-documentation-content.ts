@@ -3,6 +3,7 @@
  * Shared with `/token` earn/supply tables via token-page-data where applicable.
  */
 
+import { ARAGON_DAO_ADDRESS, ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
 import { TOKEN_EARN_ROWS, TOKEN_SUPPLY_ROWS } from "@/lib/token-page-data";
 import { XSIL_LEGAL_DISCLAIMER_LINES } from "@/lib/xsil-disclaimer";
 
@@ -21,6 +22,9 @@ export const TOKEN_OVERVIEW_ROWS = [
       "Published after deploy on Base (see extensilica.com/token)",
   },
   { property: "Standard", value: "ERC-20 (permit, pausable)" },
+  { property: "Governance DAO", value: "ExtenSilica DAO on Aragon (Base)" },
+  { property: "DAO app", value: ARAGON_DAO_PUBLIC_URL },
+  { property: "DAO contract", value: ARAGON_DAO_ADDRESS },
   { property: "Monetary value", value: "None today" },
 ] as const;
 
