@@ -25,12 +25,12 @@ export const TOKEN_OVERVIEW_ROWS = [
   { property: "Network", value: "Base (Ethereum L2)" },
   { property: "Chain ID", value: String(XSIL_CHAIN_ID) },
   { property: "Total supply", value: "10,000,000 XSIL" },
-  { property: "Standard", value: "ERC-20 (permit, pausable, AccessControl mint)" },
+  { property: "Standard", value: "ERC-20 (permit, pausable)" },
   { property: "Governance DAO", value: "ExtenSilica DAO on Aragon (Base)" },
   { property: "Monetary value", value: "None today" },
 ] as const;
 
-export const TOKEN_DISTRIBUTION_NOTE = `Total supply is 10,000,000 XSIL. There is no vesting, no ICO, and no separate Early Community or Reserve buckets. The founder allocation is minted at deploy; the treasury balance is governed by the ExtenSilica DAO on Aragon and distributed to contributors through governance-approved transfers. ${TOKEN_SUPPLY_FOOTNOTE}`;
+export const TOKEN_DISTRIBUTION_NOTE = `Total supply is 10,000,000 XSIL. The founder allocation is issued at deploy; the remaining supply is held in the ExtenSilica DAO treasury on Aragon and distributed to contributors through governance-approved transfers. ${TOKEN_SUPPLY_FOOTNOTE}`;
 
 export const GOVERNANCE_VOTING_PARAMS = [
   { param: "Voting weight", value: "1 XSIL = 1 vote" },
@@ -51,7 +51,7 @@ export const CLAIM_STEPS = [
   "Sign in at extensilica.com.",
   "Connect an Ethereum-compatible wallet (MetaMask, Coinbase Wallet, WalletConnect, etc.).",
   "Sign a free message to verify wallet ownership (no gas).",
-  "Claim pending tokens — a mint transaction is submitted on the Base network to the XSIL contract.",
+  "Claim approved tokens — XSIL is transferred from the DAO treasury to your wallet on Base.",
   "Tokens appear in your connected wallet.",
 ] as const;
 

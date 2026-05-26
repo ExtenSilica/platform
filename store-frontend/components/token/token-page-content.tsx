@@ -160,7 +160,8 @@ export function TokenPageContent({ governance }: Props) {
             ))}
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Token grants are reviewed and confirmed before minting. Gaming or duplicate actions are
+            Token grants are reviewed and confirmed before treasury transfer on-chain. Gaming or
+            duplicate actions are
             disqualified.
           </p>
         </InfoSection>

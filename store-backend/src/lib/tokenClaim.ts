@@ -20,7 +20,7 @@ export async function claimApprovedTokens(
 
   if (!isOnChainClaimConfigured()) {
     throw new TokenGrantError(
-      'On-chain mint is not configured yet. Your approved balance remains off-chain.',
+      'On-chain treasury transfer is not configured yet. Your approved balance remains off-chain.',
       503,
     );
   }
@@ -34,7 +34,7 @@ export async function claimApprovedTokens(
     );
   } catch (err) {
     console.error('[tokenClaim/mint]', err);
-    throw new TokenGrantError('On-chain mint failed to execute.', 503);
+    throw new TokenGrantError('On-chain treasury transfer failed to execute.', 503);
   }
 
   await prisma.$transaction(async (tx) => {

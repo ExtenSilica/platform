@@ -4,8 +4,9 @@ import { base } from 'viem/chains';
 import { XSIL_ABI, xsilAmountToWei } from './xsilAbi';
 
 /**
- * Mint XSIL on Base via MINTER_ROLE. `amount` is whole tokens (off-chain ledger units).
- * `grantIds` are recorded in TokensClaimed for audit.
+ * Send XSIL on Base from the treasury wallet to a contributor (`transfer`).
+ * `amount` is whole tokens (off-chain ledger units). `grantIds` are logged off-chain for audit.
+ * (Legacy helper name `mintXsilTokens` — prefer treasury transfer, not per-grant mint.)
  */
 export async function mintXsilTokens(
   recipientAddress: string,

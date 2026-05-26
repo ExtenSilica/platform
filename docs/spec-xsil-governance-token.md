@@ -69,13 +69,13 @@ Frontend: RainbowKit + wagmi (`base` + `mainnet` read). Env template: `store-fro
 ### Smart contract (section 5)
 
 - Source: `contracts/src/XSILToken.sol` (Foundry + OpenZeppelin v5).
-- ERC-20, ERC20Permit, AccessControl, Pausable; `MAX_SUPPLY = 10M * 1e18`; founder 3M minted at deploy.
-- `mint(to, amount, grantIds)` — `MINTER_ROLE` only; backend uses `lib/blockchain.ts` + `xsilAbi.ts`.
+- ERC-20, ERC20Permit, AccessControl, Pausable; `MAX_SUPPLY = 10M * 1e18`; founder 3M issued at deploy.
+- Contributor payouts: `transfer` from DAO treasury wallet (see `lib/blockchain.ts`); not per-grant `mint`.
 
 ### Grant flow (section 4)
 
 - Hooks call `createTokenGrantSafe` — `PENDING` by default, `autoApprove: true` for automated actions.
-- `GET /auth/me/token-balance`, `POST /auth/me/token-claim` (mint when `XSIL_CONTRACT_ADDRESS` + minter key or `XSIL_CLAIM_STUB=true`).
+- `GET /auth/me/token-balance`, `POST /auth/me/token-claim` (treasury transfer on Base when configured, or `XSIL_CLAIM_STUB=true` in dev).
 - Admin: `GET /admin/token-grants`, `POST …/approve`, `POST …/reject`, `POST …/manual`.
 
 ## 3. Phase 2 — Aragon
@@ -88,7 +88,7 @@ Env (production) — see `store-backend/.env.example`:
 - `ARAGON_CLAIM_CONTRACT_ADDRESS` (optional)
 - `ARAGON_DAO_DESCRIPTION` (optional)
 
-On-chain claim / mint — same file:
+On-chain claim (treasury transfer) — same file:
 
 - `XSIL_CONTRACT_ADDRESS`, `XSIL_MINTER_PRIVATE_KEY`, `XSIL_RPC_URL`, `CHAIN_ID`
 - `XSIL_CLAIM_STUB=true` (dev only)

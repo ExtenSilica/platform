@@ -169,7 +169,7 @@ export function TokenDocumentationArticle() {
             <p className="mt-2">
               Each token represents verified contribution to the ExtenSilica ecosystem. Grant
               history is recorded off-chain on the platform ledger and reflected on-chain after
-              claim.
+              transfer from the DAO treasury.
             </p>
           </div>
           <div>
