@@ -35,7 +35,7 @@ export const TOKEN_DISTRIBUTION_NOTE = `Total supply is 10,000,000 XSIL. There i
 export const GOVERNANCE_VOTING_PARAMS = [
   { param: "Voting weight", value: "1 XSIL = 1 vote" },
   { param: "Approval threshold", value: ">50% of votes cast" },
-  { param: "Minimum participation", value: "10% of circulating supply" },
+  { param: "Minimum participation", value: "15% (1,500,000 XSIL)" },
   { param: "Voting period", value: "7 days" },
 ] as const;
 
