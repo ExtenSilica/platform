@@ -70,7 +70,7 @@ Frontend: RainbowKit + wagmi (`base` + `mainnet` read). Env template: `store-fro
 
 - Source: `contracts/src/XSILToken.sol` (Foundry + OpenZeppelin v5).
 - ERC-20, ERC20Permit, AccessControl, Pausable; `MAX_SUPPLY = 10M * 1e18`; founder 3M issued at deploy.
-- Contributor payouts: `transfer` from DAO treasury wallet (see `lib/blockchain.ts`); not per-grant `mint`.
+- Contributor payouts: `transferFrom` treasury → contributor via backend allowance (see `lib/blockchain.ts`); not per-grant `mint`.
 
 ### Grant flow (section 4)
 
@@ -90,9 +90,9 @@ Env (production) — see `store-backend/.env.example`:
 
 On-chain claim (treasury transfer) — same file:
 
-- `XSIL_CONTRACT_ADDRESS`, `XSIL_MINTER_PRIVATE_KEY`, `XSIL_RPC_URL`, `CHAIN_ID`
+- `XSIL_CONTRACT_ADDRESS`, `XSIL_TREASURY_ADDRESS`, `XSIL_BACKEND_ADDRESS`, `XSIL_BACKEND_PRIVATE_KEY`, `XSIL_RPC_URL`, `XSIL_CHAIN_ID`
 - `XSIL_CLAIM_STUB=true` (dev only)
-- Foundry deploy uses `ADMIN_ADDRESS` + `MINTER_ADDRESS` (not `XSIL_ADMIN_ADDRESS`)
+- Before each `transferFrom`, the API reads `allowance(treasury, backend)` on-chain; insufficient allowance returns 503 with a DAO proposal hint. XSIL-1 approved **500,000 XSIL** (from 2026-06-01).
 
 Flow:
 

@@ -1,15 +1,32 @@
-/** XSILToken — matches contracts/src/XSILToken.sol */
+/** Minimal ERC-20 surface for treasury payouts (Base mainnet XSIL). */
 export const XSIL_ABI = [
   {
     type: 'function',
-    name: 'mint',
+    name: 'transferFrom',
     inputs: [
+      { name: 'from', type: 'address' },
       { name: 'to', type: 'address' },
       { name: 'amount', type: 'uint256' },
-      { name: 'grantIds', type: 'string' },
     ],
-    outputs: [],
+    outputs: [{ type: 'bool' }],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'allowance',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ type: 'amount', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'balanceOf',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ type: 'amount', type: 'uint256' }],
+    stateMutability: 'view',
   },
 ] as const;
 

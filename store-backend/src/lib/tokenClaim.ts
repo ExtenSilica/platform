@@ -1,5 +1,9 @@
 import { prisma } from '../db';
-import { isOnChainClaimConfigured, mintXsilTokens } from './blockchain';
+import {
+  XsilTreasuryAllowanceError,
+  distributeXsilFromTreasury,
+  isOnChainClaimConfigured,
+} from './blockchain';
 import { TokenGrantError } from './tokenGrants';
 
 export async function claimApprovedTokens(
@@ -27,13 +31,16 @@ export async function claimApprovedTokens(
 
   let txHash: string;
   try {
-    txHash = await mintXsilTokens(
+    txHash = await distributeXsilFromTreasury(
       balance.linkedEvmAddress,
       amount,
       grants.map((g) => g.id),
     );
   } catch (err) {
-    console.error('[tokenClaim/mint]', err);
+    console.error('[tokenClaim/transferFrom]', err);
+    if (err instanceof XsilTreasuryAllowanceError) {
+      throw new TokenGrantError(err.message, 503);
+    }
     throw new TokenGrantError('On-chain treasury transfer failed to execute.', 503);
   }
 
