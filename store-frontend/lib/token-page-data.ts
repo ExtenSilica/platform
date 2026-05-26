@@ -1,32 +1,29 @@
-/** Static copy for SSR `/token` page (May 2026). Supply rows match on-chain XSILToken.sol. */
+/** Static copy for SSR `/token` page (May 2026). */
 
 export { XSIL_DISCLAIMER_FULL, XSIL_LEGAL_DISCLAIMER } from "@/lib/xsil-disclaimer";
 
-/** What the deployed contract actually enforces (not off-chain policy buckets). */
+export const TOKEN_SUPPLY_FOOTNOTE =
+  "No tokens are sold. No ICO. Tokens are earned through contribution or distributed from treasury via DAO governance decision.";
+
 export const TOKEN_SUPPLY_ROWS = [
   {
-    allocation: "Maximum supply (cap)",
-    amount: "10,000,000",
-    pct: "100%",
-    notes: "MAX_SUPPLY in XSILToken — hard cap",
-  },
-  {
-    allocation: "Minted at deployment",
+    allocation: "Founder",
     amount: "3,000,000",
     pct: "30%",
-    notes: "Single constructor mint to admin; no on-chain vesting",
+    notes: "Minted to founder wallet at deploy",
   },
   {
-    allocation: "Mintable via platform",
-    amount: "Up to 7,000,000",
+    allocation: "Treasury / DAO",
+    amount: "7,000,000",
     pct: "70%",
-    notes: "MINTER_ROLE — contributor claims after off-chain grant approval",
+    notes:
+      "Held by ExtenSilica DAO on Aragon; distributed to contributors via governance-approved transfers",
   },
   {
-    allocation: "Total cap",
+    allocation: "Total",
     amount: "10,000,000",
     pct: "100%",
-    notes: "Further mints cannot exceed MAX_SUPPLY",
+    notes: "",
     total: true,
   },
 ] as const;

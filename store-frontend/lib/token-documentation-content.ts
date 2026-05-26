@@ -5,7 +5,11 @@
 
 import { ARAGON_DAO_ADDRESS, ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
 import { getXsilBasescanUrl, getXsilContractAddress, XSIL_CHAIN_ID } from "@/lib/xsil-contract";
-import { TOKEN_EARN_ROWS, TOKEN_SUPPLY_ROWS } from "@/lib/token-page-data";
+import {
+  TOKEN_EARN_ROWS,
+  TOKEN_SUPPLY_FOOTNOTE,
+  TOKEN_SUPPLY_ROWS,
+} from "@/lib/token-page-data";
 import { XSIL_LEGAL_DISCLAIMER_LINES } from "@/lib/xsil-disclaimer";
 
 export const TOKEN_DOC_VERSION = "1.0";
@@ -19,7 +23,7 @@ export const TOKEN_OVERVIEW_ROWS = [
   { property: "Symbol", value: "XSIL" },
   { property: "Network", value: "Base (Ethereum L2)" },
   { property: "Chain ID", value: String(XSIL_CHAIN_ID) },
-  { property: "Maximum supply", value: "10,000,000 XSIL (on-chain cap)" },
+  { property: "Total supply", value: "10,000,000 XSIL" },
   { property: "Contract", value: xsilContract },
   { property: "Block explorer", value: xsilBasescan },
   { property: "Standard", value: "ERC-20 (permit, pausable, AccessControl mint)" },
@@ -29,7 +33,7 @@ export const TOKEN_OVERVIEW_ROWS = [
   { property: "Monetary value", value: "None today" },
 ] as const;
 
-export const ON_CHAIN_SUPPLY_NOTE = `The deployed XSILToken contract does not implement vesting schedules, cliffs, or reserved allocation buckets (no 40% / 20% / 10% splits on-chain). At deployment, 3,000,000 XSIL were minted once to the admin address. Additional tokens are minted only through addresses holding MINTER_ROLE (the platform minter used for approved contributor claims), up to the 10,000,000 cap.`;
+export const TOKEN_DISTRIBUTION_NOTE = `Total supply is 10,000,000 XSIL. There is no vesting, no ICO, and no separate Early Community or Reserve buckets. The founder allocation is minted at deploy; the treasury balance is governed by the ExtenSilica DAO on Aragon and distributed to contributors through governance-approved transfers. ${TOKEN_SUPPLY_FOOTNOTE}`;
 
 export const GOVERNANCE_VOTING_PARAMS = [
   { param: "Voting weight", value: "1 XSIL = 1 vote" },

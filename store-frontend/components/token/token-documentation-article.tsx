@@ -5,7 +5,7 @@ import {
   GOVERNANCE_SCOPE_ITEMS,
   GOVERNANCE_VOTING_PARAMS,
   LEGAL_DISCLAIMER_WHITEPAPER,
-  ON_CHAIN_SUPPLY_NOTE,
+  TOKEN_DISTRIBUTION_NOTE,
   TOKEN_SUPPLY_ROWS,
   TOKEN_DOC_CONTACT,
   TOKEN_DOC_DATE,
@@ -94,7 +94,7 @@ export function TokenDocumentationArticle() {
             ["introduction", "1. Introduction"],
             ["overview", "2. Token Overview"],
             ["purpose", "3. Token Purpose"],
-            ["distribution", "4. On-chain supply"],
+            ["distribution", "4. Token distribution"],
             ["contributions", "5. Contribution Criteria"],
             ["governance", "6. Governance"],
             ["claim", "7. Claim Process"],
@@ -161,10 +161,10 @@ export function TokenDocumentationArticle() {
           </div>
         </DocSection>
 
-        <DocSection id="distribution" title="4. On-chain supply">
-          <p>{ON_CHAIN_SUPPLY_NOTE}</p>
+        <DocSection id="distribution" title="4. Token distribution">
+          <p>{TOKEN_DISTRIBUTION_NOTE}</p>
           <DataTable
-            headers={["Element", "Amount", "%", "Notes"]}
+            headers={["Allocation", "Amount", "%", "Notes"]}
             rows={TOKEN_SUPPLY_ROWS.map((r) => [r.allocation, r.amount, r.pct, r.notes])}
           />
         </DocSection>

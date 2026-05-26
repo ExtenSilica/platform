@@ -14,28 +14,23 @@ export const TOKEN_ACCRUAL_AMOUNTS: Partial<Record<TokenGrantReason, number>> = 
 
 export const TOKEN_SUPPLY_ROWS = [
   {
-    allocation: 'Maximum supply (cap)',
-    amount: '10,000,000',
-    pct: '100%',
-    notes: 'MAX_SUPPLY in XSILToken — hard cap',
-  },
-  {
-    allocation: 'Minted at deployment',
+    allocation: 'Founder',
     amount: '3,000,000',
     pct: '30%',
-    notes: 'Single constructor mint to admin; no on-chain vesting',
+    notes: 'Minted to founder wallet at deploy',
   },
   {
-    allocation: 'Mintable via platform',
-    amount: 'Up to 7,000,000',
+    allocation: 'Treasury / DAO',
+    amount: '7,000,000',
     pct: '70%',
-    notes: 'MINTER_ROLE — contributor claims after off-chain grant approval',
+    notes:
+      'Held by ExtenSilica DAO on Aragon; distributed to contributors via governance-approved transfers',
   },
   {
-    allocation: 'Total cap',
+    allocation: 'Total',
     amount: '10,000,000',
     pct: '100%',
-    notes: 'Further mints cannot exceed MAX_SUPPLY',
+    notes: '',
     total: true,
   },
 ] as const;

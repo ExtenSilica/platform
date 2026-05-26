@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { InfoPage, InfoSection } from "@/components/info-page";
 import type { GovernancePublic } from "@/lib/api";
-import { TOKEN_EARN_ROWS, TOKEN_SUPPLY_ROWS, WHAT_IS_XSIL } from "@/lib/token-page-data";
+import {
+  TOKEN_EARN_ROWS,
+  TOKEN_SUPPLY_FOOTNOTE,
+  TOKEN_SUPPLY_ROWS,
+  WHAT_IS_XSIL,
+} from "@/lib/token-page-data";
 import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 import { TokenHeroActions } from "@/components/token/token-hero-actions";
 import { TokenClaimSection } from "@/components/token/token-claim-section";
@@ -59,7 +64,7 @@ export function TokenPageContent({ governance }: Props) {
           </div>
         </InfoSection>
 
-        <InfoSection id="tokenomics" title="On-chain supply">
+        <InfoSection id="tokenomics" title="Token distribution">
           <div className="mb-6 rounded-lg border bg-muted/20 p-4 text-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               XSILToken on Base (chain {XSIL_CHAIN_ID})
@@ -78,7 +83,7 @@ export function TokenPageContent({ governance }: Props) {
             <table className="w-full min-w-[520px] text-sm">
               <thead>
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Element</th>
+                  <th className="px-4 py-3 font-medium">Allocation</th>
                   <th className="px-4 py-3 font-medium">Amount</th>
                   <th className="px-4 py-3 font-medium">%</th>
                   <th className="px-4 py-3 font-medium">Notes</th>
@@ -99,11 +104,7 @@ export function TokenPageContent({ governance }: Props) {
               </tbody>
             </table>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            The contract does not enforce vesting cliffs or 40/20/10 allocation buckets — only a
-            10M cap, a one-time 3M deploy mint, and further mints via <code className="text-xs">MINTER_ROLE</code>{" "}
-            for approved contributor claims. No tokens are sold. No ICO.
-          </p>
+          <p className="mt-4 text-sm text-muted-foreground">{TOKEN_SUPPLY_FOOTNOTE}</p>
         </InfoSection>
 
         <InfoSection id="earn" title="Earn XSIL by contributing">
