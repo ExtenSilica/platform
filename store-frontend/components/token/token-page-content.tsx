@@ -2,6 +2,8 @@ import Link from "next/link";
 import { InfoPage, InfoSection } from "@/components/info-page";
 import type { GovernancePublic } from "@/lib/api";
 import {
+  GOVERNANCE_VOTING_PARAMS,
+  TOKEN_DISTRIBUTION_INTRO,
   TOKEN_EARN_ROWS,
   TOKEN_SUPPLY_FOOTNOTE,
   TOKEN_SUPPLY_ROWS,
@@ -68,8 +70,9 @@ export function TokenPageContent({ governance }: Props) {
           </div>
         </InfoSection>
 
-        <InfoSection id="tokenomics" title="Token distribution">
-          <div className="mb-6 rounded-lg border bg-muted/20 p-4 text-sm">
+        <InfoSection id="tokenomics" title="Token Supply">
+          <p className="text-sm leading-relaxed text-muted-foreground">{TOKEN_DISTRIBUTION_INTRO}</p>
+          <div className="mb-6 mt-4 rounded-lg border bg-muted/20 p-4 text-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               XSILToken on Base (chain {XSIL_CHAIN_ID})
             </p>
@@ -170,13 +173,17 @@ export function TokenPageContent({ governance }: Props) {
 
         <InfoSection id="governance-dao" title="Participate in governance">
           <p className="leading-relaxed text-muted-foreground">
-            ExtenSilica is governed by XSIL token holders via Aragon DAO. Token holders vote on
-            platform decisions including feature priorities, registry policies, and future token
-            distribution.
-          </p>
-          <p className="mt-3 leading-relaxed text-muted-foreground">
-            Governance is active when meaningful decisions require community input. Early-stage
-            votes focus on registry policies and prioritization.
+            ExtenSilica is governed by XSIL token holders through the{" "}
+            <a
+              href={aragonUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              ExtenSilica DAO on Aragon
+            </a>{" "}
+            (Base). Token holders vote on registry policies, treasury distributions to
+            contributors, and platform priorities.
           </p>
           <div className="mt-6 flex flex-col gap-4 rounded-lg border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -205,18 +212,27 @@ export function TokenPageContent({ governance }: Props) {
           <p className="mt-3 font-mono text-xs text-muted-foreground">
             DAO on Base: {governance?.aragon?.daoAddress ?? ARAGON_DAO_ADDRESS}
           </p>
+          <div className="mt-6 overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[320px] text-sm">
+              <thead>
+                <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">Parameter</th>
+                  <th className="px-4 py-3 font-medium">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {GOVERNANCE_VOTING_PARAMS.map((row) => (
+                  <tr key={row.param} className="border-b last:border-0">
+                    <td className="px-4 py-3 font-medium text-foreground">{row.param}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Voting requires XSIL tokens on-chain. Connect your wallet and claim your tokens to
-            participate. View proposals and cast votes on{" "}
-            <a
-              href={aragonUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
-            >
-              Aragon
-            </a>
-            .
+            Voting requires XSIL on-chain. Earn or receive tokens from the DAO treasury, connect
+            your wallet on this page, then open Aragon to view proposals and cast votes.
           </p>
         </InfoSection>
 

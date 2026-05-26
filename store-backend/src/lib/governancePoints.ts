@@ -17,7 +17,7 @@ export const TOKEN_SUPPLY_ROWS = [
     allocation: 'Founder',
     amount: '3,000,000',
     pct: '30%',
-    notes: 'Founder wallet at deploy (30% of total supply)',
+    notes: 'Minted to founder wallet at deploy',
   },
   {
     allocation: 'Treasury / DAO',

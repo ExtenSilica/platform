@@ -94,7 +94,7 @@ export function TokenDocumentationArticle() {
             ["introduction", "1. Introduction"],
             ["overview", "2. Token Overview"],
             ["purpose", "3. Token Purpose"],
-            ["distribution", "4. Token distribution"],
+            ["distribution", "4. Token Distribution"],
             ["contributions", "5. Contribution Criteria"],
             ["governance", "6. Governance"],
             ["claim", "7. Claim Process"],
@@ -129,18 +129,29 @@ export function TokenDocumentationArticle() {
             headers={["Property", "Value"]}
             rows={TOKEN_OVERVIEW_ROWS.map((r) => [r.property, r.value])}
           />
+          <p className="text-sm">
+            <span className="font-medium text-foreground">Contract: </span>
+            <a
+              href={XSIL_BASESCAN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-primary underline break-all"
+            >
+              {XSIL_CONTRACT_ADDRESS}
+            </a>
+          </p>
           <div className="space-y-4">
             <div className="rounded-lg border bg-muted/20 p-4 text-sm">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Contract (Base)
+                Block explorer (Basescan)
               </p>
               <a
                 href={XSIL_BASESCAN_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 block font-mono text-xs break-all text-primary underline"
+                className="mt-2 block text-sm text-primary underline break-all"
               >
-                {XSIL_CONTRACT_ADDRESS}
+                {XSIL_BASESCAN_URL}
               </a>
             </div>
             <div className="rounded-lg border bg-muted/20 p-4 text-sm">
@@ -190,7 +201,7 @@ export function TokenDocumentationArticle() {
           </div>
         </DocSection>
 
-        <DocSection id="distribution" title="4. Token distribution">
+        <DocSection id="distribution" title="4. Token Distribution">
           <p>{TOKEN_DISTRIBUTION_NOTE}</p>
           <DataTable
             headers={["Allocation", "Amount", "%", "Notes"]}

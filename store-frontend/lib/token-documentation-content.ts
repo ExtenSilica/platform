@@ -10,6 +10,8 @@ import {
   XSIL_CONTRACT_ADDRESS,
 } from "@/lib/xsil-contract";
 import {
+  GOVERNANCE_VOTING_PARAMS,
+  TOKEN_DISTRIBUTION_INTRO,
   TOKEN_EARN_ROWS,
   TOKEN_SUPPLY_FOOTNOTE,
   TOKEN_SUPPLY_ROWS,
@@ -25,19 +27,13 @@ export const TOKEN_OVERVIEW_ROWS = [
   { property: "Network", value: "Base (Ethereum L2)" },
   { property: "Chain ID", value: String(XSIL_CHAIN_ID) },
   { property: "Total supply", value: "10,000,000 XSIL" },
+  { property: "Contract", value: XSIL_CONTRACT_ADDRESS },
   { property: "Standard", value: "ERC-20 (permit, pausable)" },
   { property: "Governance DAO", value: "ExtenSilica DAO on Aragon (Base)" },
   { property: "Monetary value", value: "None today" },
 ] as const;
 
-export const TOKEN_DISTRIBUTION_NOTE = `Total supply is 10,000,000 XSIL. The founder allocation is issued at deploy; the remaining supply is held in the ExtenSilica DAO treasury on Aragon and distributed to contributors through governance-approved transfers. ${TOKEN_SUPPLY_FOOTNOTE}`;
-
-export const GOVERNANCE_VOTING_PARAMS = [
-  { param: "Voting weight", value: "1 XSIL = 1 vote" },
-  { param: "Approval threshold", value: ">50% of votes cast" },
-  { param: "Minimum participation", value: "15% (1,500,000 XSIL)" },
-  { param: "Voting period", value: "7 days" },
-] as const;
+export const TOKEN_DISTRIBUTION_NOTE = `${TOKEN_DISTRIBUTION_INTRO} ${TOKEN_SUPPLY_FOOTNOTE}`;
 
 export const GOVERNANCE_SCOPE_ITEMS = [
   "Registry policies (portStatus, readiness criteria)",
@@ -73,4 +69,4 @@ export const TOKEN_DOC_CONTACT = {
   github: "https://github.com/ExtenSilica",
 } as const;
 
-export { TOKEN_EARN_ROWS, TOKEN_SUPPLY_ROWS };
+export { GOVERNANCE_VOTING_PARAMS, TOKEN_EARN_ROWS, TOKEN_SUPPLY_ROWS };

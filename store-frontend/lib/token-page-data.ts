@@ -5,12 +5,22 @@ export { XSIL_DISCLAIMER_FULL, XSIL_LEGAL_DISCLAIMER } from "@/lib/xsil-disclaim
 export const TOKEN_SUPPLY_FOOTNOTE =
   "No tokens are sold. No ICO. Tokens are earned through contribution or distributed from treasury via DAO governance decision.";
 
+export const TOKEN_DISTRIBUTION_INTRO =
+  "Total supply is 10,000,000 XSIL. The founder allocation is issued at deploy; the remaining supply is held in the ExtenSilica DAO treasury on Aragon and distributed to contributors through governance-approved transfers.";
+
+export const GOVERNANCE_VOTING_PARAMS = [
+  { param: "Voting weight", value: "1 XSIL = 1 vote" },
+  { param: "Approval threshold", value: ">50% of votes cast" },
+  { param: "Minimum participation", value: "15% (1,500,000 XSIL)" },
+  { param: "Voting period", value: "7 days" },
+] as const;
+
 export const TOKEN_SUPPLY_ROWS = [
   {
     allocation: "Founder",
     amount: "3,000,000",
     pct: "30%",
-    notes: "Founder wallet at deploy (30% of total supply)",
+    notes: "Minted to founder wallet at deploy",
   },
   {
     allocation: "Treasury / DAO",
