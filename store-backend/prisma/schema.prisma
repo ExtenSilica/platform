@@ -204,6 +204,23 @@ enum PortStatus {
   archived
 }
 
+/// Coupling style declared by the extension for compatibility planning.
+enum Coupling {
+  TIGHTLY_COUPLED
+  LOOSELY_COUPLED
+  HYBRID
+  UNKNOWN
+}
+
+/// Primary dispatch mechanism used by the extension implementation.
+enum Dispatch {
+  INLINE
+  ROCC
+  PREFIX
+  TRAP_EMULATE
+  UNKNOWN
+}
+
 // ── Organisations ─────────────────────────────────────────────
 
 model Organization {
@@ -271,6 +288,16 @@ model Extension {
   /// Provenance on ExtenSilica. SERVER-SET ONLY — never copied from the
   /// uploaded manifest. Null for legacy packages predating this field.
   portStatus           PortStatus?
+  /// Compatibility metadata (Feature B).
+  coupling             Coupling           @default(UNKNOWN)
+  /// Claimed custom encoding spaces (e.g. custom-0/custom-1).
+  encodingSpace        String[]           @default([])
+  /// Claimed CSR ranges (e.g. "0x800-0x8FF").
+  csrRange             String[]           @default([])
+  /// Runtime dispatch mechanism used by this extension.
+  dispatch             Dispatch           @default(UNKNOWN)
+  /// Core features required by the extension (e.g. rocc-interface).
+  requiresCoreFeatures String[]           @default([])
   /// Required audit trail when `portStatus` is set to `official` (platform admin only).
   portStatusDecisionNote String?
   portStatusDecidedById  Int?
@@ -283,6 +310,7 @@ model Extension {
   externalCitations    ExternalCitation[]
   ownershipRequests    OwnershipRequest[]
   implementationRequests ImplementationRequest[]
+  instructions         Instruction[]
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
@@ -293,6 +321,35 @@ model Extension {
   @@index([latestReadinessLevel])
   @@index([standardStatus])
   @@index([portStatus])
+}
+
+/// Normalized instruction encodings extracted from package opcodes.json on publish.
+/// Queryable/indexed source of truth for collision analysis and compatibility tooling.
+model Instruction {
+  id          Int       @id @default(autoincrement())
+  extensionId Int
+  /// Version string this encoding was extracted from.
+  version     String
+  mnemonic    String
+  /// 7-bit major opcode as integer (0..127).
+  opcode      Int
+  /// Optional 3-bit funct field.
+  funct3      Int?
+  /// Optional 7-bit funct field.
+  funct7      Int?
+  /// R, I, S, B, U, J, R4, custom...
+  format      String
+  /// Optional CSR address tied to the instruction.
+  csrAddress  Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  extension Extension @relation(fields: [extensionId], references: [id], onDelete: Cascade)
+
+  @@index([extensionId])
+  @@index([extensionId, version])
+  @@index([opcode, funct3, funct7])
+  @@index([csrAddress])
 }
 
 model Maintainer {

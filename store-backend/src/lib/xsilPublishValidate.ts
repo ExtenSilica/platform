@@ -132,6 +132,15 @@ export interface ManifestJson {
   checksums?: { payload?: string; archive?: string };
 }
 
+export interface ParsedInstructionEncoding {
+  mnemonic: string;
+  format: string;
+  opcode: number;
+  funct3: number | null;
+  funct7: number | null;
+  csrAddress: number | null;
+}
+
 const EVIDENCE_KINDS = new Set(['documentation', 'ci', 'artifact', 'other']);
 const EVIDENCE_MAX_ITEMS = 24;
 const EVIDENCE_LABEL_MAX = 200;
@@ -302,8 +311,89 @@ export interface ValidatePublishedXsilResult {
   /** `sha256:<hex>` for Version.checksumPayload */
   checksumPayloadStored: string;
   manifest: ManifestJson;
+  instructionEncodings: ParsedInstructionEncoding[];
   /** Canonical JSON array for `Version.evidence`, or null when omitted / empty */
   evidenceJson: string | null;
+}
+
+function parseIntegerLike(raw: unknown): number | null {
+  if (typeof raw === 'number' && Number.isInteger(raw) && Number.isFinite(raw)) return raw;
+  if (typeof raw !== 'string') return null;
+  const v = raw.trim().toLowerCase();
+  if (!v) return null;
+  if (/^0x[0-9a-f]+$/.test(v)) return Number.parseInt(v.slice(2), 16);
+  if (/^0b[01]+$/.test(v)) return Number.parseInt(v.slice(2), 2);
+  if (/^\d+$/.test(v)) return Number.parseInt(v, 10);
+  return null;
+}
+
+function parseOpcode(raw: unknown): number | null {
+  if (typeof raw === 'string') {
+    switch (raw.trim().toLowerCase()) {
+      case 'custom-0':
+        return 0x0b;
+      case 'custom-1':
+        return 0x2b;
+      case 'custom-2':
+        return 0x5b;
+      case 'custom-3':
+        return 0x7b;
+      default:
+        break;
+    }
+  }
+  const parsed = parseIntegerLike(raw);
+  if (parsed == null || parsed < 0 || parsed > 0x7f) return null;
+  return parsed;
+}
+
+function parseFunct(raw: unknown, bits: 3 | 7): number | null {
+  const parsed = parseIntegerLike(raw);
+  if (parsed == null) return null;
+  const max = bits === 3 ? 0b111 : 0b1111111;
+  if (parsed < 0 || parsed > max) return null;
+  return parsed;
+}
+
+function parseCsr(raw: unknown): number | null {
+  const parsed = parseIntegerLike(raw);
+  if (parsed == null || parsed < 0 || parsed > 0x0fff) return null;
+  return parsed;
+}
+
+function parseInstructionEncodings(opcodesRaw: unknown): ParsedInstructionEncoding[] {
+  const rows =
+    opcodesRaw &&
+    typeof opcodesRaw === 'object' &&
+    Array.isArray((opcodesRaw as Record<string, unknown>).instructions)
+      ? ((opcodesRaw as Record<string, unknown>).instructions as unknown[])
+      : Array.isArray(opcodesRaw)
+        ? opcodesRaw
+        : [];
+  const out: ParsedInstructionEncoding[] = [];
+  for (const [idx, rowRaw] of rows.entries()) {
+    if (!rowRaw || typeof rowRaw !== 'object' || Array.isArray(rowRaw)) continue;
+    const row = rowRaw as Record<string, unknown>;
+    const opcode = parseOpcode(row.opcode);
+    if (opcode == null) continue;
+    const mnemonic =
+      typeof row.mnemonic === 'string' && row.mnemonic.trim()
+        ? row.mnemonic.trim()
+        : `instruction_${idx + 1}`;
+    const format =
+      typeof row.format === 'string' && row.format.trim()
+        ? row.format.trim().toUpperCase()
+        : 'CUSTOM';
+    out.push({
+      mnemonic,
+      format,
+      opcode,
+      funct3: parseFunct(row.funct3, 3),
+      funct7: parseFunct(row.funct7, 7),
+      csrAddress: parseCsr(row.csrAddress ?? row.csr ?? row.csr_address),
+    });
+  }
+  return out;
 }
 
 /**
@@ -349,6 +439,21 @@ export function validatePublishedXsilBuffer(
 
     const manifest = readManifest(extractDir);
     validatePublishManifestFields(manifest);
+    let opcodesRaw: unknown = null;
+    const opcodesPath = path.join(extractDir, 'opcodes.json');
+    if (fs.existsSync(opcodesPath)) {
+      let text = '';
+      try {
+        text = fs.readFileSync(opcodesPath, 'utf8');
+      } catch {
+        throw new XsilValidationError('Could not read opcodes.json.');
+      }
+      try {
+        opcodesRaw = JSON.parse(text);
+      } catch {
+        throw new XsilValidationError('opcodes.json is not valid JSON.');
+      }
+    }
 
     if (manifest.name!.trim() !== opts.slug) {
       throw new XsilValidationError(
@@ -382,10 +487,12 @@ export function validatePublishedXsilBuffer(
     }
 
     const evidenceJson = validateAndStringifyManifestEvidence(manifest.evidence);
+    const instructionEncodings = parseInstructionEncodings(opcodesRaw);
 
     return {
       checksumPayloadStored: `sha256:${computedPayloadHex}`,
       manifest,
+      instructionEncodings,
       evidenceJson,
     };
   } finally {

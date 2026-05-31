@@ -13,6 +13,7 @@ import { computeLatestVersion } from '../lib/packageLatestVersion';
 import {
   validatePublishedXsilBuffer,
   XsilValidationError,
+  type ParsedInstructionEncoding,
 } from '../lib/xsilPublishValidate';
 import { storage } from '../storage';
 import {
@@ -115,6 +116,57 @@ function firstFormString(body: Record<string, unknown>, key: string): string | u
   return typeof v === 'string' ? v : undefined;
 }
 
+function normalizeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out = value
+    .map((v) => (typeof v === 'string' ? v.trim() : ''))
+    .filter((v) => v.length > 0);
+  return Array.from(new Set(out));
+}
+
+type CouplingValue = 'TIGHTLY_COUPLED' | 'LOOSELY_COUPLED' | 'HYBRID' | 'UNKNOWN';
+type DispatchValue = 'INLINE' | 'ROCC' | 'PREFIX' | 'TRAP_EMULATE' | 'UNKNOWN';
+
+function normalizeCoupling(raw: unknown): CouplingValue {
+  if (typeof raw !== 'string') return 'UNKNOWN';
+  const key = raw.trim().toUpperCase();
+  switch (key) {
+    case 'TIGHTLY_COUPLED':
+    case 'LOOSELY_COUPLED':
+    case 'HYBRID':
+    case 'UNKNOWN':
+      return key;
+    default:
+      return 'UNKNOWN';
+  }
+}
+
+function normalizeDispatch(raw: unknown): DispatchValue {
+  if (typeof raw !== 'string') return 'UNKNOWN';
+  const key = raw.trim().toUpperCase();
+  switch (key) {
+    case 'INLINE':
+    case 'ROCC':
+    case 'PREFIX':
+    case 'TRAP_EMULATE':
+    case 'UNKNOWN':
+      return key;
+    default:
+      return 'UNKNOWN';
+  }
+}
+
+function mapInstructionCreateRows(instructions: ParsedInstructionEncoding[]) {
+  return instructions.map((ins) => ({
+    mnemonic: ins.mnemonic,
+    format: ins.format,
+    opcode: ins.opcode,
+    funct3: ins.funct3,
+    funct7: ins.funct7,
+    csrAddress: ins.csrAddress,
+  }));
+}
+
 function isExtensilicaArtifactUrl(urlRaw: string, baseUrl: string): boolean {
   try {
     const url = new URL(urlRaw);
@@ -183,6 +235,12 @@ export function mapPackage(
     standardStatus: ext.standardStatus ?? null,
     authority: ext.authority ?? null,
     portStatus: (ext as Extension & { portStatus?: PortStatus | null }).portStatus ?? null,
+    coupling: (ext as Extension & { coupling?: string | null }).coupling ?? 'UNKNOWN',
+    encodingSpace: (ext as Extension & { encodingSpace?: string[] | null }).encodingSpace ?? [],
+    csrRange: (ext as Extension & { csrRange?: string[] | null }).csrRange ?? [],
+    dispatch: (ext as Extension & { dispatch?: string | null }).dispatch ?? 'UNKNOWN',
+    requiresCoreFeatures:
+      (ext as Extension & { requiresCoreFeatures?: string[] | null }).requiresCoreFeatures ?? [],
     portStatusDecisionNote:
       (ext as Extension & { portStatusDecisionNote?: string | null }).portStatusDecisionNote ??
       null,
@@ -470,13 +528,29 @@ export const createPackage = async (req: Request, res: Response) => {
     iconUrl,
     standardStatus: standardStatusRaw,
     authority: authorityRaw,
-  } = req.body as Record<string, string | undefined>;
+    coupling: couplingRaw,
+    encodingSpace: encodingSpaceRaw,
+    csrRange: csrRangeRaw,
+    dispatch: dispatchRaw,
+    requiresCoreFeatures: requiresCoreFeaturesRaw,
+  } = req.body as Record<string, unknown>;
 
-  if (!name?.trim()) {
+  const nameStr = typeof name === 'string' ? name : '';
+  const descriptionStr = typeof description === 'string' ? description : '';
+  const shortDescriptionStr = typeof shortDescription === 'string' ? shortDescription : '';
+  const longDescriptionStr = typeof longDescription === 'string' ? longDescription : '';
+  const keywordsStr = typeof keywords === 'string' ? keywords : '';
+  const licenseStr = typeof license === 'string' ? license : '';
+  const repositoryUrlStr = typeof repositoryUrl === 'string' ? repositoryUrl : '';
+  const homepageUrlStr = typeof homepageUrl === 'string' ? homepageUrl : '';
+  const iconUrlStr = typeof iconUrl === 'string' ? iconUrl : '';
+  const scopeStr = typeof scope === 'string' ? scope : '';
+
+  if (!nameStr.trim()) {
     res.status(400).json({ error: 'Package name is required.' });
     return;
   }
-  if (!description?.trim()) {
+  if (!descriptionStr.trim()) {
     res.status(400).json({ error: 'Package description is required.' });
     return;
   }
@@ -492,9 +566,14 @@ export const createPackage = async (req: Request, res: Response) => {
     return;
   }
   const authority = normalizeAuthority(authorityRaw);
+  const coupling = normalizeCoupling(couplingRaw);
+  const dispatch = normalizeDispatch(dispatchRaw);
+  const encodingSpace = normalizeStringList(encodingSpaceRaw);
+  const csrRange = normalizeStringList(csrRangeRaw);
+  const requiresCoreFeatures = normalizeStringList(requiresCoreFeaturesRaw);
 
   // Normalise the package name part (no @ or org prefix)
-  const pkgName = name
+  const pkgName = nameStr
     .trim()
     .toLowerCase()
     .replace(/\s+/g, '-')
@@ -513,9 +592,9 @@ export const createPackage = async (req: Request, res: Response) => {
   let finalSlug = pkgName;
   let orgId: number | null = null;
 
-  if (scope) {
+  if (scopeStr) {
     // Accept "@orgslug" or "orgslug"
-    const orgSlug = scope.replace(/^@/, '').trim().toLowerCase();
+    const orgSlug = scopeStr.replace(/^@/, '').trim().toLowerCase();
 
     if (!/^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$|^[a-z0-9]{1,2}$/.test(orgSlug)) {
       res.status(400).json({ error: 'Invalid org scope format.' });
@@ -551,20 +630,25 @@ export const createPackage = async (req: Request, res: Response) => {
     const pkg = await prisma.extension.create({
       data: {
         slug: finalSlug,
-        name: name.trim(),
-        description: description.trim(),
-        shortDescription: shortDescription?.trim() || null,
-        longDescription: longDescription?.trim() || null,
+        name: nameStr.trim(),
+        description: descriptionStr.trim(),
+        shortDescription: shortDescriptionStr.trim() || null,
+        longDescription: longDescriptionStr.trim() || null,
         author: user.username,
         ownerId: user.id,
         orgId,
-        keywords: typeof keywords === 'string' ? keywords.trim() : '',
-        license: license?.trim() || null,
-        repositoryUrl: repositoryUrl?.trim() || null,
-        homepageUrl: homepageUrl?.trim() || null,
-        iconUrl: iconUrl?.trim() || null,
+        keywords: keywordsStr.trim(),
+        license: licenseStr.trim() || null,
+        repositoryUrl: repositoryUrlStr.trim() || null,
+        homepageUrl: homepageUrlStr.trim() || null,
+        iconUrl: iconUrlStr.trim() || null,
         standardStatus: standardStatus ?? null,
         authority,
+        coupling,
+        dispatch,
+        encodingSpace,
+        csrRange,
+        requiresCoreFeatures,
         // SERVER-SET provenance: only the catalog-seed bot gets `seeded`
         // automatically. Regular publishers leave the field null so the
         // detail page does not falsely advertise an unverified port.
@@ -671,6 +755,19 @@ export const publishVersion = async (req: Request, res: Response) => {
     const mfToolchain = mf.toolchain != null ? JSON.stringify(mf.toolchain) : '';
     const mfExecution = mf.execution != null ? JSON.stringify(mf.execution) : '';
     const mfDeps = mf.dependencies != null ? JSON.stringify(mf.dependencies) : '';
+    const mfEncodingSpace = normalizeStringList((mf as Record<string, unknown>).encodingSpace);
+    const mfCsrRange = normalizeStringList((mf as Record<string, unknown>).csrRange);
+    const mfRequiresCoreFeatures = normalizeStringList(
+      (mf as Record<string, unknown>).requiresCoreFeatures
+    );
+    const hasMfCoupling = (mf as Record<string, unknown>).coupling !== undefined;
+    const hasMfDispatch = (mf as Record<string, unknown>).dispatch !== undefined;
+    const hasMfEncodingSpace = (mf as Record<string, unknown>).encodingSpace !== undefined;
+    const hasMfCsrRange = (mf as Record<string, unknown>).csrRange !== undefined;
+    const hasMfRequiresCoreFeatures =
+      (mf as Record<string, unknown>).requiresCoreFeatures !== undefined;
+    const mfCoupling = normalizeCoupling((mf as Record<string, unknown>).coupling);
+    const mfDispatch = normalizeDispatch((mf as Record<string, unknown>).dispatch);
     const mfResolution =
       mf.resolution && typeof mf.resolution === 'object' && (mf.resolution as Record<string, unknown>).mode
         ? String((mf.resolution as Record<string, unknown>).mode)
@@ -778,6 +875,15 @@ export const publishVersion = async (req: Request, res: Response) => {
             : {}),
         },
       });
+      if (validated.instructionEncodings.length > 0) {
+        await prisma.instruction.createMany({
+          data: mapInstructionCreateRows(validated.instructionEncodings).map((row) => ({
+            extensionId: pkg.id,
+            version,
+            ...row,
+          })),
+        });
+      }
     } catch (dbError) {
       // DB write failed after the file was stored — attempt to clean up the blob.
       await storage.delete(key).catch(() => {});
@@ -801,6 +907,21 @@ export const publishVersion = async (req: Request, res: Response) => {
     }
     if (mfAuthority !== null) {
       extensionUpdate.authority = mfAuthority;
+    }
+    if (hasMfCoupling) {
+      extensionUpdate.coupling = mfCoupling;
+    }
+    if (hasMfDispatch) {
+      extensionUpdate.dispatch = mfDispatch;
+    }
+    if (hasMfEncodingSpace) {
+      extensionUpdate.encodingSpace = mfEncodingSpace;
+    }
+    if (hasMfCsrRange) {
+      extensionUpdate.csrRange = mfCsrRange;
+    }
+    if (hasMfRequiresCoreFeatures) {
+      extensionUpdate.requiresCoreFeatures = mfRequiresCoreFeatures;
     }
     await prisma.extension.update({
       where: { id: pkg.id },
@@ -858,7 +979,12 @@ export const updatePackage = async (req: Request, res: Response) => {
       license, repositoryUrl, homepageUrl, iconUrl, isDeprecated, deprecationMessage,
       standardStatus: standardStatusRaw, authority: authorityRaw,
       portStatus: portStatusRaw,
-    } = req.body as Record<string, string | boolean | undefined>;
+      coupling: couplingRaw,
+      encodingSpace: encodingSpaceRaw,
+      csrRange: csrRangeRaw,
+      dispatch: dispatchRaw,
+      requiresCoreFeatures: requiresCoreFeaturesRaw,
+    } = req.body as Record<string, unknown>;
 
     // Validate deprecationMessage length
     if (deprecationMessage !== undefined && typeof deprecationMessage === 'string' && deprecationMessage.length > 500) {
@@ -886,6 +1012,18 @@ export const updatePackage = async (req: Request, res: Response) => {
       authorityRaw === undefined
         ? null
         : { authority: normalizeAuthority(authorityRaw) };
+    const couplingUpdate =
+      couplingRaw === undefined ? null : { coupling: normalizeCoupling(couplingRaw) };
+    const dispatchUpdate =
+      dispatchRaw === undefined ? null : { dispatch: normalizeDispatch(dispatchRaw) };
+    const encodingSpaceUpdate =
+      encodingSpaceRaw === undefined ? null : { encodingSpace: normalizeStringList(encodingSpaceRaw) };
+    const csrRangeUpdate =
+      csrRangeRaw === undefined ? null : { csrRange: normalizeStringList(csrRangeRaw) };
+    const requiresCoreFeaturesUpdate =
+      requiresCoreFeaturesRaw === undefined
+        ? null
+        : { requiresCoreFeatures: normalizeStringList(requiresCoreFeaturesRaw) };
 
     // Port status is SERVER-SIDE provenance — only platform admins may set it
     // directly (e.g. `official` requires portStatusDecisionNote). Owners may
@@ -931,6 +1069,11 @@ export const updatePackage = async (req: Request, res: Response) => {
         }),
         ...(standardStatusUpdate ?? {}),
         ...(authorityUpdate ?? {}),
+        ...(couplingUpdate ?? {}),
+        ...(dispatchUpdate ?? {}),
+        ...(encodingSpaceUpdate ?? {}),
+        ...(csrRangeUpdate ?? {}),
+        ...(requiresCoreFeaturesUpdate ?? {}),
         ...(portStatusUpdate ?? {}),
       },
       include: { versions: { orderBy: { publishedAt: 'desc' } } },

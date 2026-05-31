@@ -21,6 +21,7 @@ import wizardRoutes from './routes/wizard';
 import meRoutes from './routes/me';
 import implementationRequestRoutes from './routes/implementationRequests';
 import submissionRoutes from './routes/submissions';
+import collisionRoutes from './routes/collision';
 import { initStorage, storage } from './storage';
 import { specs } from './swagger';
 import { prisma } from './db';
@@ -192,6 +193,9 @@ app.use('/api/artifacts', artifactRoutes);
 // POST /wizard/generate — public; returns a `.xsil` skeleton (gzip tar).
 app.use('/wizard', wizardRoutes);
 app.use('/api/wizard', wizardRoutes);
+
+// ── Collision detection API (shared with CLI contracts) ─────────────────────
+app.use('/api', collisionRoutes);
 
 // ── Legal submissions ───────────────────────────────────────────
 // POST /legal/dmca — DMCA / IP takedown request (rate-limited)
