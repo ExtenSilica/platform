@@ -430,7 +430,7 @@ export async function fetchPackage(
 export async function fetchPackageConflicts(
   extensionId: number | string
 ): Promise<ExtensionConflictsResponse | null> {
-  const res = await fetch(`${API_BASE}/package/${extensionId}/conflicts`, {
+  const res = await fetch(`${API_BASE}/api/package/${extensionId}/conflicts`, {
     cache: "no-store",
   });
   if (res.status === 404) return null;
@@ -819,7 +819,7 @@ export async function apiGenerateXsil(input: WizardInput): Promise<{
 export async function apiCheckOpcode(
   body: CheckOpcodeRequest
 ): Promise<CheckOpcodeResponse> {
-  return apiPostPublic<CheckOpcodeResponse>("/opcodes/check", body);
+  return apiPostPublic<CheckOpcodeResponse>("/api/opcodes/check", body);
 }
 
 export async function apiResolveArtifacts(
