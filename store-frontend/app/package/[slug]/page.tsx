@@ -5,11 +5,18 @@ import ReactMarkdown from "react-markdown";
 
 import {
   fetchPackage,
+  fetchPackageConflicts,
+  fetchPackages,
   fetchPackageReviews,
   fetchPackageStats,
   fetchPackageCitation,
 } from "@/lib/api";
-import type { RegistryVersion, Review, PackageStats } from "@/lib/types";
+import type {
+  RegistryVersion,
+  Review,
+  PackageStats,
+  ExtensionConflict,
+} from "@/lib/types";
 import {
   targetsDisplayFromJson,
   toolchainToString,
@@ -47,6 +54,7 @@ import {
   XCircle,
   Link2,
   BadgeCheck,
+  AlertCircle,
 } from "lucide-react";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -174,6 +182,43 @@ export default async function PackagePage({
 
   if (!pkg) notFound();
 
+  const conflictsResponse = await fetchPackageConflicts(pkg.id).catch(() => null);
+  const conflicts = conflictsResponse?.conflicts ?? [];
+  const conflictsByExtension = new Map<
+    string,
+    {
+      withExtensionId: string;
+      withExtensionName: string;
+      severity: "FATAL" | "WARNING";
+      items: ExtensionConflict[];
+    }
+  >();
+  for (const row of conflicts) {
+    const existing = conflictsByExtension.get(row.withExtensionId);
+    if (!existing) {
+      conflictsByExtension.set(row.withExtensionId, {
+        withExtensionId: row.withExtensionId,
+        withExtensionName: row.withExtensionName,
+        severity: row.severity,
+        items: [row],
+      });
+      continue;
+    }
+    existing.items.push(row);
+    if (row.severity === "FATAL") existing.severity = "FATAL";
+  }
+  const conflictGroups = Array.from(conflictsByExtension.values()).sort((a, b) =>
+    a.withExtensionName.localeCompare(b.withExtensionName)
+  );
+  const fatalGroups = conflictGroups.filter((g) => g.severity === "FATAL");
+  const warningGroups = conflictGroups.filter((g) => g.severity !== "FATAL");
+
+  let conflictSlugById = new Map<string, string>();
+  if (conflictGroups.length > 0) {
+    const allPackages = await fetchPackages({ limit: 500 }).catch(() => []);
+    conflictSlugById = new Map(allPackages.map((p) => [String(p.id), p.slug]));
+  }
+
   const latest: RegistryVersion | undefined = pkg.versions?.[0];
   const keywords = pkg.keywords ?? [];
   const targetsUi = targetsDisplayFromJson(latest?.targets ?? null);
@@ -292,6 +337,73 @@ export default async function PackagePage({
           <p className="mb-3 max-w-2xl text-base text-muted-foreground leading-relaxed">
             {pkg.description || pkg.shortDescription || "No description provided."}
           </p>
+
+          <div className="mb-3">
+            {conflictGroups.length === 0 ? (
+              <Badge className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                No known encoding conflicts
+              </Badge>
+            ) : fatalGroups.length > 0 ? (
+              <Badge className="border border-destructive/50 bg-destructive/10 text-destructive">
+                Incompatible with {fatalGroups.length} extension(s)
+              </Badge>
+            ) : (
+              <Badge className="border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                Conflicts with {warningGroups.length} extension(s)
+              </Badge>
+            )}
+          </div>
+
+          {conflictGroups.length > 0 && (
+            <details className="mb-4 rounded-lg border bg-background p-4">
+              <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium">
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                Show encoding conflict details
+              </summary>
+              <div className="mt-3 space-y-3">
+                {conflictGroups.map((group) => {
+                  const slug = conflictSlugById.get(group.withExtensionId);
+                  return (
+                    <div key={group.withExtensionId} className="rounded-md border bg-muted/10 p-3">
+                      <p className="text-sm">
+                        <span className="font-semibold">
+                          {slug ? (
+                            <Link href={`/package/${slug}`} className="hover:underline">
+                              {group.withExtensionName}
+                            </Link>
+                          ) : (
+                            group.withExtensionName
+                          )}
+                        </span>{" "}
+                        <Badge
+                          variant="outline"
+                          className={
+                            group.severity === "FATAL"
+                              ? "ml-2 border-destructive/60 text-destructive"
+                              : "ml-2 border-amber-500/50 text-amber-700 dark:text-amber-300"
+                          }
+                        >
+                          {group.severity}
+                        </Badge>
+                      </p>
+                      {group.severity === "FATAL" && (
+                        <p className="mt-1 text-xs text-destructive">
+                          Cannot coexist in the same binary with current fixed encodings.
+                        </p>
+                      )}
+                      <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        {group.items.map((c, idx) => (
+                          <li key={`${group.withExtensionId}-${idx}`}>
+                            <span className="font-medium text-foreground">{c.type}</span>: {c.detail}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
+          )}
 
           <p className="mb-4 text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Pre-silicon bridge</span>: this package is

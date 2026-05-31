@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import {
   apiGenerateXsil,
+  apiCheckOpcode,
+  fetchPackages,
   ApiError,
   type WizardInstruction,
   type WizardInstructionFormat,
@@ -13,6 +15,7 @@ import {
 import {
   STANDARD_STATUS_INFO,
   STANDARD_STATUS_VALUES,
+  type ExtensionConflict,
   type StandardStatus,
 } from "@/lib/types";
 import { Input } from "@/components/ui/input";
@@ -119,6 +122,13 @@ interface InstructionDraft extends WizardInstruction {
   operandsText: string;
 }
 
+type InstructionCollisionState = {
+  loading: boolean;
+  collides: boolean;
+  conflicts: ExtensionConflict[];
+  error?: string;
+};
+
 function newInstruction(): InstructionDraft {
   return {
     id: crypto.randomUUID(),
@@ -154,6 +164,11 @@ export default function WizardPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [instructionCollisionMap, setInstructionCollisionMap] = useState<
+    Record<string, InstructionCollisionState>
+  >({});
+  const [extensionSlugById, setExtensionSlugById] = useState<Record<string, string>>({});
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
 
   // Pre-fill author with logged-in username, if any.
   useEffect(() => {
@@ -292,7 +307,172 @@ export default function WizardPage() {
 
   function removeInstruction(id: string) {
     setInstructions((prev) => prev.filter((ins) => ins.id !== id));
+    setInstructionCollisionMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   }
+
+  function parseIntegerLike(raw: string): number | null {
+    const value = raw.trim().toLowerCase();
+    if (!value) return null;
+    if (/^0x[0-9a-f]+$/.test(value)) return Number.parseInt(value.slice(2), 16);
+    if (/^0b[01]+$/.test(value)) return Number.parseInt(value.slice(2), 2);
+    if (/^\d+$/.test(value)) return Number.parseInt(value, 10);
+    return null;
+  }
+
+  function parseOpcodeInput(raw: string): number | null {
+    const key = raw.trim().toLowerCase();
+    if (!key) return null;
+    if (key === "custom-0") return 0x0b;
+    if (key === "custom-1") return 0x2b;
+    if (key === "custom-2") return 0x5b;
+    if (key === "custom-3") return 0x7b;
+    const parsed = parseIntegerLike(raw);
+    if (parsed == null || parsed < 0 || parsed > 0x7f) return null;
+    return parsed;
+  }
+
+  function parseFunctInput(raw: string, bits: 3 | 7): number | null {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const parsed = parseIntegerLike(trimmed);
+    if (parsed == null) return null;
+    const max = bits === 3 ? 0b111 : 0b1111111;
+    if (parsed < 0 || parsed > max) return null;
+    return parsed;
+  }
+
+  function buildOpcodeCandidate(ins: InstructionDraft): {
+    opcode: number;
+    funct3?: number;
+    funct7?: number;
+    format: string;
+  } | null {
+    const opcode = parseOpcodeInput(ins.opcode ?? "");
+    if (opcode == null) return null;
+    const candidate: {
+      opcode: number;
+      funct3?: number;
+      funct7?: number;
+      format: string;
+    } = { opcode, format: ins.format };
+
+    if (ins.format !== "U" && ins.format !== "J") {
+      const f3Raw = (ins.funct3 ?? "").trim();
+      if (f3Raw) {
+        const f3 = parseFunctInput(f3Raw, 3);
+        if (f3 == null) return null;
+        candidate.funct3 = f3;
+      }
+    }
+
+    if (ins.format === "R") {
+      const f7Raw = (ins.funct7 ?? "").trim();
+      if (f7Raw) {
+        const f7 = parseFunctInput(f7Raw, 7);
+        if (f7 == null) return null;
+        candidate.funct7 = f7;
+      }
+    }
+
+    return candidate;
+  }
+
+  useEffect(() => {
+    const timers: number[] = [];
+    const validIds = new Set(instructions.map((ins) => ins.id));
+    setInstructionCollisionMap((prev) => {
+      const next = { ...prev };
+      for (const id of Object.keys(next)) {
+        if (!validIds.has(id)) delete next[id];
+      }
+      return next;
+    });
+
+    for (const ins of instructions) {
+      const candidate = buildOpcodeCandidate(ins);
+      if (!candidate) {
+        setInstructionCollisionMap((prev) => {
+          if (!prev[ins.id]) return prev;
+          return {
+            ...prev,
+            [ins.id]: { loading: false, collides: false, conflicts: [] },
+          };
+        });
+        continue;
+      }
+
+      setInstructionCollisionMap((prev) => ({
+        ...prev,
+        [ins.id]: {
+          loading: true,
+          collides: prev[ins.id]?.collides ?? false,
+          conflicts: prev[ins.id]?.conflicts ?? [],
+        },
+      }));
+
+      const timer = window.setTimeout(async () => {
+        try {
+          const response = await apiCheckOpcode(candidate);
+          setInstructionCollisionMap((prev) => ({
+            ...prev,
+            [ins.id]: {
+              loading: false,
+              collides: response.collides,
+              conflicts: response.conflicts,
+            },
+          }));
+        } catch (err) {
+          setInstructionCollisionMap((prev) => ({
+            ...prev,
+            [ins.id]: {
+              loading: false,
+              collides: false,
+              conflicts: [],
+              error:
+                err instanceof ApiError
+                  ? err.message
+                  : "Could not validate encoding collision.",
+            },
+          }));
+        }
+      }, 450);
+      timers.push(timer);
+    }
+
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+    };
+  }, [instructions]);
+
+  useEffect(() => {
+    if (catalogLoaded) return;
+    const unknownIds = new Set<string>();
+    for (const row of Object.values(instructionCollisionMap)) {
+      for (const c of row.conflicts) {
+        if (!extensionSlugById[c.withExtensionId]) unknownIds.add(c.withExtensionId);
+      }
+    }
+    if (unknownIds.size === 0) return;
+
+    let cancelled = false;
+    fetchPackages({ limit: 500 })
+      .then((rows) => {
+        if (cancelled) return;
+        setExtensionSlugById(Object.fromEntries(rows.map((p) => [String(p.id), p.slug])));
+        setCatalogLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCatalogLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [instructionCollisionMap, extensionSlugById, catalogLoaded]);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -858,6 +1038,59 @@ export default function WizardPage() {
                         />
                       </Field>
                     </div>
+
+                    {instructionCollisionMap[ins.id]?.loading && (
+                      <p className="text-xs text-muted-foreground">
+                        Checking encoding collisions...
+                      </p>
+                    )}
+
+                    {!instructionCollisionMap[ins.id]?.loading &&
+                      instructionCollisionMap[ins.id]?.conflicts?.length > 0 && (
+                        <div className="space-y-2">
+                          {instructionCollisionMap[ins.id].conflicts.map((conflict, conflictIdx) => {
+                            const slug = extensionSlugById[conflict.withExtensionId];
+                            const targetName = slug ? (
+                              <Link href={`/package/${slug}`} className="underline underline-offset-2">
+                                {conflict.withExtensionName}
+                              </Link>
+                            ) : (
+                              <span>{conflict.withExtensionName}</span>
+                            );
+                            if (conflict.severity === "FATAL") {
+                              return (
+                                <Alert
+                                  key={`${ins.id}-fatal-${conflictIdx}`}
+                                  variant="destructive"
+                                  className="py-2"
+                                >
+                                  <AlertCircle className="h-4 w-4" />
+                                  <AlertDescription className="text-xs">
+                                    This encoding is already claimed by {targetName} ({conflict.detail}). Consider a different opcode.
+                                  </AlertDescription>
+                                </Alert>
+                              );
+                            }
+                            return (
+                              <Alert
+                                key={`${ins.id}-warn-${conflictIdx}`}
+                                className="border-amber-500/50 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 py-2"
+                              >
+                                <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                                <AlertDescription className="text-xs">
+                                  This encoding overlaps with {targetName}. This may be resolvable by remapping, but flagging it now.
+                                </AlertDescription>
+                              </Alert>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                    {instructionCollisionMap[ins.id]?.error && (
+                      <p className="text-xs text-muted-foreground">
+                        {instructionCollisionMap[ins.id].error}
+                      </p>
+                    )}
 
                     <Field
                       label="Operands"

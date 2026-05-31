@@ -226,6 +226,24 @@ export interface PackageStats {
   byVersion?: Array<{ version: string; count90Days: number }> | null;
 }
 
+export type ExtensionConflictType = "OPCODE" | "CSR" | "CUSTOM_SPACE";
+export type ExtensionConflictSeverity = "FATAL" | "WARNING";
+
+export interface ExtensionConflict {
+  withExtensionId: string;
+  withExtensionName: string;
+  type: ExtensionConflictType;
+  detail: string;
+  severity: ExtensionConflictSeverity;
+}
+
+export interface ExtensionConflictsResponse {
+  extensionId: string;
+  extensionName: string;
+  conflicts: ExtensionConflict[];
+  checkedAt: string;
+}
+
 export interface UserContributionRequest {
   id: number;
   title: string;

@@ -28,6 +28,8 @@ import type {
   ExternalCitationKind,
   CreateExternalCitationInput,
   PackageCitation,
+  ExtensionConflictsResponse,
+  ExtensionConflict,
 } from "@/lib/types";
 import type { AuthUser } from "@/lib/auth";
 
@@ -425,6 +427,17 @@ export async function fetchPackage(
   return res.json() as Promise<RegistryPackage>;
 }
 
+export async function fetchPackageConflicts(
+  extensionId: number | string
+): Promise<ExtensionConflictsResponse | null> {
+  const res = await fetch(`${API_BASE}/package/${extensionId}/conflicts`, {
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new ApiError(res.statusText, res.status);
+  return res.json() as Promise<ExtensionConflictsResponse>;
+}
+
 export async function fetchPackageReviews(slug: string): Promise<Review[]> {
   const res = await fetch(`${API_BASE}/packages/${slug}/reviews`, {
     cache: "no-store",
@@ -749,6 +762,19 @@ export interface WizardInput {
   targets?: { spike?: boolean; qemu?: boolean; binutils?: boolean; llvm?: boolean };
 }
 
+export type CheckOpcodeRequest = {
+  opcode: number;
+  funct3?: number;
+  funct7?: number;
+  format: string;
+  excludeExtensionId?: string;
+};
+
+export type CheckOpcodeResponse = {
+  collides: boolean;
+  conflicts: ExtensionConflict[];
+};
+
 /**
  * Calls `POST /wizard/generate` and resolves with a downloadable `.xsil` blob.
  * On error the server responds with JSON, which is surfaced as `ApiError`.
@@ -788,6 +814,12 @@ export async function apiGenerateXsil(input: WizardInput): Promise<{
   const filename = m?.[1] ?? `${slug}-${version}.xsil`;
 
   return { blob, filename, slug, version, payloadChecksum };
+}
+
+export async function apiCheckOpcode(
+  body: CheckOpcodeRequest
+): Promise<CheckOpcodeResponse> {
+  return apiPostPublic<CheckOpcodeResponse>("/opcodes/check", body);
 }
 
 export async function apiResolveArtifacts(
