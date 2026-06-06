@@ -42,6 +42,7 @@ export async function postCheckOpcode(req: Request, res: Response): Promise<void
   const format = body.format;
   const funct3 = body.funct3;
   const funct7 = body.funct7;
+  const funct12 = body.funct12;
   const excludeExtensionId = body.excludeExtensionId;
 
   if (!Number.isInteger(opcode) || (opcode as number) < 0 || (opcode as number) > 0x7f) {
@@ -64,6 +65,12 @@ export async function postCheckOpcode(req: Request, res: Response): Promise<void
       return;
     }
   }
+  if (funct12 !== undefined && funct12 !== null) {
+    if (!Number.isInteger(funct12) || (funct12 as number) < 0 || (funct12 as number) > 0xfff) {
+      res.status(400).json({ error: 'funct12 must be an integer between 0 and 4095 when provided.' });
+      return;
+    }
+  }
   if (excludeExtensionId !== undefined && excludeExtensionId !== null) {
     if (typeof excludeExtensionId !== 'string' || !/^\d+$/.test(excludeExtensionId)) {
       res.status(400).json({ error: 'excludeExtensionId must be a positive integer string when provided.' });
@@ -77,6 +84,7 @@ export async function postCheckOpcode(req: Request, res: Response): Promise<void
         opcode: opcode as number,
         funct3: funct3 as number | undefined,
         funct7: funct7 as number | undefined,
+        funct12: funct12 as number | undefined,
         format: format.trim(),
       },
       {

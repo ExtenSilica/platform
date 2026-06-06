@@ -337,7 +337,11 @@ model Instruction {
   funct3      Int?
   /// Optional 7-bit funct field.
   funct7      Int?
-  /// R, I, S, B, U, J, R4, custom...
+  /// Optional 12-bit I-immediate for I-singleton encodings (brev8/rev8/zip/unzip,
+  /// scalar-crypto fixed-imm instructions, etc.) where rs2 is part of the imm.
+  /// Mutually exclusive with funct7 in practice: R-type uses funct7, I-singleton uses funct12.
+  funct12     Int?
+  /// R, I, S, B, U, J, R4, I-singleton, custom...
   format      String
   /// Optional CSR address tied to the instruction.
   csrAddress  Int?
@@ -348,7 +352,7 @@ model Instruction {
 
   @@index([extensionId])
   @@index([extensionId, version])
-  @@index([opcode, funct3, funct7])
+  @@index([opcode, funct3, funct7, funct12])
   @@index([csrAddress])
 }
 

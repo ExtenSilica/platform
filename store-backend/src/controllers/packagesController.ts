@@ -163,6 +163,7 @@ function mapInstructionCreateRows(instructions: ParsedInstructionEncoding[]) {
     opcode: ins.opcode,
     funct3: ins.funct3,
     funct7: ins.funct7,
+    funct12: ins.funct12,
     csrAddress: ins.csrAddress,
   }));
 }

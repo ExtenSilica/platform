@@ -20,6 +20,7 @@ type InstructionRow = {
   opcode: number;
   funct3: number | null;
   funct7: number | null;
+  funct12: number | null;
   format: string;
   csrAddress: number | null;
   createdAt: Date;
@@ -82,6 +83,7 @@ const instructionsFixture: InstructionRow[] = [
     opcode: 0x0b,
     funct3: 2,
     funct7: 0,
+    funct12: null,
     format: 'R',
     csrAddress: 0x800,
     createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -95,6 +97,7 @@ const instructionsFixture: InstructionRow[] = [
     opcode: 0x0b,
     funct3: 2,
     funct7: 0,
+    funct12: null,
     format: 'R',
     csrAddress: 0x800,
     createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -108,7 +111,39 @@ const instructionsFixture: InstructionRow[] = [
     opcode: 0x33,
     funct3: 0,
     funct7: 0,
+    funct12: null,
     format: 'R',
+    csrAddress: null,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  },
+  // I-singleton encodings sharing (opcode=0x13, funct3=0b101) but differing on
+  // imm12 — pre-funct12 schema falsely collided these because funct7 was null
+  // for both. They belong to ratified extensions, so a real collision would be FATAL.
+  {
+    id: 15,
+    extensionId: 1,
+    version: '1.0.0',
+    mnemonic: 'alpha.brev8',
+    opcode: 0x13,
+    funct3: 0b101,
+    funct7: null,
+    funct12: 0x687,
+    format: 'I-SINGLETON',
+    csrAddress: null,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  },
+  {
+    id: 16,
+    extensionId: 4,
+    version: '1.0.0',
+    mnemonic: 'delta.rev8',
+    opcode: 0x13,
+    funct3: 0b101,
+    funct7: null,
+    funct12: 0x6b8,
+    format: 'I-SINGLETON',
     csrAddress: null,
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
@@ -121,6 +156,7 @@ const instructionsFixture: InstructionRow[] = [
     opcode: 0x33,
     funct3: 0,
     funct7: 0,
+    funct12: null,
     format: 'R',
     csrAddress: null,
     createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -194,7 +230,8 @@ beforeEach(() => {
         (r) =>
           r.opcode === where.opcode &&
           (where.funct3 ?? null) === (r.funct3 ?? null) &&
-          (where.funct7 ?? null) === (r.funct7 ?? null),
+          (where.funct7 ?? null) === (r.funct7 ?? null) &&
+          (where.funct12 ?? null) === (r.funct12 ?? null),
       );
       if (typeof where?.extensionId?.not === 'number') {
         rows = rows.filter((r) => r.extensionId !== where.extensionId.not);
@@ -205,6 +242,7 @@ beforeEach(() => {
         opcode: r.opcode,
         funct3: r.funct3,
         funct7: r.funct7,
+        funct12: r.funct12,
         extension: extRows.find((e) => e.id === r.extensionId)!,
       }));
     }
@@ -282,5 +320,33 @@ describe('collisionDetection.checkCandidateOpcode', () => {
     });
     expect(out.length).toBeGreaterThan(0);
     expect(out[0].type).toBe('OPCODE');
+  });
+
+  // Regression: pre-funct12 schema treated funct7=null as "any", so any two
+  // I-singleton instructions sharing (opcode, funct3) false-collided. The fix
+  // is funct12 in the tuple key — different imm12 = no collision.
+  it('does not falsely collide two I-singleton encodings with different imm12', async () => {
+    const out = await checkCandidateOpcode({
+      opcode: 0x13,
+      funct3: 0b101,
+      funct12: 0x687, // alpha.brev8
+      format: 'I-SINGLETON',
+    });
+    // Only alpha.brev8 lives at this exact tuple; delta.rev8 has imm12=0x6b8.
+    // Excluding alpha itself would yield no conflicts; without exclusion we
+    // still match only alpha.brev8 (self), proving rev8 is NOT pulled in.
+    expect(out.every((c) => !c.detail.includes('delta.rev8'))).toBe(true);
+  });
+
+  it('still collides two I-singleton encodings with the same imm12', async () => {
+    const out = await checkCandidateOpcode({
+      opcode: 0x13,
+      funct3: 0b101,
+      funct12: 0x687, // exactly alpha.brev8
+      format: 'I-SINGLETON',
+      excludeExtensionId: undefined,
+    });
+    expect(out.some((c) => c.detail.includes('alpha.brev8'))).toBe(true);
+    expect(out.some((c) => c.detail.includes('funct12 0x687'))).toBe(true);
   });
 });

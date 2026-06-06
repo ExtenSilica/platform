@@ -32,6 +32,8 @@ type CandidateOpcode = {
   opcode: number;
   funct3?: number;
   funct7?: number;
+  /** 12-bit I-immediate, populated for I-singleton encodings. */
+  funct12?: number;
   format: string;
 };
 
@@ -102,8 +104,22 @@ function severity(a: ExtensionLite, b: ExtensionLite): Collision['severity'] {
   return !isRemappable(a) && !isRemappable(b) ? 'FATAL' : 'WARNING';
 }
 
-function opcodeTupleKey(i: Pick<Instruction, 'opcode' | 'funct3' | 'funct7'>): string {
-  return `${i.opcode}:${i.funct3 ?? -1}:${i.funct7 ?? -1}`;
+function opcodeTupleKey(
+  i: Pick<Instruction, 'opcode' | 'funct3' | 'funct7' | 'funct12'>,
+): string {
+  return `${i.opcode}:${i.funct3 ?? -1}:${i.funct7 ?? -1}:${i.funct12 ?? -1}`;
+}
+
+function formatEncodingDetail(
+  ins: Pick<Instruction, 'opcode' | 'funct3' | 'funct7' | 'funct12'>,
+): string {
+  const f3 = ins.funct3 == null ? 'null' : toHex(ins.funct3, 1);
+  const f7 = ins.funct7 == null ? 'null' : toHex(ins.funct7, 2);
+  const op = `opcode ${toHex(ins.opcode, 2)} funct3 ${f3}`;
+  // I-singleton has funct12 instead of funct7; show whichever is set, fall
+  // back to "funct7 null" so legacy callers still see the field.
+  if (ins.funct12 != null) return `${op} funct12 ${toHex(ins.funct12, 3)}`;
+  return `${op} funct7 ${f7}`;
 }
 
 function appendUnique(list: Collision[], row: Collision): void {
@@ -173,9 +189,7 @@ function compareOneAgainstTargets(
         withExtensionId: String(target.id),
         withExtensionName: target.name,
         type: 'OPCODE',
-        detail: `opcode ${toHex(src.opcode, 2)} funct3 ${
-          src.funct3 == null ? 'null' : toHex(src.funct3, 1)
-        } funct7 ${src.funct7 == null ? 'null' : toHex(src.funct7, 2)}`,
+        detail: formatEncodingDetail(src),
         severity: sev,
       });
     }
@@ -264,6 +278,7 @@ async function loadExtensionsAndInstructions(
         opcode: true,
         funct3: true,
         funct7: true,
+        funct12: true,
         format: true,
         csrAddress: true,
         createdAt: true,
@@ -339,7 +354,7 @@ export async function detectCollisionsInSet(
 
 /**
  * Check a candidate encoding tuple before persistence (wizard / dry-run usage).
- * Uses indexed query on (opcode, funct3, funct7) for O(1)-ish lookup per tuple.
+ * Uses indexed query on (opcode, funct3, funct7, funct12) for O(1)-ish lookup per tuple.
  */
 export async function checkCandidateOpcode(
   candidate: CandidateOpcode,
@@ -348,12 +363,14 @@ export async function checkCandidateOpcode(
   const excludeId = options?.excludeExtensionId != null ? parseExtensionId(options.excludeExtensionId) : null;
   const candidateFunct3 = candidate.funct3 ?? null;
   const candidateFunct7 = candidate.funct7 ?? null;
+  const candidateFunct12 = candidate.funct12 ?? null;
 
   const matches = await prisma.instruction.findMany({
     where: {
       opcode: candidate.opcode,
       funct3: candidateFunct3,
       funct7: candidateFunct7,
+      funct12: candidateFunct12,
       ...(excludeId ? { extensionId: { not: excludeId } } : {}),
     },
     select: {
@@ -362,6 +379,7 @@ export async function checkCandidateOpcode(
       opcode: true,
       funct3: true,
       funct7: true,
+      funct12: true,
       extension: {
         select: {
           id: true,
@@ -401,9 +419,7 @@ export async function checkCandidateOpcode(
       withExtensionId: String(ext.id),
       withExtensionName: ext.name,
       type: 'OPCODE',
-      detail: `opcode ${toHex(row.opcode, 2)} funct3 ${
-        row.funct3 == null ? 'null' : toHex(row.funct3, 1)
-      } funct7 ${row.funct7 == null ? 'null' : toHex(row.funct7, 2)} (matches ${row.mnemonic})`,
+      detail: `${formatEncodingDetail(row)} (matches ${row.mnemonic})`,
       severity: sev,
     });
   }

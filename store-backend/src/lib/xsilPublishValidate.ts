@@ -138,6 +138,8 @@ export interface ParsedInstructionEncoding {
   opcode: number;
   funct3: number | null;
   funct7: number | null;
+  /** 12-bit I-immediate for I-singleton encodings (e.g. brev8/rev8/zip/unzip). */
+  funct12: number | null;
   csrAddress: number | null;
 }
 
@@ -361,6 +363,31 @@ function parseCsr(raw: unknown): number | null {
   return parsed;
 }
 
+/**
+ * Parse a 12-bit I-immediate (0..0xFFF). Accepts:
+ *   - a number or numeric-like string ("0x687", "0b...", "1671")
+ *   - legacy free-text from RL1 catalog seeds like `"imm[11:0]=0x687"` —
+ *     extracted with a regex so old packages don't fail validation.
+ */
+function parseImm12(raw: unknown): number | null {
+  let parsed = parseIntegerLike(raw);
+  if (parsed == null && typeof raw === 'string') {
+    const m = raw.toLowerCase().match(/imm\s*\[\s*11\s*:\s*0\s*\]\s*=\s*(0x[0-9a-f]+|0b[01]+|\d+)/);
+    if (m) parsed = parseIntegerLike(m[1]);
+  }
+  if (parsed == null || parsed < 0 || parsed > 0x0fff) return null;
+  return parsed;
+}
+
+/**
+ * True when the declared format means "12-bit I-immediate encoding with rs2
+ * folded into imm" (brev8/rev8/zip/unzip and similar). Tolerant of casing and
+ * common spellings used across catalog seeds.
+ */
+function isISingletonFormat(format: string): boolean {
+  return /^i[\s_-]*(singleton|imm12|imm-?12)$/i.test(format.trim());
+}
+
 function parseInstructionEncodings(opcodesRaw: unknown): ParsedInstructionEncoding[] {
   const rows =
     opcodesRaw &&
@@ -380,16 +407,31 @@ function parseInstructionEncodings(opcodesRaw: unknown): ParsedInstructionEncodi
       typeof row.mnemonic === 'string' && row.mnemonic.trim()
         ? row.mnemonic.trim()
         : `instruction_${idx + 1}`;
-    const format =
-      typeof row.format === 'string' && row.format.trim()
-        ? row.format.trim().toUpperCase()
-        : 'CUSTOM';
+    const formatRaw =
+      typeof row.format === 'string' && row.format.trim() ? row.format.trim() : 'CUSTOM';
+    const format = formatRaw.toUpperCase();
+    const iSingleton = isISingletonFormat(formatRaw);
+
+    // For R-type and friends, funct7 is the 7-bit funct field. For I-singleton
+    // (brev8/rev8/zip/unzip, scalar-crypto fixed-imm), rs2 is part of the imm,
+    // so funct7 doesn't apply and we store the full 12-bit immediate in funct12.
+    let funct7 = parseFunct(row.funct7, 7);
+    let funct12 = parseImm12(row.funct12 ?? row.imm12);
+    if (iSingleton) {
+      // Back-compat: RL1 catalog seeds shoved strings like "imm[11:0]=0x687"
+      // into funct7. If funct7 didn't cleanly parse as a 7-bit number and
+      // funct12 wasn't supplied, try recovering imm12 from that legacy field.
+      if (funct12 == null) funct12 = parseImm12(row.funct7);
+      funct7 = null;
+    }
+
     out.push({
       mnemonic,
       format,
       opcode,
       funct3: parseFunct(row.funct3, 3),
-      funct7: parseFunct(row.funct7, 7),
+      funct7,
+      funct12,
       csrAddress: parseCsr(row.csrAddress ?? row.csr ?? row.csr_address),
     });
   }
