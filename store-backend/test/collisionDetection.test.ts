@@ -117,6 +117,37 @@ const instructionsFixture: InstructionRow[] = [
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   },
+  // Designed overlap (Zbkb ⊂ Zbb pattern): both alpha (ext 1) and gamma (ext 3)
+  // declare the *same* instruction `ror` at the same encoding. This must surface
+  // as OPCODE_SHARED + WARNING, never as a real conflict.
+  {
+    id: 17,
+    extensionId: 1,
+    version: '1.0.0',
+    mnemonic: 'ror',
+    opcode: 0x33,
+    funct3: 0b101,
+    funct7: 0b0110000,
+    funct12: null,
+    format: 'R',
+    csrAddress: null,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  },
+  {
+    id: 18,
+    extensionId: 3,
+    version: '1.0.0',
+    mnemonic: 'ror',
+    opcode: 0x33,
+    funct3: 0b101,
+    funct7: 0b0110000,
+    funct12: null,
+    format: 'R',
+    csrAddress: null,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  },
   // I-singleton encodings sharing (opcode=0x13, funct3=0b101) but differing on
   // imm12 — pre-funct12 schema falsely collided these because funct7 was null
   // for both. They belong to ratified extensions, so a real collision would be FATAL.
@@ -344,9 +375,52 @@ describe('collisionDetection.checkCandidateOpcode', () => {
       funct3: 0b101,
       funct12: 0x687, // exactly alpha.brev8
       format: 'I-SINGLETON',
-      excludeExtensionId: undefined,
     });
     expect(out.some((c) => c.detail.includes('alpha.brev8'))).toBe(true);
     expect(out.some((c) => c.detail.includes('funct12 0x687'))).toBe(true);
+  });
+
+  // Same encoding + same mnemonic = designed overlap (Zbkb ⊂ Zbb pattern).
+  // Must be reported as OPCODE_SHARED + WARNING, never as a hardware conflict.
+  it('flags shared mnemonic at same encoding as OPCODE_SHARED, not OPCODE', async () => {
+    const out = await checkCandidateOpcode({
+      opcode: 0x33,
+      funct3: 0b101,
+      funct7: 0b0110000,
+      format: 'R',
+      mnemonic: 'ror', // already in fixtures for ext 1 and ext 3
+    });
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.every((c) => c.type === 'OPCODE_SHARED')).toBe(true);
+    expect(out.every((c) => c.severity === 'WARNING')).toBe(true);
+    expect(out.every((c) => c.detail.includes('ror'))).toBe(true);
+    expect(out.every((c) => c.detail.includes('same instruction by spec'))).toBe(true);
+  });
+
+  // Same encoding + DIFFERENT mnemonic on candidate stays the real-conflict path.
+  it('keeps OPCODE conflict when candidate mnemonic differs from registry hit', async () => {
+    const out = await checkCandidateOpcode({
+      opcode: 0x33,
+      funct3: 0b101,
+      funct7: 0b0110000,
+      format: 'R',
+      mnemonic: 'something.else',
+    });
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.every((c) => c.type === 'OPCODE')).toBe(true);
+  });
+});
+
+describe('collisionDetection.detectCollisions — shared mnemonic across extensions', () => {
+  it('reports OPCODE_SHARED + WARNING when both sides declare the same instruction at the same encoding', async () => {
+    // alpha (ext 1) and gamma (ext 3) both have `ror` at (0x33, 0b101, 0b0110000).
+    const out = await detectCollisions(1, { against: [3] });
+    const shared = out.filter((c) => c.type === 'OPCODE_SHARED');
+    expect(shared.length).toBeGreaterThan(0);
+    expect(shared.every((c) => c.severity === 'WARNING')).toBe(true);
+    expect(shared.every((c) => c.detail.includes('ror'))).toBe(true);
+    expect(shared.every((c) => c.detail.includes('same instruction by spec'))).toBe(true);
+    // And the real-conflict path is NOT triggered for the same row.
+    expect(out.filter((c) => c.type === 'OPCODE' && c.detail.includes('ror')).length).toBe(0);
   });
 });

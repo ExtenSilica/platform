@@ -10,7 +10,16 @@ import { prisma } from '../db';
 export type Collision = {
   withExtensionId: string;
   withExtensionName: string;
-  type: 'OPCODE' | 'CSR' | 'CUSTOM_SPACE';
+  /**
+   * - `OPCODE`         — same encoding tuple, **different** mnemonic.
+   *                     A real hardware conflict: one slot, two distinct instructions.
+   * - `OPCODE_SHARED`  — same encoding tuple **and** same mnemonic.
+   *                     A designed overlap (e.g. Zbkb ⊂ Zbb): both extensions
+   *                     describe the same instruction. Surfaced informationally.
+   * - `CSR`            — overlapping CSR address(es).
+   * - `CUSTOM_SPACE`   — both claim the same custom-N major opcode space.
+   */
+  type: 'OPCODE' | 'OPCODE_SHARED' | 'CSR' | 'CUSTOM_SPACE';
   detail: string;
   severity: 'FATAL' | 'WARNING';
 };
@@ -35,7 +44,33 @@ type CandidateOpcode = {
   /** 12-bit I-immediate, populated for I-singleton encodings. */
   funct12?: number;
   format: string;
+  /**
+   * Candidate's mnemonic. When provided, a registry hit that shares the same
+   * mnemonic is reported as `OPCODE_SHARED` (designed overlap) instead of
+   * `OPCODE` — this avoids false FATAL on intentional subset relationships
+   * (e.g. publishing a Zbkb package that re-declares Zbb's `rol`/`ror`/`andn`).
+   */
+  mnemonic?: string;
 };
+
+function normalizeMnemonic(s: string | null | undefined): string {
+  return (s ?? '').trim().toLowerCase();
+}
+
+/**
+ * Returns the matched target's mnemonic (in its original casing) when any
+ * target instruction shares the candidate's mnemonic (case-insensitive), else
+ * null. Same mnemonic + same encoding tuple = same instruction by spec.
+ */
+function findSharedMnemonic(
+  src: Pick<Instruction, 'mnemonic'> | { mnemonic?: string },
+  targets: Array<Pick<Instruction, 'mnemonic'>>,
+): string | null {
+  const srcMn = normalizeMnemonic('mnemonic' in src ? src.mnemonic : undefined);
+  if (!srcMn) return null;
+  const hit = targets.find((t) => normalizeMnemonic(t.mnemonic) === srcMn);
+  return hit ? hit.mnemonic : null;
+}
 
 const CUSTOM_OPCODE_NUM_TO_LABEL = new Map<number, string>([
   [0x0b, 'custom-0'],
@@ -185,6 +220,20 @@ function compareOneAgainstTargets(
       const otherClaims = targetOpcodeMap.get(key);
       if (!otherClaims || otherClaims.length === 0) continue;
       const src = srcClaims[0];
+      const sharedMn = findSharedMnemonic(src, otherClaims);
+      if (sharedMn) {
+        // Designed overlap (same encoding + same mnemonic): both extensions
+        // describe the same instruction. Surfaced informationally so authors
+        // know who else carries it, but it is NOT a conflict.
+        appendUnique(out, {
+          withExtensionId: String(target.id),
+          withExtensionName: target.name,
+          type: 'OPCODE_SHARED',
+          detail: `${sharedMn} shared at ${formatEncodingDetail(src)} (same instruction by spec)`,
+          severity: 'WARNING',
+        });
+        continue;
+      }
       appendUnique(out, {
         withExtensionId: String(target.id),
         withExtensionName: target.name,
@@ -412,9 +461,23 @@ export async function checkCandidateOpcode(
   };
 
   const out: Collision[] = [];
+  const candidateMn = normalizeMnemonic(candidate.mnemonic);
   for (const row of matches) {
     const ext = row.extension as ExtensionLite;
     const sev = severity(candidatePseudoExtension, ext);
+    // If the candidate carries a mnemonic and it matches the registry row, this
+    // is a designed overlap (same instruction by spec) — surface it as a
+    // WARNING-level shared overlap instead of FATAL/WARNING conflict.
+    if (candidateMn && normalizeMnemonic(row.mnemonic) === candidateMn) {
+      appendUnique(out, {
+        withExtensionId: String(ext.id),
+        withExtensionName: ext.name,
+        type: 'OPCODE_SHARED',
+        detail: `${row.mnemonic} shared at ${formatEncodingDetail(row)} (same instruction by spec)`,
+        severity: 'WARNING',
+      });
+      continue;
+    }
     appendUnique(out, {
       withExtensionId: String(ext.id),
       withExtensionName: ext.name,

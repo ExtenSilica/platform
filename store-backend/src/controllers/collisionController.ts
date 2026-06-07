@@ -43,6 +43,7 @@ export async function postCheckOpcode(req: Request, res: Response): Promise<void
   const funct3 = body.funct3;
   const funct7 = body.funct7;
   const funct12 = body.funct12;
+  const mnemonic = body.mnemonic;
   const excludeExtensionId = body.excludeExtensionId;
 
   if (!Number.isInteger(opcode) || (opcode as number) < 0 || (opcode as number) > 0x7f) {
@@ -71,6 +72,12 @@ export async function postCheckOpcode(req: Request, res: Response): Promise<void
       return;
     }
   }
+  if (mnemonic !== undefined && mnemonic !== null) {
+    if (typeof mnemonic !== 'string' || mnemonic.trim().length === 0 || mnemonic.length > 64) {
+      res.status(400).json({ error: 'mnemonic must be a 1..64 character string when provided.' });
+      return;
+    }
+  }
   if (excludeExtensionId !== undefined && excludeExtensionId !== null) {
     if (typeof excludeExtensionId !== 'string' || !/^\d+$/.test(excludeExtensionId)) {
       res.status(400).json({ error: 'excludeExtensionId must be a positive integer string when provided.' });
@@ -86,6 +93,7 @@ export async function postCheckOpcode(req: Request, res: Response): Promise<void
         funct7: funct7 as number | undefined,
         funct12: funct12 as number | undefined,
         format: format.trim(),
+        mnemonic: typeof mnemonic === 'string' ? mnemonic.trim() : undefined,
       },
       {
         excludeExtensionId: excludeExtensionId as string | undefined,
