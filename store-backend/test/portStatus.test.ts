@@ -6,6 +6,7 @@ import {
   portStatusAfterOwnershipClaim,
   evaluatePortStatusPatch,
   validatePortStatusDecisionNote,
+  autoPromotePortStatusOnPublish,
   PORT_STATUS_DECISION_NOTE_MIN,
   type PortStatus,
 } from '../src/lib/portStatus';
@@ -159,6 +160,24 @@ describe('evaluatePortStatusPatch', () => {
     if (result.ok) {
       expect(result.patch.portStatus).toBeNull();
       expect(result.patch.portStatusDecisionNote).toBeNull();
+    }
+  });
+});
+
+describe('autoPromotePortStatusOnPublish', () => {
+  it('promotes seeded -> community_port when a non-bot user publishes', () => {
+    expect(autoPromotePortStatusOnPublish('seeded', false)).toBe('community_port');
+  });
+
+  it('does NOT promote when the catalog-seed bot itself re-publishes a seeded row', () => {
+    expect(autoPromotePortStatusOnPublish('seeded', true)).toBeNull();
+  });
+
+  it('returns null (no change) for any non-seeded state, regardless of publisher', () => {
+    const others: (PortStatus | null)[] = [null, 'community_port', 'claimed', 'official', 'archived'];
+    for (const s of others) {
+      expect(autoPromotePortStatusOnPublish(s, false)).toBeNull();
+      expect(autoPromotePortStatusOnPublish(s, true)).toBeNull();
     }
   });
 });

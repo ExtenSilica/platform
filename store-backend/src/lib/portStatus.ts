@@ -65,6 +65,25 @@ export function portStatusAfterOwnershipClaim(
   return 'claimed';
 }
 
+/**
+ * Auto-promote `portStatus` when a non-catalog-seed publisher pushes a new
+ * version. Returns the value to write, or `null` when no change is needed.
+ *
+ * Transitions implemented:
+ *   `seeded` (and publisher is NOT the catalog-seed bot) → `community_port`
+ *
+ * Everything else (already-claimed/official/archived, null, or bot re-seeding)
+ * is left untouched: those statuses are stronger, and demoting them on a
+ * regular re-publish would erase real provenance.
+ */
+export function autoPromotePortStatusOnPublish(
+  current: PortStatus | null,
+  publisherIsCatalogBot: boolean,
+): PortStatus | null {
+  if (current === 'seeded' && !publisherIsCatalogBot) return 'community_port';
+  return null;
+}
+
 export const PORT_STATUS_DECISION_NOTE_MIN = 10;
 export const PORT_STATUS_DECISION_NOTE_MAX = 1000;
 

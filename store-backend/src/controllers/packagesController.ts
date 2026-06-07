@@ -28,6 +28,7 @@ import {
   type StandardStatus,
 } from '../lib/standardStatus';
 import {
+  autoPromotePortStatusOnPublish,
   evaluatePortStatusPatch,
   normalizePortStatus,
   portStatusAfterOwnershipClaim,
@@ -903,6 +904,19 @@ export const publishVersion = async (req: Request, res: Response) => {
     // carries a valid, non-empty value, so a maintainer's later edits via PATCH
     // stick across re-publishes that omit the field.
     const extensionUpdate: Prisma.ExtensionUpdateInput = { latestVersion: newLatest };
+
+    // Auto-promote portStatus when a non-bot publisher pushes on top of a
+    // `seeded` row. The lib/portStatus.ts contract documents this transition,
+    // but until now nothing was implementing it — every re-port stayed `seeded`
+    // and silently capped Readiness Level at RL1 (see maturity.ts override).
+    const autoPortStatus = autoPromotePortStatusOnPublish(
+      (pkg as typeof pkg & { portStatus?: PortStatus | null }).portStatus ?? null,
+      isCatalogBotUser(user),
+    );
+    if (autoPortStatus) {
+      extensionUpdate.portStatus = autoPortStatus;
+    }
+
     if (mfStandardStatus !== null) {
       extensionUpdate.standardStatus = mfStandardStatus;
     }
