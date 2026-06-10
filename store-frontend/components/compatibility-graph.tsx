@@ -198,14 +198,18 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
         "link",
         forceLink<SimNode, SimEdge>(visibleEdges)
           .id((d) => d.id)
-          .distance(80)
-          .strength(0.5),
+          .distance(70)
+          .strength(0.7),
       )
-      .force("charge", forceManyBody<SimNode>().strength(-180))
+      // Weak charge keeps the layout compact instead of blowing nodes out of frame.
+      .force("charge", forceManyBody<SimNode>().strength(-60))
       .force("center", forceCenter(size.width / 2, size.height / 2))
-      .force("x", forceX<SimNode>(size.width / 2).strength(0.04))
-      .force("y", forceY<SimNode>(size.height / 2).strength(0.04))
-      .force("collide", forceCollide<SimNode>().radius(20))
+      // Strong X/Y pulls so any node (especially an unlinked one) stays inside
+      // the viewport instead of drifting off the canvas.
+      .force("x", forceX<SimNode>(size.width / 2).strength(0.18))
+      .force("y", forceY<SimNode>(size.height / 2).strength(0.18))
+      .force("collide", forceCollide<SimNode>().radius(18))
+      .alphaDecay(0.05)
       .on("tick", () => setTick((t) => (t + 1) % 1_000_000));
 
     simRef.current = sim;
@@ -279,9 +283,47 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
 
   function resetZoom() {
     if (!svgRef.current || !zoomBehaviorRef.current) return;
-    // Instant reset — avoids pulling in d3-transition just for one fade.
     select(svgRef.current).call(zoomBehaviorRef.current.transform, zoomIdentity);
   }
+
+  /**
+   * Pan + zoom so the bounding box of every visible node is centred on the
+   * canvas with a small padding. Used by the "Fit to view" button and after
+   * the simulation has settled enough that positions are meaningful.
+   */
+  function fitToView() {
+    if (!svgRef.current || !zoomBehaviorRef.current) return;
+    const visible = simNodes.filter(
+      (n) => n.x != null && n.y != null && (hideIsolated ? connectedIds.has(n.id) : true),
+    );
+    if (visible.length === 0) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of visible) {
+      const x = n.x as number, y = n.y as number;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+    const pad = 60;
+    const bbW = Math.max(40, maxX - minX) + pad * 2;
+    const bbH = Math.max(40, maxY - minY) + pad * 2;
+    const k = Math.min(size.width / bbW, size.height / bbH, 2);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const tx = size.width / 2 - cx * k;
+    const ty = size.height / 2 - cy * k;
+    const next = zoomIdentity.translate(tx, ty).scale(k);
+    select(svgRef.current).call(zoomBehaviorRef.current.transform, next);
+  }
+
+  // Auto-fit after the simulation has settled on first load and after every
+  // visible-subgraph rebuild — saves the user a click on "Fit to view".
+  useEffect(() => {
+    const t = window.setTimeout(() => fitToView(), 700);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simNodes, visibleEdges, size.width, size.height]);
 
   return (
     <div className="space-y-4">
@@ -294,22 +336,40 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
           onChange={(e) => setQuery(e.target.value)}
           className="w-full min-w-0 max-w-xs rounded-md border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring sm:w-auto"
         />
-        <label className="flex cursor-pointer items-center gap-1.5 text-xs">
-          <input
-            type="checkbox"
-            checked={hideIsolated}
-            onChange={(e) => setHideIsolated(e.target.checked)}
-            className="h-3.5 w-3.5"
-          />
-          <span>Hide isolated nodes</span>
-        </label>
+        <button
+          onClick={() => setHideIsolated((v) => !v)}
+          className={
+            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs " +
+            (hideIsolated
+              ? "bg-background"
+              : "bg-muted text-muted-foreground")
+          }
+          aria-pressed={hideIsolated}
+          title={
+            hideIsolated
+              ? `Showing only the ${connectedIds.size} extensions with a visible relation`
+              : `Showing all ${graph.nodes.length} extensions, including those with no visible edge`
+          }
+        >
+          {hideIsolated ? "Hiding isolated" : "Show all"} ·{" "}
+          <span className="tabular-nums">
+            {simNodes.length}/{graph.nodes.length}
+          </span>
+        </button>
         <div className="ml-auto flex items-center gap-1.5">
+          <button
+            onClick={fitToView}
+            className="rounded-md border bg-background px-2.5 py-1 text-xs hover:bg-muted"
+            title="Fit visible nodes to the viewport"
+          >
+            Fit
+          </button>
           <button
             onClick={resetZoom}
             className="rounded-md border bg-background px-2.5 py-1 text-xs hover:bg-muted"
-            title="Reset zoom"
+            title="Reset zoom (identity transform)"
           >
-            Reset view
+            Reset
           </button>
           <span className="text-xs text-muted-foreground tabular-nums">
             {(transform.k * 100).toFixed(0)}%
