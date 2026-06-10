@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  getCollisionGraph,
   getExtensionConflicts,
   postCheckOpcode,
   postResolve,
@@ -16,5 +17,9 @@ router.post('/opcodes/check', postCheckOpcode);
 
 // POST /api/resolve
 router.post('/resolve', postResolve);
+
+// GET /api/graph/collisions — aggregate graph for the /compatibility page
+// (cached in-memory for 5 minutes; ~50 KB payload for ~100 extensions).
+router.get('/graph/collisions', getCollisionGraph);
 
 export default router;

@@ -226,8 +226,44 @@ export interface PackageStats {
   byVersion?: Array<{ version: string; count90Days: number }> | null;
 }
 
-export type ExtensionConflictType = "OPCODE" | "CSR" | "CUSTOM_SPACE";
+export type ExtensionConflictType =
+  | "OPCODE"
+  | "OPCODE_SHARED"
+  | "CSR"
+  | "CUSTOM_SPACE";
 export type ExtensionConflictSeverity = "FATAL" | "WARNING";
+
+export interface CollisionGraphNode {
+  id: string;
+  slug: string;
+  name: string;
+  version: string | null;
+  rl: number | null;
+  portStatus: string | null;
+  standardStatus: string | null;
+  coupling: string;
+  dispatch: string;
+  encodingSpace: string[];
+}
+
+export interface CollisionGraphEdge {
+  source: string;
+  target: string;
+  type: ExtensionConflictType;
+  severity: ExtensionConflictSeverity;
+  detail: string;
+}
+
+export interface CollisionGraph {
+  generatedAt: string;
+  nodes: CollisionGraphNode[];
+  edges: CollisionGraphEdge[];
+  stats: {
+    nodeCount: number;
+    edgeCount: number;
+    byTypeSeverity: Record<string, number>;
+  };
+}
 
 export interface ExtensionConflict {
   withExtensionId: string;

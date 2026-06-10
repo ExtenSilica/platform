@@ -30,6 +30,7 @@ import type {
   PackageCitation,
   ExtensionConflictsResponse,
   ExtensionConflict,
+  CollisionGraph,
 } from "@/lib/types";
 import type { AuthUser } from "@/lib/auth";
 
@@ -436,6 +437,15 @@ export async function fetchPackageConflicts(
   if (res.status === 404) return null;
   if (!res.ok) throw new ApiError(res.statusText, res.status);
   return res.json() as Promise<ExtensionConflictsResponse>;
+}
+
+/** Aggregate collision graph for the /compatibility page. Backend caches 5min. */
+export async function fetchCollisionGraph(): Promise<CollisionGraph> {
+  const res = await fetch(`${API_BASE}/api/graph/collisions`, {
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) throw new ApiError(res.statusText, res.status);
+  return res.json() as Promise<CollisionGraph>;
 }
 
 export async function fetchPackageReviews(slug: string): Promise<Review[]> {

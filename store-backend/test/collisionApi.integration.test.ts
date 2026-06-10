@@ -229,4 +229,34 @@ describe('collision API integration', () => {
     expect(body.results.length).toBe(2);
     expect(typeof body.hasFatalConflicts).toBe('boolean');
   });
+
+  it('GET /api/graph/collisions returns the aggregate {nodes, edges, stats} shape', async () => {
+    const res = await fetch(`${baseUrl}/api/graph/collisions`);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      generatedAt: string;
+      nodes: Array<{ id: string; slug: string }>;
+      edges: Array<{
+        source: string;
+        target: string;
+        type: string;
+        severity: string;
+        detail: string;
+      }>;
+      stats: { nodeCount: number; edgeCount: number; byTypeSeverity: Record<string, number> };
+    };
+    expect(typeof body.generatedAt).toBe('string');
+    expect(Array.isArray(body.nodes)).toBe(true);
+    expect(Array.isArray(body.edges)).toBe(true);
+    expect(body.stats.nodeCount).toBe(body.nodes.length);
+    expect(body.stats.edgeCount).toBe(body.edges.length);
+    // Edges must be deduped: (lo, hi, type, detail) keys appear at most once.
+    const seen = new Set<string>();
+    for (const e of body.edges) {
+      const [lo, hi] = e.source < e.target ? [e.source, e.target] : [e.target, e.source];
+      const k = `${lo}|${hi}|${e.type}|${e.detail}`;
+      expect(seen.has(k)).toBe(false);
+      seen.add(k);
+    }
+  });
 });

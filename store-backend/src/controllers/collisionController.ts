@@ -134,3 +134,134 @@ export async function postResolve(req: Request, res: Response): Promise<void> {
     res.status(500).json({ error: 'Failed to resolve collision set.' });
   }
 }
+
+// ── Aggregate collision graph for the /compatibility page ────────────────────
+
+/** Aggregate node payload — kept narrow so the JSON the page downloads stays small. */
+type GraphNode = {
+  id: string;
+  slug: string;
+  name: string;
+  version: string | null;
+  rl: number | null;
+  portStatus: string | null;
+  standardStatus: string | null;
+  coupling: string;
+  dispatch: string;
+  encodingSpace: string[];
+};
+
+type GraphEdge = {
+  source: string;
+  target: string;
+  type: 'OPCODE' | 'OPCODE_SHARED' | 'CSR' | 'CUSTOM_SPACE';
+  severity: 'FATAL' | 'WARNING';
+  detail: string;
+};
+
+type GraphPayload = {
+  generatedAt: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  stats: {
+    nodeCount: number;
+    edgeCount: number;
+    byTypeSeverity: Record<string, number>;
+  };
+};
+
+const GRAPH_TTL_MS = 5 * 60 * 1000;
+let cachedGraph: { at: number; payload: GraphPayload } | null = null;
+
+async function buildCollisionGraph(): Promise<GraphPayload> {
+  const exts = await prisma.extension.findMany({
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      latestVersion: true,
+      latestReadinessLevel: true,
+      portStatus: true,
+      standardStatus: true,
+      coupling: true,
+      dispatch: true,
+      encodingSpace: true,
+    },
+    orderBy: { id: 'asc' },
+  });
+
+  const nodes: GraphNode[] = exts.map((e) => ({
+    id: String(e.id),
+    slug: e.slug,
+    name: e.name,
+    version: e.latestVersion,
+    rl: e.latestReadinessLevel,
+    portStatus: e.portStatus,
+    standardStatus: e.standardStatus,
+    coupling: e.coupling,
+    dispatch: e.dispatch,
+    encodingSpace: e.encodingSpace,
+  }));
+
+  const ids = exts.map((e) => String(e.id));
+  const collMap = await detectCollisionsInSet(ids);
+
+  // Dedupe: detectCollisionsInSet reports A→B and B→A symmetrically. Keep one
+  // per pair+type+detail with sorted endpoints so the graph renders cleanly.
+  const seen = new Set<string>();
+  const edges: GraphEdge[] = [];
+  for (const [sourceId, list] of collMap) {
+    for (const c of list) {
+      const a = String(sourceId);
+      const b = String(c.withExtensionId);
+      if (a === b) continue;
+      const [lo, hi] = a < b ? [a, b] : [b, a];
+      const key = `${lo}|${hi}|${c.type}|${c.detail}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      edges.push({
+        source: lo,
+        target: hi,
+        type: c.type,
+        severity: c.severity,
+        detail: c.detail,
+      });
+    }
+  }
+
+  const byTypeSeverity: Record<string, number> = {};
+  for (const e of edges) {
+    const k = `${e.type}:${e.severity}`;
+    byTypeSeverity[k] = (byTypeSeverity[k] ?? 0) + 1;
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    nodes,
+    edges,
+    stats: {
+      nodeCount: nodes.length,
+      edgeCount: edges.length,
+      byTypeSeverity,
+    },
+  };
+}
+
+/** GET /api/graph/collisions — aggregate nodes+edges for the /compatibility page. */
+export async function getCollisionGraph(_req: Request, res: Response): Promise<void> {
+  try {
+    const now = Date.now();
+    if (cachedGraph && now - cachedGraph.at < GRAPH_TTL_MS) {
+      res.setHeader('X-Graph-Cache', 'hit');
+      res.json(cachedGraph.payload);
+      return;
+    }
+    const payload = await buildCollisionGraph();
+    cachedGraph = { at: now, payload };
+    res.setHeader('X-Graph-Cache', 'miss');
+    res.json(payload);
+  } catch (err) {
+    console.error('[collisions/getCollisionGraph]', err);
+    res.status(500).json({ error: 'Failed to build collision graph.' });
+  }
+}
