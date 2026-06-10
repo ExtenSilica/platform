@@ -137,6 +137,17 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
   void tick;
 
   // Visible edges from the props.
+  //
+  // IMPORTANT: `forceLink` mutates each edge in place, replacing the `source`
+  // and `target` strings with the resolved SimNode object references. Once
+  // mutated, the link force will NOT re-resolve them on a subsequent
+  // simulation rebuild — it just keeps the existing object refs. So when the
+  // node set changes (e.g. toggling "Hide isolated"), the edges still point
+  // at the previous, now-detached SimNode instances and render disconnected.
+  //
+  // We defend against that by including `hideIsolated` in the dependency
+  // list: every node-set change rebuilds the edge array with fresh string
+  // endpoints, which forceLink then resolves against the new node set.
   const visibleEdges = useMemo<SimEdge[]>(
     () =>
       graph.edges
@@ -148,7 +159,7 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
           severity: e.severity,
           detail: e.detail,
         })),
-    [graph.edges, filters],
+    [graph.edges, filters, hideIsolated],
   );
 
   // Build the set of node ids touched by at least one visible edge.
@@ -192,6 +203,16 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
   // Force simulation: re-create whenever the visible subgraph changes.
   useEffect(() => {
     if (!size.width) return;
+
+    // Belt + suspenders: normalize source/target back to id strings before
+    // handing the array to forceLink. If a previous simulation already mutated
+    // a stray reference to point at a now-detached SimNode, forceLink would
+    // happily reuse it and the edge would render at the old position. Reset
+    // to strings forces fresh resolution against the current node set.
+    for (const e of visibleEdges) {
+      if (typeof e.source === "object") e.source = (e.source as SimNode).id;
+      if (typeof e.target === "object") e.target = (e.target as SimNode).id;
+    }
 
     const sim = forceSimulation<SimNode>(simNodes)
       .force(
@@ -318,9 +339,11 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
   }
 
   // Auto-fit after the simulation has settled on first load and after every
-  // visible-subgraph rebuild — saves the user a click on "Fit to view".
+  // visible-subgraph rebuild — saves the user a click on "Fit to view". The
+  // delay is long enough for the layout to converge below alpha=0.05 (with
+  // alphaDecay=0.05 that's ~60 ticks @ 60fps ≈ 1s).
   useEffect(() => {
-    const t = window.setTimeout(() => fitToView(), 700);
+    const t = window.setTimeout(() => fitToView(), 1200);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simNodes, visibleEdges, size.width, size.height]);
