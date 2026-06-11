@@ -42,12 +42,19 @@ type Filters = Record<FilterKey, boolean>;
 const DEFAULT_FILTERS: Filters = {
   "OPCODE:FATAL": true,
   "OPCODE:WARNING": true,
+  "OPCODE:INFO": true,
   "OPCODE_SHARED:WARNING": true,
   "OPCODE_SHARED:FATAL": true,
+  "OPCODE_SHARED:INFO": true,
+  "SHARED_MAJOR_OPCODE:INFO": true,
+  "SHARED_MAJOR_OPCODE:WARNING": true,
+  "SHARED_MAJOR_OPCODE:FATAL": true,
   "CSR:FATAL": true,
   "CSR:WARNING": true,
+  "CSR:INFO": true,
   "CUSTOM_SPACE:FATAL": true,
   "CUSTOM_SPACE:WARNING": false,
+  "CUSTOM_SPACE:INFO": false,
 };
 
 const EDGE_STYLES: Record<
@@ -74,6 +81,42 @@ const EDGE_STYLES: Record<
     stroke: "rgb(34 211 238)",
     label: "Shared instruction (FATAL?)",
     description: "Unusual — shared mnemonic flagged FATAL.",
+  },
+  "OPCODE_SHARED:INFO": {
+    stroke: "rgb(34 211 238)",
+    label: "Shared instruction",
+    description: "Same encoding + same mnemonic = same instruction by spec.",
+  },
+  "SHARED_MAJOR_OPCODE:INFO": {
+    stroke: "rgb(96 165 250)", // blue-400
+    label: "Shared major opcode",
+    description:
+      "Both extensions live under the same 7-bit major opcode (e.g. OP-V 0x57 for vector, OP-IMM 0x13 for shifts/immediates). NOT a conflict — disambiguated at the next decode level (funct3/funct6/funct7). Reported because authors should compare full encoding masks, not just the major opcode.",
+  },
+  "SHARED_MAJOR_OPCODE:WARNING": {
+    stroke: "rgb(96 165 250)",
+    label: "Shared major opcode",
+    description: "Same major opcode (informational, not a conflict).",
+  },
+  "SHARED_MAJOR_OPCODE:FATAL": {
+    stroke: "rgb(96 165 250)",
+    label: "Shared major opcode",
+    description: "Same major opcode (informational, not a conflict).",
+  },
+  "OPCODE:INFO": {
+    stroke: "rgb(234 179 8)",
+    label: "Opcode INFO",
+    description: "Opcode-only overlap.",
+  },
+  "CSR:INFO": {
+    stroke: "rgb(192 132 252)",
+    label: "CSR INFO",
+    description: "CSR overlap (informational).",
+  },
+  "CUSTOM_SPACE:INFO": {
+    stroke: "rgb(168 162 158)",
+    label: "Custom-space INFO",
+    description: "Custom-space overlap (informational).",
   },
   "CSR:FATAL": {
     stroke: "rgb(168 85 247)",

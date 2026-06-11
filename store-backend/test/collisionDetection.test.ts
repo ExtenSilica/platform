@@ -193,6 +193,38 @@ const instructionsFixture: InstructionRow[] = [
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   },
+  // RVV-style rows: same 7-bit major opcode (OP-V = 0x57), every sub-field
+  // null on both sides. NOT a real conflict — these are disambiguated by
+  // funct3/funct6 at the next decode level. The model must surface these as
+  // SHARED_MAJOR_OPCODE:INFO, never OPCODE:FATAL.
+  {
+    id: 19,
+    extensionId: 1,
+    version: '1.0.0',
+    mnemonic: 'alpha.vop',
+    opcode: 0x57,
+    funct3: null,
+    funct7: null,
+    funct12: null,
+    format: 'V',
+    csrAddress: null,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  },
+  {
+    id: 20,
+    extensionId: 4,
+    version: '1.0.0',
+    mnemonic: 'delta.vop',
+    opcode: 0x57,
+    funct3: null,
+    funct7: null,
+    funct12: null,
+    format: 'V',
+    csrAddress: null,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  },
 ];
 
 function deepClone<T>(v: T): T {
@@ -422,5 +454,42 @@ describe('collisionDetection.detectCollisions — shared mnemonic across extensi
     expect(shared.every((c) => c.detail.includes('same instruction by spec'))).toBe(true);
     // And the real-conflict path is NOT triggered for the same row.
     expect(out.filter((c) => c.type === 'OPCODE' && c.detail.includes('ror')).length).toBe(0);
+  });
+});
+
+describe('collisionDetection — RVV/major-opcode-only matches are not conflicts', () => {
+  it('classifies same-opcode-all-null-subfields as SHARED_MAJOR_OPCODE:INFO, not OPCODE:FATAL', async () => {
+    // alpha (ext 1) and delta (ext 4) both carry a vector instruction at
+    // opcode=0x57 with funct3/funct7/funct12 all null. Pre-fix the detector
+    // flagged this FATAL (the brucehoult/Reddit complaint about zvbb vs zvbc).
+    const out = await detectCollisions(1, { against: [4] });
+    const v = out.filter((c) => c.detail.includes('0x57'));
+    expect(v.length).toBeGreaterThan(0);
+    expect(v.every((c) => c.type === 'SHARED_MAJOR_OPCODE')).toBe(true);
+    expect(v.every((c) => c.severity === 'INFO')).toBe(true);
+    expect(v.every((c) => c.detail.includes('shared major opcode only'))).toBe(true);
+    // The OPCODE-FATAL branch must NOT fire for these same rows.
+    expect(out.filter((c) => c.type === 'OPCODE' && c.detail.includes('0x57')).length).toBe(0);
+  });
+
+  it('checkCandidateOpcode also returns SHARED_MAJOR_OPCODE for null-subfields candidates', async () => {
+    const out = await checkCandidateOpcode({
+      opcode: 0x57,
+      format: 'V',
+      // funct3/funct7/funct12 intentionally omitted to simulate the catalog-seed
+      // shape where the parser couldn't extract them.
+    });
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.every((c) => c.type === 'SHARED_MAJOR_OPCODE')).toBe(true);
+    expect(out.every((c) => c.severity === 'INFO')).toBe(true);
+  });
+
+  it('still fires real OPCODE conflict when at least one sub-field is populated', async () => {
+    // ext 1 has alpha.add at (0x0b, 2, 0, null) and ext 2 has beta.add at the same
+    // tuple. funct3 + funct7 are set, so this must remain a real OPCODE conflict.
+    const out = await detectCollisions(1, { against: [2] });
+    const opcode = out.find((c) => c.type === 'OPCODE' && c.detail.includes('0x0B'));
+    expect(opcode).toBeTruthy();
+    expect(opcode?.severity).toBe('WARNING');
   });
 });

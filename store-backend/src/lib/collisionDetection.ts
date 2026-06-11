@@ -11,17 +11,40 @@ export type Collision = {
   withExtensionId: string;
   withExtensionName: string;
   /**
-   * - `OPCODE`         — same encoding tuple, **different** mnemonic.
-   *                     A real hardware conflict: one slot, two distinct instructions.
-   * - `OPCODE_SHARED`  — same encoding tuple **and** same mnemonic.
-   *                     A designed overlap (e.g. Zbkb ⊂ Zbb): both extensions
-   *                     describe the same instruction. Surfaced informationally.
-   * - `CSR`            — overlapping CSR address(es).
-   * - `CUSTOM_SPACE`   — both claim the same custom-N major opcode space.
+   * - `OPCODE`               — same encoding tuple, **different** mnemonic, with at
+   *                            least one sub-field (funct3/funct7/funct12) populated
+   *                            on **both** sides. A real hardware conflict: one slot,
+   *                            two distinct instructions.
+   * - `OPCODE_SHARED`        — same encoding tuple **and** same mnemonic.
+   *                            A designed overlap (e.g. Zbkb ⊂ Zbb): both extensions
+   *                            describe the same instruction. Surfaced informationally.
+   * - `SHARED_MAJOR_OPCODE`  — major 7-bit opcode matches but every sub-field
+   *                            (funct3/funct7/funct12) is null on **both** sides.
+   *                            This is NOT a hardware conflict: many RISC-V
+   *                            extensions share a major opcode (RVV's OP-V = 0x57
+   *                            covers every vector instruction; the AMO space at
+   *                            0x2F covers every atomic). They are disambiguated
+   *                            at the next decode level (funct3+funct6/funct7,
+   *                            register/immediate fields). We surface this only so
+   *                            authors know they live in shared dispatch space and
+   *                            need to compare full encoding masks, not the 7-bit
+   *                            opcode alone.
+   * - `CSR`                  — overlapping CSR address(es).
+   * - `CUSTOM_SPACE`         — both claim the same custom-N major opcode space.
    */
-  type: 'OPCODE' | 'OPCODE_SHARED' | 'CSR' | 'CUSTOM_SPACE';
+  type:
+    | 'OPCODE'
+    | 'OPCODE_SHARED'
+    | 'SHARED_MAJOR_OPCODE'
+    | 'CSR'
+    | 'CUSTOM_SPACE';
   detail: string;
-  severity: 'FATAL' | 'WARNING';
+  /**
+   * - `FATAL`   — incompatible by spec.
+   * - `WARNING` — overlap with at least one side remappable.
+   * - `INFO`    — informational; not a conflict.
+   */
+  severity: 'FATAL' | 'WARNING' | 'INFO';
 };
 
 type ExtensionLite = Pick<
@@ -220,6 +243,7 @@ function compareOneAgainstTargets(
       const otherClaims = targetOpcodeMap.get(key);
       if (!otherClaims || otherClaims.length === 0) continue;
       const src = srcClaims[0];
+      const tgt = otherClaims[0];
       const sharedMn = findSharedMnemonic(src, otherClaims);
       if (sharedMn) {
         // Designed overlap (same encoding + same mnemonic): both extensions
@@ -231,6 +255,31 @@ function compareOneAgainstTargets(
           type: 'OPCODE_SHARED',
           detail: `${sharedMn} shared at ${formatEncodingDetail(src)} (same instruction by spec)`,
           severity: 'WARNING',
+        });
+        continue;
+      }
+      // Major-opcode-only match: every sub-field is null on both sides. That
+      // means our model can't tell these apart beyond the 7-bit opcode. For
+      // RISC-V that is NOT a conflict — many extensions legitimately share a
+      // major opcode (OP-V 0x57 for the entire vector ISA; AMO 0x2F for atomics;
+      // OP-IMM 0x13 for shifts/immediates; etc.) and are disambiguated by
+      // funct3/funct6/funct7 plus register/immediate fields. We surface this
+      // as informational so authors know they're in shared dispatch space and
+      // should compare full encoding masks, not the 7-bit opcode alone.
+      if (
+        src.funct3 == null &&
+        src.funct7 == null &&
+        src.funct12 == null &&
+        tgt.funct3 == null &&
+        tgt.funct7 == null &&
+        tgt.funct12 == null
+      ) {
+        appendUnique(out, {
+          withExtensionId: String(target.id),
+          withExtensionName: target.name,
+          type: 'SHARED_MAJOR_OPCODE',
+          detail: `${formatEncodingDetail(src)} — shared major opcode only; disambiguated at the next decode level (funct3/funct6/funct7).`,
+          severity: 'INFO',
         });
         continue;
       }
@@ -462,6 +511,8 @@ export async function checkCandidateOpcode(
 
   const out: Collision[] = [];
   const candidateMn = normalizeMnemonic(candidate.mnemonic);
+  const candidateAllNull =
+    candidate.funct3 == null && candidate.funct7 == null && candidate.funct12 == null;
   for (const row of matches) {
     const ext = row.extension as ExtensionLite;
     const sev = severity(candidatePseudoExtension, ext);
@@ -475,6 +526,23 @@ export async function checkCandidateOpcode(
         type: 'OPCODE_SHARED',
         detail: `${row.mnemonic} shared at ${formatEncodingDetail(row)} (same instruction by spec)`,
         severity: 'WARNING',
+      });
+      continue;
+    }
+    // Major-opcode-only match: nothing beyond the 7-bit opcode is known on
+    // either side. Not a hardware conflict — see the type-doc comment above.
+    if (
+      candidateAllNull &&
+      row.funct3 == null &&
+      row.funct7 == null &&
+      row.funct12 == null
+    ) {
+      appendUnique(out, {
+        withExtensionId: String(ext.id),
+        withExtensionName: ext.name,
+        type: 'SHARED_MAJOR_OPCODE',
+        detail: `${formatEncodingDetail(row)} — shared major opcode only; disambiguated at the next decode level (funct3/funct6/funct7).`,
+        severity: 'INFO',
       });
       continue;
     }

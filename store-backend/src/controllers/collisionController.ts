@@ -154,8 +154,13 @@ type GraphNode = {
 type GraphEdge = {
   source: string;
   target: string;
-  type: 'OPCODE' | 'OPCODE_SHARED' | 'CSR' | 'CUSTOM_SPACE';
-  severity: 'FATAL' | 'WARNING';
+  type:
+    | 'OPCODE'
+    | 'OPCODE_SHARED'
+    | 'SHARED_MAJOR_OPCODE'
+    | 'CSR'
+    | 'CUSTOM_SPACE';
+  severity: 'FATAL' | 'WARNING' | 'INFO';
   detail: string;
 };
 

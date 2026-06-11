@@ -229,9 +229,10 @@ export interface PackageStats {
 export type ExtensionConflictType =
   | "OPCODE"
   | "OPCODE_SHARED"
+  | "SHARED_MAJOR_OPCODE"
   | "CSR"
   | "CUSTOM_SPACE";
-export type ExtensionConflictSeverity = "FATAL" | "WARNING";
+export type ExtensionConflictSeverity = "FATAL" | "WARNING" | "INFO";
 
 export interface CollisionGraphNode {
   id: string;

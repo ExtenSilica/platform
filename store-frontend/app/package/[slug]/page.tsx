@@ -189,10 +189,16 @@ export default async function PackagePage({
     {
       withExtensionId: string;
       withExtensionName: string;
-      severity: "FATAL" | "WARNING";
+      severity: "FATAL" | "WARNING" | "INFO";
       items: ExtensionConflict[];
     }
   >();
+  // Severity is rolled up to the strongest signal across this extension's items.
+  const SEVERITY_RANK: Record<"FATAL" | "WARNING" | "INFO", number> = {
+    INFO: 0,
+    WARNING: 1,
+    FATAL: 2,
+  };
   for (const row of conflicts) {
     const existing = conflictsByExtension.get(row.withExtensionId);
     if (!existing) {
@@ -205,7 +211,9 @@ export default async function PackagePage({
       continue;
     }
     existing.items.push(row);
-    if (row.severity === "FATAL") existing.severity = "FATAL";
+    if (SEVERITY_RANK[row.severity] > SEVERITY_RANK[existing.severity]) {
+      existing.severity = row.severity;
+    }
   }
   const conflictGroups = Array.from(conflictsByExtension.values()).sort((a, b) =>
     a.withExtensionName.localeCompare(b.withExtensionName)
