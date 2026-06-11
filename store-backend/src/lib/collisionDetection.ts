@@ -180,6 +180,14 @@ function formatEncodingDetail(
   return `${op} funct7 ${f7}`;
 }
 
+/** True when every sub-encoding field is null on this row — i.e. the seed
+ *  parser couldn't extract anything beyond the 7-bit major opcode. */
+function hasNoSubFields(
+  ins: Pick<Instruction, 'funct3' | 'funct7' | 'funct12'>,
+): boolean {
+  return ins.funct3 == null && ins.funct7 == null && ins.funct12 == null;
+}
+
 function appendUnique(list: Collision[], row: Collision): void {
   if (
     list.some(
@@ -253,7 +261,9 @@ function compareOneAgainstTargets(
           withExtensionId: String(target.id),
           withExtensionName: target.name,
           type: 'OPCODE_SHARED',
-          detail: `${sharedMn} shared at ${formatEncodingDetail(src)} (same instruction by spec)`,
+          detail: hasNoSubFields(src)
+            ? `${sharedMn} — same instruction in both extensions by spec (encoding details not yet imported)`
+            : `${sharedMn} shared at ${formatEncodingDetail(src)} (same instruction by spec)`,
           severity: 'WARNING',
         });
         continue;
@@ -278,7 +288,7 @@ function compareOneAgainstTargets(
           withExtensionId: String(target.id),
           withExtensionName: target.name,
           type: 'SHARED_MAJOR_OPCODE',
-          detail: `${formatEncodingDetail(src)} — shared major opcode only; disambiguated at the next decode level (funct3/funct6/funct7).`,
+          detail: `opcode ${toHex(src.opcode, 2)} — shared major opcode; not a conflict by itself. A true conflict requires overlapping full decode mask/match patterns, including any fixed register/immediate field constraints.`,
           severity: 'INFO',
         });
         continue;
@@ -524,7 +534,9 @@ export async function checkCandidateOpcode(
         withExtensionId: String(ext.id),
         withExtensionName: ext.name,
         type: 'OPCODE_SHARED',
-        detail: `${row.mnemonic} shared at ${formatEncodingDetail(row)} (same instruction by spec)`,
+        detail: hasNoSubFields(row)
+          ? `${row.mnemonic} — same instruction in both extensions by spec (encoding details not yet imported)`
+          : `${row.mnemonic} shared at ${formatEncodingDetail(row)} (same instruction by spec)`,
         severity: 'WARNING',
       });
       continue;
@@ -541,7 +553,7 @@ export async function checkCandidateOpcode(
         withExtensionId: String(ext.id),
         withExtensionName: ext.name,
         type: 'SHARED_MAJOR_OPCODE',
-        detail: `${formatEncodingDetail(row)} — shared major opcode only; disambiguated at the next decode level (funct3/funct6/funct7).`,
+        detail: `opcode ${toHex(row.opcode, 2)} — shared major opcode; not a conflict by itself. A true conflict requires overlapping full decode mask/match patterns, including any fixed register/immediate field constraints.`,
         severity: 'INFO',
       });
       continue;

@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-05-31T14:32:28.173Z",
+  "startedAt": "2026-05-31T14:32:28.078Z",
+  "totals": {
+    "extensions": 1,
+    "opcodeClaims": 0,
+    "csrClaims": 0,
+    "customSpaceClaims": 0,
+    "collisions": 0
+  },
+  "extensions": [
+    {
+      "slug": "riscv-zbkb",
+      "authority": null,
+      "version": "1.0.1",
+      "xsilUrl": "http://localhost:3001/uploads/3b3ece5e-4280-4619-97f4-6e3da93c6a2f.xsil",
+      "opcodeClaims": [],
+      "csrClaims": [],
+      "customSpaceClaims": [],
+      "warnings": [
+        "No opcodes.json found in archive."
+      ]
+    }
+  ],
+  "collisions": []
+}

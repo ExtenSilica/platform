@@ -58,20 +58,28 @@ export default async function CompatibilityPage() {
       */}
       <aside className="rounded-lg border border-blue-400/30 bg-blue-400/5 p-4 text-sm">
         <p className="font-semibold text-foreground">
-          Reading shared major opcodes correctly
+          What &ldquo;shared major opcode&rdquo; means here
         </p>
         <p className="mt-1 text-muted-foreground">
           Many ratified extensions live under the same 7-bit major opcode by
-          design — RVV vector instructions all sit at{" "}
+          design — every RVV vector instruction sits at{" "}
           <span className="font-mono">OP-V 0x57</span>, atomics at{" "}
           <span className="font-mono">AMO 0x2F</span>, immediate ops at{" "}
-          <span className="font-mono">OP-IMM 0x13</span>. They are NOT
-          conflicts: they&apos;re disambiguated at the next decode level
-          (funct3 + funct6/funct7, register and immediate fields). Such edges
-          are now classified as{" "}
+          <span className="font-mono">OP-IMM 0x13</span>. Sharing the major
+          opcode is <em>not</em> a conflict by itself. A real conflict requires
+          overlapping full decode mask/match patterns, including any fixed
+          register/immediate field constraints (the kind of reserved carve-outs
+          that distinguish, say, two RVV instructions sharing funct3 + funct6).
+          Such edges are now classified as{" "}
           <span className="font-mono">SHARED_MAJOR_OPCODE</span> and rendered in
-          blue. Real conflicts require a full encoding-mask match — flagged{" "}
-          <span className="font-mono">FATAL</span> in red.
+          blue. <span className="font-mono">FATAL</span> in red is reserved for
+          full-mask matches with different mnemonics — none on the graph today.
+          <br />
+          <br />
+          The current detector still works at the funct3/funct7/funct12 level;
+          adding funct6 + register/immediate mask resolution is the next
+          iteration, and will refine some of today&apos;s WARNINGs into either
+          real conflicts or shared dispatch space.
         </p>
       </aside>
 

@@ -467,7 +467,8 @@ describe('collisionDetection — RVV/major-opcode-only matches are not conflicts
     expect(v.length).toBeGreaterThan(0);
     expect(v.every((c) => c.type === 'SHARED_MAJOR_OPCODE')).toBe(true);
     expect(v.every((c) => c.severity === 'INFO')).toBe(true);
-    expect(v.every((c) => c.detail.includes('shared major opcode only'))).toBe(true);
+    expect(v.every((c) => c.detail.includes('shared major opcode'))).toBe(true);
+    expect(v.every((c) => c.detail.includes('full decode mask/match'))).toBe(true);
     // The OPCODE-FATAL branch must NOT fire for these same rows.
     expect(out.filter((c) => c.type === 'OPCODE' && c.detail.includes('0x57')).length).toBe(0);
   });
