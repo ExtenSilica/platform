@@ -36,107 +36,73 @@ type SimEdge = SimulationLinkDatum<SimNode> & {
   detail: string;
 };
 
-type FilterKey = `${ExtensionConflictType}:${ExtensionConflictSeverity}`;
-type Filters = Record<FilterKey, boolean>;
+// Filters and styles are keyed by collision TYPE — severity is now mostly
+// implied by the type, so per-type granularity is what users actually want.
+type Filters = Record<ExtensionConflictType, boolean>;
 
 const DEFAULT_FILTERS: Filters = {
-  "OPCODE:FATAL": true,
-  "OPCODE:WARNING": true,
-  "OPCODE:INFO": true,
-  "OPCODE_SHARED:WARNING": true,
-  "OPCODE_SHARED:FATAL": true,
-  "OPCODE_SHARED:INFO": true,
-  "SHARED_MAJOR_OPCODE:INFO": true,
-  "SHARED_MAJOR_OPCODE:WARNING": true,
-  "SHARED_MAJOR_OPCODE:FATAL": true,
-  "CSR:FATAL": true,
-  "CSR:WARNING": true,
-  "CSR:INFO": true,
-  "CUSTOM_SPACE:FATAL": true,
-  "CUSTOM_SPACE:WARNING": false,
-  "CUSTOM_SPACE:INFO": false,
+  OPCODE: true,
+  CSR: true,
+  PARTIAL_DECODE_OVERLAP: true,
+  OPCODE_SHARED: true,
+  SHARED_MAJOR_OPCODE: true,
+  // Shared custom space is the highest-volume, lowest-signal category — off by
+  // default so the canvas isn't dominated by "both declared custom-0".
+  SHARED_CUSTOM_SPACE: false,
+  CUSTOM_SPACE: false, // legacy alias
 };
 
-const EDGE_STYLES: Record<
-  FilterKey,
-  { stroke: string; label: string; description: string }
+const TYPE_STYLES: Record<
+  ExtensionConflictType,
+  { stroke: string; label: string; conflict: boolean; description: string }
 > = {
-  "OPCODE:FATAL": {
-    stroke: "rgb(239 68 68)",
-    label: "Opcode FATAL",
-    description: "Same encoding tuple, different mnemonics — real hardware conflict.",
-  },
-  "OPCODE:WARNING": {
-    stroke: "rgb(234 179 8)",
-    label: "Opcode WARNING",
-    description: "Opcode conflict but at least one side is remappable.",
-  },
-  "OPCODE_SHARED:WARNING": {
-    stroke: "rgb(34 211 238)",
-    label: "Shared instruction",
+  OPCODE: {
+    stroke: "rgb(239 68 68)", // red-500
+    label: "Conflict (opcode)",
+    conflict: true,
     description:
-      "Same encoding + same mnemonic = same instruction by spec (designed overlap).",
+      "Full encoding tuple (opcode + funct3 + funct7/funct12) matches with a different mnemonic. A real conflict: one decode slot, two distinct instructions.",
   },
-  "OPCODE_SHARED:FATAL": {
-    stroke: "rgb(34 211 238)",
-    label: "Shared instruction (FATAL?)",
-    description: "Unusual — shared mnemonic flagged FATAL.",
+  CSR: {
+    stroke: "rgb(168 85 247)", // purple-500
+    label: "Conflict (CSR)",
+    conflict: true,
+    description: "Overlapping CSR address(es). A real conflict.",
   },
-  "OPCODE_SHARED:INFO": {
-    stroke: "rgb(34 211 238)",
+  PARTIAL_DECODE_OVERLAP: {
+    stroke: "rgb(234 179 8)", // yellow-500
+    label: "Possible overlap",
+    conflict: false,
+    description:
+      "Opcode + funct3 match, but funct7/funct12 isn't known, so the full mask can't be compared. A possible overlap — not a confirmed conflict.",
+  },
+  OPCODE_SHARED: {
+    stroke: "rgb(34 211 238)", // cyan-400
     label: "Shared instruction",
-    description: "Same encoding + same mnemonic = same instruction by spec.",
+    conflict: false,
+    description:
+      "Same encoding + same mnemonic = the same instruction in both extensions by spec (e.g. Zbkb ⊂ Zbb). Not a conflict.",
   },
-  "SHARED_MAJOR_OPCODE:INFO": {
+  SHARED_MAJOR_OPCODE: {
     stroke: "rgb(96 165 250)", // blue-400
     label: "Shared major opcode",
+    conflict: false,
     description:
-      "Both extensions live under the same 7-bit major opcode (e.g. OP-V 0x57 for vector, OP-IMM 0x13 for shifts/immediates). NOT a conflict — disambiguated at the next decode level (funct3/funct6/funct7). Reported because authors should compare full encoding masks, not just the major opcode.",
+      "Only the 7-bit major opcode matches (e.g. OP-V 0x57 for the whole vector ISA). Not a conflict — a true conflict needs the full decode mask/match, including fixed register/immediate fields.",
   },
-  "SHARED_MAJOR_OPCODE:WARNING": {
-    stroke: "rgb(96 165 250)",
-    label: "Shared major opcode",
-    description: "Same major opcode (informational, not a conflict).",
+  SHARED_CUSTOM_SPACE: {
+    stroke: "rgb(168 162 158)", // stone-400
+    label: "Shared custom space",
+    conflict: false,
+    description:
+      "Both declare the same custom-N opcode. RISC-V has no per-vendor custom allocation, so co-occupancy is expected. Not a conflict — composing both needs opcode remapping or selective enable.",
   },
-  "SHARED_MAJOR_OPCODE:FATAL": {
-    stroke: "rgb(96 165 250)",
-    label: "Shared major opcode",
-    description: "Same major opcode (informational, not a conflict).",
-  },
-  "OPCODE:INFO": {
-    stroke: "rgb(234 179 8)",
-    label: "Opcode INFO",
-    description: "Opcode-only overlap.",
-  },
-  "CSR:INFO": {
-    stroke: "rgb(192 132 252)",
-    label: "CSR INFO",
-    description: "CSR overlap (informational).",
-  },
-  "CUSTOM_SPACE:INFO": {
+  CUSTOM_SPACE: {
+    // legacy alias for SHARED_CUSTOM_SPACE (older cached payloads)
     stroke: "rgb(168 162 158)",
-    label: "Custom-space INFO",
-    description: "Custom-space overlap (informational).",
-  },
-  "CSR:FATAL": {
-    stroke: "rgb(168 85 247)",
-    label: "CSR FATAL",
-    description: "Overlapping CSR addresses on non-remappable extensions.",
-  },
-  "CSR:WARNING": {
-    stroke: "rgb(192 132 252)",
-    label: "CSR WARNING",
-    description: "Overlapping CSR addresses; remappable.",
-  },
-  "CUSTOM_SPACE:FATAL": {
-    stroke: "rgb(120 113 108)",
-    label: "Custom-space FATAL",
-    description: "Both claim the same custom-N major opcode space.",
-  },
-  "CUSTOM_SPACE:WARNING": {
-    stroke: "rgb(168 162 158)",
-    label: "Custom-space WARNING",
-    description: "Both reach for the same custom-N opcode space. Common in vendor catalogs.",
+    label: "Shared custom space",
+    conflict: false,
+    description: "Both declare the same custom-N opcode (legacy label).",
   },
 };
 
@@ -156,8 +122,8 @@ function rlColor(rl: number | null): string {
   }
 }
 
-function edgeKey(e: { type: ExtensionConflictType; severity: ExtensionConflictSeverity }): FilterKey {
-  return `${e.type}:${e.severity}` as FilterKey;
+function styleFor(type: ExtensionConflictType) {
+  return TYPE_STYLES[type] ?? TYPE_STYLES.OPCODE;
 }
 
 export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
@@ -191,10 +157,20 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
   // We defend against that by including `hideIsolated` in the dependency
   // list: every node-set change rebuilds the edge array with fresh string
   // endpoints, which forceLink then resolves against the new node set.
+  // Per-type edge counts, aggregated from the type:severity stats map.
+  const typeCounts = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const [k, n] of Object.entries(graph.stats.byTypeSeverity)) {
+      const type = k.split(":")[0];
+      acc[type] = (acc[type] ?? 0) + n;
+    }
+    return acc as Record<ExtensionConflictType, number>;
+  }, [graph.stats.byTypeSeverity]);
+
   const visibleEdges = useMemo<SimEdge[]>(
     () =>
       graph.edges
-        .filter((e) => filters[edgeKey(e)])
+        .filter((e) => filters[e.type] ?? true)
         .map((e) => ({
           source: e.source,
           target: e.target,
@@ -442,15 +418,17 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
           </span>
         </div>
         <div className="flex w-full flex-wrap gap-1.5">
-          {(Object.entries(EDGE_STYLES) as Array<[FilterKey, (typeof EDGE_STYLES)[FilterKey]]>)
-            .filter(([k]) => graph.stats.byTypeSeverity[k] !== undefined)
-            .map(([k, style]) => {
-              const active = filters[k];
-              const count = graph.stats.byTypeSeverity[k] ?? 0;
+          {(Object.entries(TYPE_STYLES) as Array<
+            [ExtensionConflictType, (typeof TYPE_STYLES)[ExtensionConflictType]]
+          >)
+            .filter(([t]) => typeCounts[t] > 0)
+            .map(([t, style]) => {
+              const active = filters[t] ?? true;
+              const count = typeCounts[t];
               return (
                 <button
-                  key={k}
-                  onClick={() => setFilters((f) => ({ ...f, [k]: !f[k] }))}
+                  key={t}
+                  onClick={() => setFilters((f) => ({ ...f, [t]: !(f[t] ?? true) }))}
                   className={
                     "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition " +
                     (active ? "bg-background" : "bg-muted text-muted-foreground opacity-60")
@@ -464,6 +442,9 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
                     aria-hidden
                   />
                   <span className="font-medium">{style.label}</span>
+                  {style.conflict && (
+                    <span className="text-[10px] uppercase text-red-500">conflict</span>
+                  )}
                   <span className="tabular-nums">{count}</span>
                 </button>
               );
@@ -510,8 +491,7 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
                   tgt.y == null
                 )
                   return null;
-                const k = edgeKey({ type: e.edgeType, severity: e.severity });
-                const style = EDGE_STYLES[k];
+                const style = styleFor(e.edgeType);
                 const dim =
                   highlightedIds &&
                   !highlightedIds.has(src.id) &&
@@ -589,7 +569,10 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
             {hoveredEdge ? (
               <div>
                 <div className="font-semibold">
-                  {EDGE_STYLES[edgeKey({ type: hoveredEdge.edgeType, severity: hoveredEdge.severity })]?.label}
+                  {styleFor(hoveredEdge.edgeType).label}
+                  {styleFor(hoveredEdge.edgeType).conflict && (
+                    <span className="ml-2 text-xs uppercase text-red-500">conflict</span>
+                  )}
                 </div>
                 <div className="text-muted-foreground">{hoveredEdge.detail}</div>
               </div>
@@ -625,14 +608,22 @@ export function CompatibilityGraph({ graph }: { graph: CollisionGraph }) {
             Drag to reposition. Click to open the package page.
           </li>
           <li>
-            <strong className="text-foreground">Edges</strong> = collisions
-            detected by the registry. Hover for the encoding detail.
+            <strong className="text-foreground">Edges.</strong> Only{" "}
+            <strong style={{ color: "rgb(239 68 68)" }}>red</strong> (opcode) and{" "}
+            <strong style={{ color: "rgb(168 85 247)" }}>purple</strong> (CSR)
+            are <em>conflicts</em> — one decode slot, two different things.
+            Everything else is overlap / shared-space metadata:
           </li>
-          <li>
-            <strong style={{ color: "rgb(34 211 238)" }}>Cyan</strong> edges
-            (SHARED) are <em>designed overlaps</em>, not real conflicts — e.g.
-            Zbkb&apos;s <code>rol</code> and Zbb&apos;s <code>rol</code> are the
-            same instruction by spec.
+          <li className="pl-3">
+            <strong style={{ color: "rgb(234 179 8)" }}>Yellow</strong> = possible
+            overlap (opcode+funct3 match, full mask unknown).{" "}
+            <strong style={{ color: "rgb(34 211 238)" }}>Cyan</strong> = same
+            instruction by spec (Zbkb&apos;s <code>rol</code> = Zbb&apos;s{" "}
+            <code>rol</code>).{" "}
+            <strong style={{ color: "rgb(96 165 250)" }}>Blue</strong> = shared
+            major opcode (e.g. OP-V 0x57).{" "}
+            <strong style={{ color: "rgb(168 162 158)" }}>Grey</strong> = shared
+            custom space (off by default).
           </li>
           <li>
             <strong>Scroll</strong> to zoom · <strong>drag the canvas</strong>{" "}

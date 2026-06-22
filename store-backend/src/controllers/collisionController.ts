@@ -4,6 +4,8 @@ import {
   checkCandidateOpcode,
   detectCollisions,
   detectCollisionsInSet,
+  isRealConflict,
+  type Collision,
 } from '../lib/collisionDetection';
 
 export async function getExtensionConflicts(req: Request, res: Response): Promise<void> {
@@ -154,13 +156,8 @@ type GraphNode = {
 type GraphEdge = {
   source: string;
   target: string;
-  type:
-    | 'OPCODE'
-    | 'OPCODE_SHARED'
-    | 'SHARED_MAJOR_OPCODE'
-    | 'CSR'
-    | 'CUSTOM_SPACE';
-  severity: 'FATAL' | 'WARNING' | 'INFO';
+  type: Collision['type'];
+  severity: Collision['severity'];
   detail: string;
 };
 
@@ -171,6 +168,8 @@ type GraphPayload = {
   stats: {
     nodeCount: number;
     edgeCount: number;
+    /** Edges whose type is a confirmed conflict (OPCODE / CSR) — what "conflict" actually means. */
+    conflictEdgeCount: number;
     byTypeSeverity: Record<string, number>;
   };
 };
@@ -235,9 +234,11 @@ async function buildCollisionGraph(): Promise<GraphPayload> {
   }
 
   const byTypeSeverity: Record<string, number> = {};
+  let conflictEdgeCount = 0;
   for (const e of edges) {
     const k = `${e.type}:${e.severity}`;
     byTypeSeverity[k] = (byTypeSeverity[k] ?? 0) + 1;
+    if (isRealConflict(e)) conflictEdgeCount += 1;
   }
 
   return {
@@ -247,6 +248,7 @@ async function buildCollisionGraph(): Promise<GraphPayload> {
     stats: {
       nodeCount: nodes.length,
       edgeCount: edges.length,
+      conflictEdgeCount,
       byTypeSeverity,
     },
   };

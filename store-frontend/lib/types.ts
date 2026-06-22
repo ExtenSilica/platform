@@ -228,11 +228,25 @@ export interface PackageStats {
 
 export type ExtensionConflictType =
   | "OPCODE"
+  | "PARTIAL_DECODE_OVERLAP"
   | "OPCODE_SHARED"
   | "SHARED_MAJOR_OPCODE"
+  | "SHARED_CUSTOM_SPACE"
   | "CSR"
+  // legacy values still possible from older cached payloads:
   | "CUSTOM_SPACE";
 export type ExtensionConflictSeverity = "FATAL" | "WARNING" | "INFO";
+
+/** Only these collision types are confirmed conflicts; everything else is
+ *  overlap / shared-space metadata. Mirrors the backend's CONFLICT_TYPES. */
+export const REAL_CONFLICT_TYPES: ReadonlySet<ExtensionConflictType> = new Set([
+  "OPCODE",
+  "CSR",
+]);
+
+export function isRealConflict(t: ExtensionConflictType): boolean {
+  return REAL_CONFLICT_TYPES.has(t);
+}
 
 export interface CollisionGraphNode {
   id: string;
@@ -262,6 +276,8 @@ export interface CollisionGraph {
   stats: {
     nodeCount: number;
     edgeCount: number;
+    /** Edges that are confirmed conflicts (OPCODE / CSR). Optional for back-compat. */
+    conflictEdgeCount?: number;
     byTypeSeverity: Record<string, number>;
   };
 }

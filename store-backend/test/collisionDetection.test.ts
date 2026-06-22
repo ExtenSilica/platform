@@ -225,6 +225,37 @@ const instructionsFixture: InstructionRow[] = [
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   },
+  // Partial-decode pair: opcode + funct3 line up, but funct7/funct12 are null
+  // on both sides (the xthead-style catalog-seed shape). Different mnemonics,
+  // so this is a *possible* overlap, not a confirmed conflict.
+  {
+    id: 21,
+    extensionId: 1,
+    version: '1.0.0',
+    mnemonic: 'alpha.cust',
+    opcode: 0x0b,
+    funct3: 1,
+    funct7: null,
+    funct12: null,
+    format: 'CUSTOM',
+    csrAddress: null,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  },
+  {
+    id: 22,
+    extensionId: 4,
+    version: '1.0.0',
+    mnemonic: 'delta.cust',
+    opcode: 0x0b,
+    funct3: 1,
+    funct7: null,
+    funct12: null,
+    format: 'CUSTOM',
+    csrAddress: null,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+  },
 ];
 
 function deepClone<T>(v: T): T {
@@ -247,6 +278,7 @@ import {
   checkCandidateOpcode,
   detectCollisions,
   detectCollisionsInSet,
+  isRealConflict,
 } from '../src/lib/collisionDetection';
 
 beforeEach(() => {
@@ -329,9 +361,13 @@ describe('collisionDetection.detectCollisions', () => {
     expect(out.some((c) => c.type === 'CSR' && c.detail.includes('0x800'))).toBe(true);
   });
 
-  it('detects CUSTOM_SPACE collision', async () => {
+  it('reports shared custom space as SHARED_CUSTOM_SPACE:INFO, not a conflict', async () => {
     const out = await detectCollisions(1, { against: [2] });
-    expect(out.some((c) => c.type === 'CUSTOM_SPACE')).toBe(true);
+    const cs = out.filter((c) => c.type === 'SHARED_CUSTOM_SPACE');
+    expect(cs.length).toBeGreaterThan(0);
+    expect(cs.every((c) => c.severity === 'INFO')).toBe(true);
+    // None of the custom-space rows should count as a real conflict.
+    expect(cs.every((c) => !isRealConflict(c))).toBe(true);
   });
 
   it('uses WARNING when one side is remappable', async () => {
@@ -413,8 +449,8 @@ describe('collisionDetection.checkCandidateOpcode', () => {
   });
 
   // Same encoding + same mnemonic = designed overlap (Zbkb ⊂ Zbb pattern).
-  // Must be reported as OPCODE_SHARED + WARNING, never as a hardware conflict.
-  it('flags shared mnemonic at same encoding as OPCODE_SHARED, not OPCODE', async () => {
+  // Must be reported as OPCODE_SHARED + INFO, never as a hardware conflict.
+  it('flags shared mnemonic at same encoding as OPCODE_SHARED:INFO, not OPCODE', async () => {
     const out = await checkCandidateOpcode({
       opcode: 0x33,
       funct3: 0b101,
@@ -424,7 +460,8 @@ describe('collisionDetection.checkCandidateOpcode', () => {
     });
     expect(out.length).toBeGreaterThan(0);
     expect(out.every((c) => c.type === 'OPCODE_SHARED')).toBe(true);
-    expect(out.every((c) => c.severity === 'WARNING')).toBe(true);
+    expect(out.every((c) => c.severity === 'INFO')).toBe(true);
+    expect(out.every((c) => !isRealConflict(c))).toBe(true);
     expect(out.every((c) => c.detail.includes('ror'))).toBe(true);
     expect(out.every((c) => c.detail.includes('same instruction by spec'))).toBe(true);
   });
@@ -444,12 +481,13 @@ describe('collisionDetection.checkCandidateOpcode', () => {
 });
 
 describe('collisionDetection.detectCollisions — shared mnemonic across extensions', () => {
-  it('reports OPCODE_SHARED + WARNING when both sides declare the same instruction at the same encoding', async () => {
+  it('reports OPCODE_SHARED + INFO when both sides declare the same instruction at the same encoding', async () => {
     // alpha (ext 1) and gamma (ext 3) both have `ror` at (0x33, 0b101, 0b0110000).
     const out = await detectCollisions(1, { against: [3] });
     const shared = out.filter((c) => c.type === 'OPCODE_SHARED');
     expect(shared.length).toBeGreaterThan(0);
-    expect(shared.every((c) => c.severity === 'WARNING')).toBe(true);
+    expect(shared.every((c) => c.severity === 'INFO')).toBe(true);
+    expect(shared.every((c) => !isRealConflict(c))).toBe(true);
     expect(shared.every((c) => c.detail.includes('ror'))).toBe(true);
     expect(shared.every((c) => c.detail.includes('same instruction by spec'))).toBe(true);
     // And the real-conflict path is NOT triggered for the same row.
@@ -485,12 +523,27 @@ describe('collisionDetection — RVV/major-opcode-only matches are not conflicts
     expect(out.every((c) => c.severity === 'INFO')).toBe(true);
   });
 
-  it('still fires real OPCODE conflict when at least one sub-field is populated', async () => {
-    // ext 1 has alpha.add at (0x0b, 2, 0, null) and ext 2 has beta.add at the same
-    // tuple. funct3 + funct7 are set, so this must remain a real OPCODE conflict.
+  it('fires a real OPCODE conflict only when the full decode is known on both sides', async () => {
+    // ext 1 has alpha.add at (0x0b, funct3=2, funct7=0) and ext 2 has beta.add
+    // at the same full tuple, different mnemonic. funct3 + funct7 both set, so
+    // this is a confirmed conflict.
     const out = await detectCollisions(1, { against: [2] });
     const opcode = out.find((c) => c.type === 'OPCODE' && c.detail.includes('0x0B'));
     expect(opcode).toBeTruthy();
-    expect(opcode?.severity).toBe('WARNING');
+    expect(isRealConflict(opcode!)).toBe(true);
+  });
+
+  it('classifies opcode+funct3 match with null funct7/funct12 as PARTIAL_DECODE_OVERLAP, not OPCODE', async () => {
+    // ext 1 (alpha.cust) and ext 4 (delta.cust) share (opcode 0x0b, funct3 1)
+    // but funct7/funct12 are null on both, and the mnemonics differ. The full
+    // mask isn't known, so this is a *possible* overlap — not a conflict.
+    const out = await detectCollisions(1, { against: [4] });
+    const partial = out.filter((c) => c.type === 'PARTIAL_DECODE_OVERLAP');
+    expect(partial.length).toBeGreaterThan(0);
+    expect(partial.every((c) => c.severity === 'WARNING')).toBe(true);
+    expect(partial.every((c) => !isRealConflict(c))).toBe(true);
+    expect(partial.every((c) => c.detail.includes("full mask isn't known"))).toBe(true);
+    // Must NOT be promoted to a confirmed OPCODE conflict.
+    expect(out.some((c) => c.type === 'OPCODE' && c.detail.includes('0x0B'))).toBe(false);
   });
 });

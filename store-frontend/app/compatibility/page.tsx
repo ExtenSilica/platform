@@ -92,15 +92,21 @@ export default async function CompatibilityPage() {
         <>
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard label="Extensions" value={fmtNum(graph.stats.nodeCount)} />
-            <StatCard label="Edges" value={fmtNum(graph.stats.edgeCount)} />
+            <StatCard label="Relations" value={fmtNum(graph.stats.edgeCount)} />
             <StatCard
-              label="FATAL conflicts"
-              value={fmtNum(graph.stats.byTypeSeverity["OPCODE:FATAL"] ?? 0)}
+              label="Confirmed conflicts"
+              value={fmtNum(
+                graph.stats.conflictEdgeCount ??
+                  (graph.stats.byTypeSeverity["OPCODE:FATAL"] ?? 0) +
+                    (graph.stats.byTypeSeverity["OPCODE:WARNING"] ?? 0) +
+                    (graph.stats.byTypeSeverity["CSR:FATAL"] ?? 0) +
+                    (graph.stats.byTypeSeverity["CSR:WARNING"] ?? 0),
+              )}
             />
             <StatCard
-              label="Designed overlaps"
+              label="Shared major opcode"
               value={fmtNum(
-                graph.stats.byTypeSeverity["OPCODE_SHARED:WARNING"] ?? 0,
+                graph.stats.byTypeSeverity["SHARED_MAJOR_OPCODE:INFO"] ?? 0,
               )}
             />
           </section>

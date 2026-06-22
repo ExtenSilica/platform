@@ -11,41 +11,61 @@ export type Collision = {
   withExtensionId: string;
   withExtensionName: string;
   /**
-   * - `OPCODE`               — same encoding tuple, **different** mnemonic, with at
-   *                            least one sub-field (funct3/funct7/funct12) populated
-   *                            on **both** sides. A real hardware conflict: one slot,
-   *                            two distinct instructions.
-   * - `OPCODE_SHARED`        — same encoding tuple **and** same mnemonic.
-   *                            A designed overlap (e.g. Zbkb ⊂ Zbb): both extensions
-   *                            describe the same instruction. Surfaced informationally.
-   * - `SHARED_MAJOR_OPCODE`  — major 7-bit opcode matches but every sub-field
-   *                            (funct3/funct7/funct12) is null on **both** sides.
-   *                            This is NOT a hardware conflict: many RISC-V
-   *                            extensions share a major opcode (RVV's OP-V = 0x57
-   *                            covers every vector instruction; the AMO space at
-   *                            0x2F covers every atomic). They are disambiguated
-   *                            at the next decode level (funct3+funct6/funct7,
-   *                            register/immediate fields). We surface this only so
-   *                            authors know they live in shared dispatch space and
-   *                            need to compare full encoding masks, not the 7-bit
-   *                            opcode alone.
-   * - `CSR`                  — overlapping CSR address(es).
-   * - `CUSTOM_SPACE`         — both claim the same custom-N major opcode space.
+   * Only `OPCODE` (and `CSR`) are *conflicts* — a single decode slot claimed by
+   * two genuinely different things. Everything else is overlap/shared-space
+   * metadata that does not mean two extensions are incompatible.
+   *
+   * - `OPCODE`                 — full encoding tuple (opcode + funct3 + funct7/funct12,
+   *                              all populated on both sides) matches with a
+   *                              **different** mnemonic. A real conflict: one slot,
+   *                              two distinct instructions.
+   * - `PARTIAL_DECODE_OVERLAP` — opcode + funct3 match but funct7/funct12 is null on
+   *                              at least one side, so the full mask isn't known. This
+   *                              *might* be a conflict — it can't be confirmed without
+   *                              the missing sub-fields. Surfaced as a warning, not a
+   *                              verdict.
+   * - `OPCODE_SHARED`          — same encoding tuple **and** same mnemonic. A designed
+   *                              overlap (e.g. Zbkb ⊂ Zbb): both extensions describe the
+   *                              same instruction. Informational.
+   * - `SHARED_MAJOR_OPCODE`    — only the 7-bit major opcode matches; every sub-field is
+   *                              null on both sides. Not a conflict — RVV's OP-V (0x57),
+   *                              the AMO space (0x2F), OP-IMM (0x13) are each shared by
+   *                              many extensions and disambiguated at the next decode
+   *                              level. Informational.
+   * - `SHARED_CUSTOM_SPACE`    — both declare the same custom-N major opcode in their
+   *                              encodingSpace. NOT a conflict: custom-0..3 are a shared
+   *                              sandbox with no per-vendor allocation, so co-occupancy
+   *                              is expected. Integration metadata — composing two of
+   *                              them needs remapping/selection, not "they're
+   *                              incompatible".
+   * - `CSR`                    — overlapping CSR address(es). A real conflict.
    */
   type:
     | 'OPCODE'
+    | 'PARTIAL_DECODE_OVERLAP'
     | 'OPCODE_SHARED'
     | 'SHARED_MAJOR_OPCODE'
-    | 'CSR'
-    | 'CUSTOM_SPACE';
+    | 'SHARED_CUSTOM_SPACE'
+    | 'CSR';
   detail: string;
   /**
    * - `FATAL`   — incompatible by spec.
-   * - `WARNING` — overlap with at least one side remappable.
+   * - `WARNING` — possible conflict or overlap that needs coordination.
    * - `INFO`    — informational; not a conflict.
    */
   severity: 'FATAL' | 'WARNING' | 'INFO';
 };
+
+/** The only collision types that represent a *confirmed* conflict (not overlap
+ *  / shared-space metadata). Used to count "real conflicts" in summaries. */
+export const CONFLICT_TYPES: ReadonlySet<Collision['type']> = new Set([
+  'OPCODE',
+  'CSR',
+]);
+
+export function isRealConflict(c: Pick<Collision, 'type'>): boolean {
+  return CONFLICT_TYPES.has(c.type);
+}
 
 type ExtensionLite = Pick<
   Extension,
@@ -188,6 +208,16 @@ function hasNoSubFields(
   return ins.funct3 == null && ins.funct7 == null && ins.funct12 == null;
 }
 
+/** True when the row carries enough to pin a decode slot: funct3 plus at least
+ *  one of funct7 (R/I-shamt) or funct12 (I-singleton). Anything less means the
+ *  full mask isn't known and any same-tuple match is only a *possible* overlap,
+ *  not a confirmed conflict. */
+function hasFullDecode(
+  ins: Pick<Instruction, 'funct3' | 'funct7' | 'funct12'>,
+): boolean {
+  return ins.funct3 != null && (ins.funct7 != null || ins.funct12 != null);
+}
+
 function appendUnique(list: Collision[], row: Collision): void {
   if (
     list.some(
@@ -257,6 +287,8 @@ function compareOneAgainstTargets(
         // Designed overlap (same encoding + same mnemonic): both extensions
         // describe the same instruction. Surfaced informationally so authors
         // know who else carries it, but it is NOT a conflict.
+        // Designed overlap (same encoding + same mnemonic): both extensions
+        // describe the same instruction. Informational, never a conflict.
         appendUnique(out, {
           withExtensionId: String(target.id),
           withExtensionName: target.name,
@@ -264,26 +296,15 @@ function compareOneAgainstTargets(
           detail: hasNoSubFields(src)
             ? `${sharedMn} — same instruction in both extensions by spec (encoding details not yet imported)`
             : `${sharedMn} shared at ${formatEncodingDetail(src)} (same instruction by spec)`,
-          severity: 'WARNING',
+          severity: 'INFO',
         });
         continue;
       }
-      // Major-opcode-only match: every sub-field is null on both sides. That
-      // means our model can't tell these apart beyond the 7-bit opcode. For
-      // RISC-V that is NOT a conflict — many extensions legitimately share a
-      // major opcode (OP-V 0x57 for the entire vector ISA; AMO 0x2F for atomics;
-      // OP-IMM 0x13 for shifts/immediates; etc.) and are disambiguated by
-      // funct3/funct6/funct7 plus register/immediate fields. We surface this
-      // as informational so authors know they're in shared dispatch space and
-      // should compare full encoding masks, not the 7-bit opcode alone.
-      if (
-        src.funct3 == null &&
-        src.funct7 == null &&
-        src.funct12 == null &&
-        tgt.funct3 == null &&
-        tgt.funct7 == null &&
-        tgt.funct12 == null
-      ) {
+      // Major-opcode-only match: every sub-field is null on both sides — we
+      // can't tell these apart beyond the 7-bit opcode. NOT a conflict; many
+      // RISC-V extensions share a major opcode (OP-V 0x57, AMO 0x2F, OP-IMM
+      // 0x13) and are disambiguated at the next decode level.
+      if (hasNoSubFields(src) && hasNoSubFields(tgt)) {
         appendUnique(out, {
           withExtensionId: String(target.id),
           withExtensionName: target.name,
@@ -293,12 +314,28 @@ function compareOneAgainstTargets(
         });
         continue;
       }
+      // Full decode known on both sides (funct3 + funct7/funct12) with a
+      // different mnemonic — this is a confirmed conflict: one decode slot,
+      // two distinct instructions.
+      if (hasFullDecode(src) && hasFullDecode(tgt)) {
+        appendUnique(out, {
+          withExtensionId: String(target.id),
+          withExtensionName: target.name,
+          type: 'OPCODE',
+          detail: formatEncodingDetail(src),
+          severity: sev,
+        });
+        continue;
+      }
+      // Otherwise opcode + funct3 line up but funct7/funct12 is missing on at
+      // least one side — a *possible* overlap we can't confirm without the full
+      // mask. Warn, don't declare a conflict.
       appendUnique(out, {
         withExtensionId: String(target.id),
         withExtensionName: target.name,
-        type: 'OPCODE',
-        detail: formatEncodingDetail(src),
-        severity: sev,
+        type: 'PARTIAL_DECODE_OVERLAP',
+        detail: `${formatEncodingDetail(src)} — opcode and funct3 match, but the full mask isn't known (funct7/funct12 not imported). Possible overlap; needs full mask/match data to confirm.`,
+        severity: 'WARNING',
       });
     }
 
@@ -337,12 +374,16 @@ function compareOneAgainstTargets(
     );
     for (const space of sourceCustomSpaces) {
       if (!targetCustomSpaces.has(space)) continue;
+      // Both declare the same custom-N space. This is NOT a conflict: custom-0..3
+      // are a shared sandbox with no per-vendor allocation, so co-occupancy is
+      // expected. Composing two of them needs remapping/selection — integration
+      // metadata, not incompatibility.
       appendUnique(out, {
         withExtensionId: String(target.id),
         withExtensionName: target.name,
-        type: 'CUSTOM_SPACE',
-        detail: `${space} claimed by both extensions`,
-        severity: sev,
+        type: 'SHARED_CUSTOM_SPACE',
+        detail: `both declare ${space}; shared custom space (no per-vendor allocation in RISC-V). Not a conflict on its own — composing both needs opcode remapping or selective enable.`,
+        severity: 'INFO',
       });
     }
   }
@@ -537,18 +578,13 @@ export async function checkCandidateOpcode(
         detail: hasNoSubFields(row)
           ? `${row.mnemonic} — same instruction in both extensions by spec (encoding details not yet imported)`
           : `${row.mnemonic} shared at ${formatEncodingDetail(row)} (same instruction by spec)`,
-        severity: 'WARNING',
+        severity: 'INFO',
       });
       continue;
     }
     // Major-opcode-only match: nothing beyond the 7-bit opcode is known on
     // either side. Not a hardware conflict — see the type-doc comment above.
-    if (
-      candidateAllNull &&
-      row.funct3 == null &&
-      row.funct7 == null &&
-      row.funct12 == null
-    ) {
+    if (candidateAllNull && hasNoSubFields(row)) {
       appendUnique(out, {
         withExtensionId: String(ext.id),
         withExtensionName: ext.name,
@@ -558,12 +594,27 @@ export async function checkCandidateOpcode(
       });
       continue;
     }
+    // Full decode known on both sides + different mnemonic = confirmed conflict.
+    const candidateFull =
+      candidate.funct3 != null && (candidate.funct7 != null || candidate.funct12 != null);
+    if (candidateFull && hasFullDecode(row)) {
+      appendUnique(out, {
+        withExtensionId: String(ext.id),
+        withExtensionName: ext.name,
+        type: 'OPCODE',
+        detail: `${formatEncodingDetail(row)} (matches ${row.mnemonic})`,
+        severity: sev,
+      });
+      continue;
+    }
+    // opcode + funct3 line up but the full mask isn't known on one side —
+    // possible overlap, not a confirmed conflict.
     appendUnique(out, {
       withExtensionId: String(ext.id),
       withExtensionName: ext.name,
-      type: 'OPCODE',
-      detail: `${formatEncodingDetail(row)} (matches ${row.mnemonic})`,
-      severity: sev,
+      type: 'PARTIAL_DECODE_OVERLAP',
+      detail: `${formatEncodingDetail(row)} (matches ${row.mnemonic}) — opcode and funct3 match, but the full mask isn't known (funct7/funct12 not imported). Possible overlap; needs full mask/match data to confirm.`,
+      severity: 'WARNING',
     });
   }
 

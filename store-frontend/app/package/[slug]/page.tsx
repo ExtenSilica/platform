@@ -33,7 +33,7 @@ import { ClaimOwnershipCard } from "@/components/claim-ownership-card";
 import { RequestImplementationCard } from "@/components/request-implementation-card";
 import { StandardStatusBadge } from "@/components/standard-status-badge";
 import { PortStatusBadge } from "@/components/port-status-badge";
-import { PORT_STATUS_INFO } from "@/lib/types";
+import { PORT_STATUS_INFO, isRealConflict } from "@/lib/types";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -218,8 +218,16 @@ export default async function PackagePage({
   const conflictGroups = Array.from(conflictsByExtension.values()).sort((a, b) =>
     a.withExtensionName.localeCompare(b.withExtensionName)
   );
-  const fatalGroups = conflictGroups.filter((g) => g.severity === "FATAL");
-  const warningGroups = conflictGroups.filter((g) => g.severity !== "FATAL");
+  // A group is a *real conflict* only if it carries at least one OPCODE/CSR row.
+  // Everything else (shared major opcode, shared custom space, partial overlap,
+  // designed shared instruction) is overlap / integration metadata, not a conflict.
+  const realConflictGroups = conflictGroups.filter((g) =>
+    g.items.some((c) => isRealConflict(c.type))
+  );
+  const overlapGroups = conflictGroups.filter(
+    (g) => !g.items.some((c) => isRealConflict(c.type))
+  );
+  const fatalGroups = realConflictGroups.filter((g) => g.severity === "FATAL");
 
   let conflictSlugById = new Map<string, string>();
   if (conflictGroups.length > 0) {
@@ -346,18 +354,23 @@ export default async function PackagePage({
             {pkg.description || pkg.shortDescription || "No description provided."}
           </p>
 
-          <div className="mb-3">
-            {conflictGroups.length === 0 ? (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {realConflictGroups.length === 0 ? (
               <Badge className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                No known encoding conflicts
+                No confirmed encoding conflicts
               </Badge>
             ) : fatalGroups.length > 0 ? (
               <Badge className="border border-destructive/50 bg-destructive/10 text-destructive">
                 Incompatible with {fatalGroups.length} extension(s)
               </Badge>
             ) : (
-              <Badge className="border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300">
-                Conflicts with {warningGroups.length} extension(s)
+              <Badge className="border border-destructive/50 bg-destructive/10 text-destructive">
+                Conflicts with {realConflictGroups.length} extension(s)
+              </Badge>
+            )}
+            {overlapGroups.length > 0 && (
+              <Badge className="border border-blue-400/40 bg-blue-400/10 text-blue-700 dark:text-blue-300">
+                Shares encoding space with {overlapGroups.length} extension(s)
               </Badge>
             )}
           </div>
@@ -366,7 +379,7 @@ export default async function PackagePage({
             <details className="mb-4 rounded-lg border bg-background p-4">
               <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium">
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                Show encoding conflict details
+                Show encoding relation details
               </summary>
               <div className="mt-3 space-y-3">
                 {conflictGroups.map((group) => {
