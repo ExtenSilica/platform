@@ -47,5 +47,15 @@ gem5/
 pkg_temp/
 test-pkg/
 
+# Portability PoC — local sim toolchain + generated build artefacts
+portability/third_party/oss-cad-suite/
+portability/third_party/picorv32/
+portability/third_party/neorv32/
+portability/.venv/
+portability/backends/**/build/
+portability/**/__pycache__/
+portability/**/*.pyc
+
+
 # Old Verdaccio-based registry data + htpasswd (not used by store-backend deploy)
 registry/

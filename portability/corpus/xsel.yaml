@@ -1,0 +1,13 @@
+# Selection / mux (3 inputs): rd = (rs2 != 0) ? rs1 : rs3
+instruction: xsel
+description: "Conditional select: rd = (rs2 != 0) ? rs1 : rs3."
+xlen: 32
+encoding: {length: 32, mask: 0x0000707f, match: 0x0000200b}
+operands: {inputs: [rs1, rs2, rs3], outputs: [rd]}
+execution: {latency: fixed, cycles: 1, may_stall: false}
+semantics:
+  expression:
+    select:
+      - read: rs2
+      - read: rs1
+      - read: rs3

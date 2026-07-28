@@ -1,0 +1,12 @@
+# Comparison / selection: signed max. Schema fitness only — not an MVP target.
+instruction: xmax
+description: "Signed maximum: rd = max_s(rs1, rs2)."
+xlen: 32
+encoding: {length: 32, mask: 0xfe00707f, match: 0x0a00200b}
+operands: {inputs: [rs1, rs2], outputs: [rd]}
+execution: {latency: fixed, cycles: 1, may_stall: false}
+semantics:
+  expression:
+    maxs:
+      - read: rs1
+      - read: rs2

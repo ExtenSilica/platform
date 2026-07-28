@@ -1,0 +1,12 @@
+# DSP / saturation: signed saturating add. rd = clamp_s32(rs1 + rs2)
+instruction: xsatadd
+description: "Signed saturating add: rd = sat_s32(rs1 + rs2)."
+xlen: 32
+encoding: {length: 32, mask: 0xfe00707f, match: 0x0400000b}
+operands: {inputs: [rs1, rs2], outputs: [rd]}
+execution: {latency: fixed, cycles: 1, may_stall: false}
+semantics:
+  expression:
+    sat_add_s:
+      - read: rs1
+      - read: rs2

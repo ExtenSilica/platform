@@ -1,0 +1,37 @@
+# XROLADD — rotate-left then accumulate: rd = rotate_left(rs1, rs2[4:0]) + rd
+instruction: xroladd
+description: "rd = rotate_left(rs1, rs2[4:0]) + rd (mod 2^32)."
+xlen: 32
+
+encoding:
+  length: 32
+  mask: 0xfe00707f
+  match: 0x0200100b     # custom-0 opcode 0x0b, funct3=1, funct7=0x01
+
+operands:
+  inputs: [rd, rs1, rs2]
+  outputs: [rd]
+
+overflow: wrap
+
+effects:
+  memory: none
+  csr: none
+  exceptions: none
+  persistent_state: false
+
+execution:
+  latency: variable
+  may_stall: true
+
+semantics:
+  expression:
+    add:
+      - rotl:
+          - read: rs1
+          - slice:
+              value:
+                read: rs2
+              hi: 4
+              lo: 0
+      - read: rd

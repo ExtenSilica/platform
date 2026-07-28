@@ -1,0 +1,11 @@
+# Bit manipulation: count leading zeros. Schema fitness only — not an MVP target.
+instruction: xclz
+description: "Count leading zeros: rd = clz(rs1)."
+xlen: 32
+encoding: {length: 32, mask: 0xfff0707f, match: 0x6000100b}
+operands: {inputs: [rs1], outputs: [rd]}
+execution: {latency: fixed, cycles: 1, may_stall: false}
+semantics:
+  expression:
+    clz:
+      - read: rs1

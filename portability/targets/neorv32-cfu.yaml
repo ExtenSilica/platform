@@ -1,0 +1,38 @@
+# NEORV32 Custom Functions Unit (CFU) — target capability model.
+#
+# Pre-build statuses only: Not assessed | Candidate | Looks mappable |
+# Adapter required | Unsupported capability.
+# Never "Compatible" from flags alone.
+
+target: neorv32-cfu
+description: "NEORV32 CPU-internal Custom Functions Unit (Zxcfu)."
+
+architecture:
+  xlen: [32]
+
+interface:
+  name: cfu
+  operands:
+    inputs_native: [rs1, rs2]
+    inputs_adapter: [rd]    # bound to port rsd_i
+    outputs: [rd]
+  variable_latency: true
+  stall: true               # CPU pipeline stalls until valid_o
+  ready: true               # valid_o
+  memory_access: false
+  exceptions: limited       # no valid_o within ~512 cycles → illegal insn
+  custom_state: false
+  max_ack_cycles_without_wait: 512
+  start_is_pulse: true      # start_i high for exactly one cycle
+
+implementation:
+  language: vhdl
+  adapter_backend: neorv32-cfu
+  reference_core: stnolting/neorv32
+  entity: neorv32_cpu_alu_cfu   # drop-in name; we emit xsil_cfu with same ports + rsd_i
+
+adapter_notes: |
+  Stock CFU presents only rs1_i/rs2_i. Instructions that read rd as a source
+  need adapter port rsd_i (current destination register value). Full-core
+  integration requires forwarding the RF read of rd alongside rs1/rs2 when the
+  CFU is triggered. Differential tests use a CFU BFM that supplies rsd_i.
