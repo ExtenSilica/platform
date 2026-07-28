@@ -1,0 +1,35 @@
+# Rocket Chip / RoCC — ExtenSilica portability target (MVP subset).
+schema_version: 1
+target: rocket-rocc
+description: "Rocket Chip via RoCC accelerator interface (MVP subset)."
+status: working
+
+architecture:
+  xlen: [32]
+
+interface:
+  name: rocc
+  operands:
+    inputs_native: [rs1, rs2]
+    inputs_adapter: [rd]    # bound to port cmd_rsd
+    outputs: [rd]
+  variable_latency: true
+  stall: true               # cmd_ready / busy
+  ready: true               # resp_ready / cmd_ready
+  memory_access: false      # MVP: no HellaCache / TileLink port
+  exceptions: limited       # unrecognized → not accepted
+  custom_state: false       # MVP: no persistent accelerator state
+  max_ack_cycles_without_wait: null
+  start_is_pulse: false
+
+implementation:
+  language: verilog
+  adapter_backend: rocc
+  reference_core: chipsalliance/rocket-chip
+  entity: xsil_rocc
+
+adapter_notes: |
+  MVP subset of RoCC: RV32 cmd/resp Decoupled channels + busy. No memory port,
+  IRQ, or PTW. Stock RoCC presents rs1/rs2 values; instructions that read rd
+  need adapter port cmd_rsd. Differential tests use a BFM — not a full Rocket
+  tile. See docs/rocc-backend.md.

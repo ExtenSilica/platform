@@ -1,11 +1,10 @@
 # NEORV32 Custom Functions Unit (CFU) — target capability model.
-#
-# Pre-build statuses only: Not assessed | Candidate | Looks mappable |
-# Adapter required | Unsupported capability.
-# Never "Compatible" from flags alone.
+# schema_version: 1 (see docs/target-capability-model.md)
 
+schema_version: 1
 target: neorv32-cfu
 description: "NEORV32 CPU-internal Custom Functions Unit (Zxcfu)."
+status: working
 
 architecture:
   xlen: [32]
@@ -23,13 +22,13 @@ interface:
   exceptions: limited       # no valid_o within ~512 cycles → illegal insn
   custom_state: false
   max_ack_cycles_without_wait: 512
-  start_is_pulse: true      # start_i high for exactly one cycle
+  start_is_pulse: true
 
 implementation:
   language: vhdl
   adapter_backend: neorv32-cfu
   reference_core: stnolting/neorv32
-  entity: neorv32_cpu_alu_cfu   # drop-in name; we emit xsil_cfu with same ports + rsd_i
+  entity: neorv32_cpu_alu_cfu
 
 adapter_notes: |
   Stock CFU presents only rs1_i/rs2_i. Instructions that read rd as a source

@@ -25,6 +25,8 @@ import {
   executionIndicatesTests,
   parseRegistryEvidence,
 } from "@/lib/xsil-parser";
+import { parsePortabilityMatrix } from "@/lib/portability-matrix";
+import { PortabilityMatrixTable } from "@/components/portability-matrix";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/star-rating";
@@ -55,6 +57,7 @@ import {
   Link2,
   BadgeCheck,
   AlertCircle,
+  Layers,
 } from "lucide-react";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -253,6 +256,7 @@ export default async function PackagePage({
   const hasTestEntry = Boolean(execObj && typeof execObj.testEntry === "string" && execObj.testEntry.trim());
   const badgeSet = new Set(maturity.badges);
   const evidenceRows = parseRegistryEvidence(latest?.evidence ?? null);
+  const portabilityMatrix = parsePortabilityMatrix(latest?.targets ?? null);
 
   const readme = pkg.longDescription || pkg.description || "";
   const installCmd = `xsil install ${pkg.slug}`;
@@ -272,6 +276,9 @@ export default async function PackagePage({
   const NAV: { id: string; label: string }[] = [
     { id: "readiness", label: "Readiness" },
   ];
+  if (portabilityMatrix) {
+    NAV.push({ id: "portability", label: "Portability" });
+  }
   if (evidenceRows.length > 0) {
     NAV.push({ id: "evidence", label: "Evidence" });
   }
@@ -789,6 +796,12 @@ export default async function PackagePage({
                 </div>
               </div>
             </Section>
+
+            {portabilityMatrix && (
+              <Section id="portability" title="Portability matrix" icon={Layers}>
+                <PortabilityMatrixTable matrix={portabilityMatrix} />
+              </Section>
+            )}
 
             {evidenceRows.length > 0 && (
               <Section id="evidence" title="Evidence" icon={Link2}>

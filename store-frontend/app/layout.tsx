@@ -14,11 +14,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "ExtenSilica — RISC-V Extension Registry",
+    default: "ExtenSilica — Port RISC-V extensions across cores",
     template: "%s — ExtenSilica",
   },
   description:
-    "Discover, publish, and run reproducible RISC-V extensions using .xsil packages.",
+    "Describe a RISC-V extension once, check core compatibility, generate adapters, and prove ports with shared differential tests. The registry remembers what was validated.",
   icons: {
     icon: [
       { url: "/logo.svg", type: "image/svg+xml" },

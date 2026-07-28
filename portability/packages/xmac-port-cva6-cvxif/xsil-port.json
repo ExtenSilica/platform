@@ -1,0 +1,15 @@
+{
+  "target": "cva6-cvxif",
+  "status": "Adapter required",
+  "artifacts": [
+    "rtl/xsil_cvxif.v"
+  ],
+  "instructions": [
+    "xmac"
+  ],
+  "schema": "experimental",
+  "schema_version": 1,
+  "parentPackage": "xmac",
+  "adapter_backend": "cvxif",
+  "generated_by": "tools/build_port_packages.py"
+}

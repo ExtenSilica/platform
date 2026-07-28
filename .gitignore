@@ -53,8 +53,11 @@ portability/third_party/picorv32/
 portability/third_party/neorv32/
 portability/.venv/
 portability/backends/**/build/
+portability/backends/cli-build/
 portability/**/__pycache__/
 portability/**/*.pyc
+portability/generated/
+portability/packages/dist/
 
 
 # Old Verdaccio-based registry data + htpasswd (not used by store-backend deploy)

@@ -100,3 +100,25 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:3001/api
+
+  # ── Portability engine (unit tests; no Icarus/GHDL) ───────────────────────────
+  portability-check:
+    name: Portability — pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: portability
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python3 -m pip install -r requirements.txt pytest
+
+      - name: Unit tests
+        run: python3 -m pytest tests/ -q

@@ -1,0 +1,13 @@
+{
+  "instruction": "xmac",
+  "target": "cva6-cvxif",
+  "status": "DIFFERENTIALLY_VALIDATED",
+  "total": 1200,
+  "passed": 1200,
+  "failed": 0,
+  "proto_fail": 0,
+  "random": 200,
+  "seed": 12648430,
+  "pre_build": "Adapter required",
+  "generated_at": "20260727T233755Z"
+}

@@ -1,0 +1,52 @@
+{
+  "name": "xmac-port-picorv32-pcpi",
+  "version": "1.0.0",
+  "description": "XMAC \u2192 PicoRV32 PCPI port evidence: generated Verilog adapter + differential test report.",
+  "author": "extensilica",
+  "license": "Apache-2.0",
+  "homepage": "https://extensilica.com/package/xmac-port-picorv32-pcpi",
+  "keywords": [
+    "riscv",
+    "picorv32",
+    "pcpi",
+    "xmac",
+    "port",
+    "evidence"
+  ],
+  "isa": "RV32I_XMAC",
+  "entry": "sh tests/run.sh",
+  "testEntry": "sh tests/run.sh",
+  "readme": "README.md",
+  "toolchain": {
+    "external": true,
+    "root": "toolchain",
+    "triple": "none",
+    "version": "none"
+  },
+  "targets": {
+    "picorv32-pcpi": {
+      "status": "working",
+      "interface": "pcpi",
+      "language": "verilog",
+      "preBuild": "Adapter required",
+      "adapter": "Generated (pcpi_rsd)",
+      "build": "Passed",
+      "tests": "1200/1200",
+      "postTest": "Differentially validated",
+      "parentPackage": "xmac"
+    }
+  },
+  "metadata": {
+    "portability": {
+      "schema_version": 1,
+      "kind": "port",
+      "extension": "xmac",
+      "parentPackage": "xmac",
+      "target": "picorv32-pcpi",
+      "adapterBackend": "pcpi",
+      "preBuild": "Adapter required",
+      "rtl": "rtl/xsil_pcpi.v",
+      "evidence": "evidence/differential.json"
+    }
+  }
+}

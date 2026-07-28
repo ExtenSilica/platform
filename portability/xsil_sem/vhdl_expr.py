@@ -73,4 +73,19 @@ def to_vhdl(node: Any, env: Dict[str, str], xlen: int = 32) -> str:
         b = to_vhdl(arg[2], env, xlen)
         return f"( {a} ) when (unsigned({c}) /= 0) else ( {b} )"
 
+    if op == "clz":
+        if not isinstance(arg, list) or len(arg) != 1:
+            raise VhdlGenError("clz expects 1 arg")
+        return f"xsil_clz({to_vhdl(arg[0], env, xlen)})"
+
+    if op == "ctz":
+        if not isinstance(arg, list) or len(arg) != 1:
+            raise VhdlGenError("ctz expects 1 arg")
+        return f"xsil_ctz({to_vhdl(arg[0], env, xlen)})"
+
+    if op == "popcount":
+        if not isinstance(arg, list) or len(arg) != 1:
+            raise VhdlGenError("popcount expects 1 arg")
+        return f"xsil_popcount({to_vhdl(arg[0], env, xlen)})"
+
     raise VhdlGenError(f"no VHDL emitter for op {op!r} (CFU MVP subset)")

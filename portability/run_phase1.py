@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 from xsil_sem import Interpreter, load_instruction, run_differential  # noqa: E402
+from xsil_sem.mvp import load_mvp_instructions  # noqa: E402
 
 
 def _oracle_xmac(inputs):
@@ -46,6 +47,19 @@ def _oracle_xroladd(inputs):
     return (rotated + rd) & 0xFFFFFFFF
 
 
+def _oracle_clz(inputs):
+    """Zbb clz — independent of the IR."""
+    x = inputs["rs1"] & 0xFFFFFFFF
+    if x == 0:
+        return 32
+    n = 0
+    for bit in range(31, -1, -1):
+        if x & (1 << bit):
+            return n
+        n += 1
+    return 32
+
+
 def _buggy_xmac(inputs):
     """Negative control: off-by-one. Harness must report MISMATCH."""
     return (_oracle_xmac(inputs) + 1) & 0xFFFFFFFF
@@ -62,38 +76,39 @@ def main() -> int:
     print("schema + reference interpreter + differential harness")
     print()
 
-    # 1. Load MVP instructions
-    xmac = load_instruction(ROOT / "instructions" / "xmac.yaml")
-    xroladd = load_instruction(ROOT / "instructions" / "xroladd.yaml")
-    print(f"[load] {xmac.name}: {xmac.description}")
-    print(f"[load] {xroladd.name}: {xroladd.description}")
+    instrs = load_mvp_instructions()
+    oracles = {
+        "xmac": _oracle_xmac,
+        "xroladd": _oracle_xroladd,
+        "clz": _oracle_clz,
+    }
+    for instr in instrs:
+        print(f"[load] {instr.name}: {instr.description}")
 
-    # 2. Fixed smoke vectors (the textbook cases from the product brief)
-    ix = Interpreter(xmac)
-    ir = Interpreter(xroladd)
-    assert ix.run_scalar({"rd": 3, "rs1": 4, "rs2": 5}) == 23
-    assert ir.run_scalar({"rd": 1, "rs1": 0x80000001, "rs2": 1}) == 4
-    print("[smoke] XMAC(3,4,5) = 23")
-    print("[smoke] XROLADD(rd=1, rs1=0x80000001, rs2=1) = 4")
+    # Fixed smoke vectors
+    by_name = {i.name: i for i in instrs}
+    assert Interpreter(by_name["xmac"]).run_scalar({"rd": 3, "rs1": 4, "rs2": 5}) == 23
+    assert Interpreter(by_name["xroladd"]).run_scalar(
+        {"rd": 1, "rs1": 0x80000001, "rs2": 1}
+    ) == 4
+    assert Interpreter(by_name["clz"]).run_scalar({"rs1": 0}) == 32
+    assert Interpreter(by_name["clz"]).run_scalar({"rs1": 1}) == 31
+    assert Interpreter(by_name["clz"]).run_scalar({"rs1": 0x80000000}) == 0
+    print("[smoke] XMAC / XROLADD / CLZ textbook vectors OK")
     print()
 
-    # 3. Differential vs independent oracles
     reports = []
-    for instr, oracle, name in (
-        (xmac, _oracle_xmac, "python-oracle"),
-        (xroladd, _oracle_xroladd, "python-oracle"),
-    ):
+    for instr in instrs:
         report = run_differential(
-            instr, oracle, target_name=name,
+            instr, oracles[instr.name], target_name="python-oracle",
             num_random=args.random, seed=args.seed,
         )
         print(report.format())
         print()
         reports.append(report)
 
-    # 4. Negative control — buggy target must fail
     bad = run_differential(
-        xmac, _buggy_xmac, target_name="buggy-off-by-one",
+        by_name["xmac"], _buggy_xmac, target_name="buggy-off-by-one",
         num_random=min(200, args.random), seed=args.seed,
     )
     print(bad.format())
@@ -102,13 +117,11 @@ def main() -> int:
         print("FAIL: harness did not catch a deliberately buggy target")
         return 1
 
-    # 5. Corpus fitness — schema must accept a broader instruction class
     corpus_dir = ROOT / "corpus"
     print("[corpus] loading schema-fitness instructions:")
     for path in sorted(corpus_dir.glob("*.yaml")):
         instr = load_instruction(path)
         interp = Interpreter(instr)
-        # One trivial execution just to prove the tree evaluates.
         env = {role: 1 for role in instr.inputs}
         out = interp.run(env)
         print(f"  {instr.name:10s}  inputs={instr.inputs}  "
@@ -122,7 +135,7 @@ def main() -> int:
     total = sum(r.total for r in reports)
     print(f"PHASE 1 PASSED — {total} differential cases across "
           f"{len(reports)} instructions agreed with independent oracles.")
-    print("Next: PicoRV32 PCPI backend (same description, same cases).")
+    print("Next: hardware backends (PCPI / CFU) with the same descriptions.")
     return 0
 
 

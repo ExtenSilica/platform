@@ -20,8 +20,9 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 from backends.pcpi.generate import write_module  # noqa: E402
-from xsil_sem import Interpreter, generate_cases, load_instruction  # noqa: E402
+from xsil_sem import Interpreter, generate_cases  # noqa: E402
 from xsil_sem.compat import assess, load_target  # noqa: E402
+from xsil_sem.mvp import load_mvp_instructions  # noqa: E402
 
 IVERILOG = ROOT / "third_party" / "oss-cad-suite" / "bin" / "iverilog"
 VVP = ROOT / "third_party" / "oss-cad-suite" / "bin" / "vvp"
@@ -71,10 +72,7 @@ def main() -> int:
         print("Run: bash tools/fetch_sim.sh")
         return 2
 
-    instrs = [
-        load_instruction(ROOT / "instructions" / "xmac.yaml"),
-        load_instruction(ROOT / "instructions" / "xroladd.yaml"),
-    ]
+    instrs = load_mvp_instructions()
     target = load_target(ROOT / "targets" / "picorv32-pcpi.yaml")
 
     print("[compat] pre-build assessment (flags only — not Compatible):")

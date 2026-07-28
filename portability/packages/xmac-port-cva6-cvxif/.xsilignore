@@ -1,0 +1,8 @@
+# Built-in exclusions always apply: .git .xsilignore .DS_Store Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+*.tmp
+*.log
+__pycache__/

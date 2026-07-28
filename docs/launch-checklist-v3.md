@@ -15,7 +15,7 @@
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| 1.1 | Home page — hero, search bar, featured packages, recent packages, CLI snippet | ✅ done | `app/page.tsx` |
+| 1.1 | Home page — portability hero, XMAC demo, targets, how-it-works, secondary registry browse | ✅ done | `components/home-index.tsx` |
 | 1.2 | Search results page — query param, package cards, ISA/keyword filter | ✅ done | `app/search/page.tsx` + `SearchResults` component |
 | 1.3 | Package detail page — all sections (Install, Run, README, Versions, Downloads, Reviews, sidebar) | ✅ done | `app/package/[slug]/page.tsx` |
 | 1.4 | User profile page — frontend renders username, bio, package list | ✅ done | `app/users/[username]/page.tsx` |

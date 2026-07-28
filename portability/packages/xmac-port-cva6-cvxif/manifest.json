@@ -1,0 +1,54 @@
+{
+  "name": "xmac-port-cva6-cvxif",
+  "version": "1.0.0",
+  "description": "XMAC \u2192 CV-X-IF port evidence: generated Verilog MVP adapter + differential test report.",
+  "author": "extensilica",
+  "license": "Apache-2.0",
+  "homepage": "https://extensilica.com/package/xmac-port-cva6-cvxif",
+  "keywords": [
+    "riscv",
+    "cva6",
+    "cvxif",
+    "cv-x-if",
+    "xmac",
+    "port",
+    "evidence"
+  ],
+  "isa": "RV32I_XMAC",
+  "entry": "sh tests/run.sh",
+  "testEntry": "sh tests/run.sh",
+  "readme": "README.md",
+  "toolchain": {
+    "external": true,
+    "root": "toolchain",
+    "triple": "none",
+    "version": "none"
+  },
+  "targets": {
+    "cva6-cvxif": {
+      "status": "working",
+      "interface": "cvxif",
+      "language": "verilog",
+      "preBuild": "Adapter required",
+      "adapter": "Generated (register_rsd)",
+      "build": "Passed",
+      "tests": "1200/1200",
+      "postTest": "Differentially validated",
+      "parentPackage": "xmac"
+    }
+  },
+  "metadata": {
+    "portability": {
+      "schema_version": 1,
+      "kind": "port",
+      "extension": "xmac",
+      "parentPackage": "xmac",
+      "target": "cva6-cvxif",
+      "adapterBackend": "cvxif",
+      "preBuild": "Adapter required",
+      "rtl": "rtl/xsil_cvxif.v",
+      "evidence": "evidence/differential.json",
+      "subset": "CV-X-IF MVP (no compressed interface; BFM only)"
+    }
+  }
+}

@@ -87,4 +87,19 @@ def to_verilog(node: Any, env: Dict[str, str], xlen: int = 32) -> str:
         b = to_verilog(arg[2], env, xlen)
         return f"((({c}) != 0) ? ({a}) : ({b}))"
 
+    if op == "clz":
+        if not isinstance(arg, list) or len(arg) != 1:
+            raise VerilogGenError("clz expects 1 arg")
+        return f"xsil_clz({to_verilog(arg[0], env, xlen)})"
+
+    if op == "ctz":
+        if not isinstance(arg, list) or len(arg) != 1:
+            raise VerilogGenError("ctz expects 1 arg")
+        return f"xsil_ctz({to_verilog(arg[0], env, xlen)})"
+
+    if op == "popcount":
+        if not isinstance(arg, list) or len(arg) != 1:
+            raise VerilogGenError("popcount expects 1 arg")
+        return f"xsil_popcount({to_verilog(arg[0], env, xlen)})"
+
     raise VerilogGenError(f"no Verilog emitter for op {op!r} (PCPI MVP subset)")

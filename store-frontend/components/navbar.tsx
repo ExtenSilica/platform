@@ -68,8 +68,18 @@ export function Navbar() {
         )}
 
         <div className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
+          <Link href="/#targets" className="transition-colors hover:text-riscv-accent">
+            Targets
+          </Link>
           <Link href="/search" className="transition-colors hover:text-riscv-accent">
             Registry
+          </Link>
+          <Link
+            href="/wizard"
+            className="inline-flex items-center gap-1 transition-colors hover:text-riscv-accent"
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+            Analyze
           </Link>
           <Link
             href="/requests"
@@ -77,13 +87,6 @@ export function Navbar() {
           >
             <ClipboardList className="h-3.5 w-3.5" />
             Requests
-          </Link>
-          <Link
-            href="/wizard"
-            className="inline-flex items-center gap-1 transition-colors hover:text-riscv-accent"
-          >
-            <Wand2 className="h-3.5 w-3.5" />
-            Wizard
           </Link>
           <Link href="/faq" className="transition-colors hover:text-riscv-accent">
             FAQ
@@ -168,6 +171,13 @@ export function Navbar() {
           ) : (
             <>
               <Link
+                href="/wizard"
+                className="hidden h-8 items-center gap-1.5 rounded-md border border-transparent bg-riscv px-3 text-xs font-medium text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-riscv-light sm:inline-flex"
+              >
+                <Wand2 className="h-3.5 w-3.5" />
+                Analyze
+              </Link>
+              <Link
                 href="/login"
                 className="h-8 inline-flex items-center rounded-md px-3 text-sm text-muted-foreground transition-colors hover:text-riscv-accent"
               >
@@ -175,7 +185,7 @@ export function Navbar() {
               </Link>
               <Link
                 href="/register"
-                className="h-8 inline-flex items-center rounded-md border border-transparent bg-primary px-3 text-sm font-medium text-primary-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-riscv-accent/45 hover:bg-primary/90 hover:shadow-[0_8px_20px_-6px_hsl(var(--riscv-accent)/0.35)]"
+                className="h-8 inline-flex items-center rounded-md px-3 text-sm text-muted-foreground transition-colors hover:text-riscv-accent"
               >
                 Register
               </Link>

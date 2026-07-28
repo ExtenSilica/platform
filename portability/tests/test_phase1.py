@@ -126,3 +126,117 @@ def test_verilog_emitter_for_xmac():
     )
     assert "rsd_q" in v and "rs1_q" in v and "rs2_q" in v
     assert "*" in v and "+" in v
+
+
+def test_clz_looks_mappable_on_pcpi():
+    from xsil_sem.compat import assess, load_target
+    from xsil_sem.mvp import load_mvp_instructions
+
+    clz = next(i for i in load_mvp_instructions() if i.name == "clz")
+    target = load_target(ROOT / "targets" / "picorv32-pcpi.yaml")
+    result = assess(clz, target)
+    assert result.status == "Looks mappable"
+
+
+def test_clz_textbook():
+    instr = load_instruction(ROOT / "instructions" / "clz.yaml")
+    interp = Interpreter(instr)
+    assert interp.run_scalar({"rs1": 0}) == 32
+    assert interp.run_scalar({"rs1": 1}) == 31
+    assert interp.run_scalar({"rs1": 0x80000000}) == 0
+
+
+def test_all_targets_load_schema_v1():
+    from xsil_sem.target_schema import SCHEMA_VERSION, load_all_targets
+
+    targets = load_all_targets(ROOT / "targets")
+    assert {t.id for t in targets} >= {
+        "reference",
+        "picorv32-pcpi",
+        "neorv32-cfu",
+        "cva6-cvxif",
+        "rocket-rocc",
+    }
+    for t in targets:
+        assert t.schema_version == SCHEMA_VERSION
+        if t.status == "working":
+            assert t.implementation.adapter_backend
+
+
+def test_not_assessed_target_short_circuits():
+    from xsil_sem.compat import assess
+    from xsil_sem.target_schema import from_dict
+
+    instr = load_instruction(ROOT / "instructions" / "xmac.yaml")
+    target = from_dict(
+        {
+            "schema_version": 1,
+            "target": "future-placeholder",
+            "description": "synthetic",
+            "status": "not_assessed",
+            "architecture": {"xlen": [32]},
+            "interface": {
+                "name": "placeholder",
+                "operands": {
+                    "inputs_native": ["rs1", "rs2"],
+                    "inputs_adapter": ["rd"],
+                    "outputs": ["rd"],
+                },
+                "variable_latency": True,
+                "stall": True,
+                "ready": True,
+                "memory_access": False,
+                "exceptions": "none",
+                "custom_state": False,
+            },
+            "implementation": {"language": "none", "adapter_backend": None},
+        }
+    )
+    result = assess(instr, target)
+    assert result.status == "Not assessed"
+    assert "no adapter backend" in result.reasons[0]
+
+
+def test_cvxif_adapter_required_for_xmac():
+    from xsil_sem.compat import assess
+    from xsil_sem.target_schema import load_target_doc
+
+    instr = load_instruction(ROOT / "instructions" / "xmac.yaml")
+    target = load_target_doc(ROOT / "targets" / "cva6-cvxif.yaml")
+    assert target.status == "working"
+    assert target.implementation.adapter_backend == "cvxif"
+    result = assess(instr, target)
+    assert result.status == "Adapter required"
+
+
+def test_rocc_adapter_required_for_xmac():
+    from xsil_sem.compat import assess
+    from xsil_sem.target_schema import load_target_doc
+
+    instr = load_instruction(ROOT / "instructions" / "xmac.yaml")
+    target = load_target_doc(ROOT / "targets" / "rocket-rocc.yaml")
+    assert target.status == "working"
+    assert target.implementation.adapter_backend == "rocc"
+    result = assess(instr, target)
+    assert result.status == "Adapter required"
+
+
+def test_reference_looks_mappable():
+    from xsil_sem.compat import assess, load_target
+
+    instr = load_instruction(ROOT / "instructions" / "xmac.yaml")
+    target = load_target(ROOT / "targets" / "reference.yaml")
+    result = assess(instr, target)
+    assert result.status == "Looks mappable"
+
+
+def test_working_pcpi_still_adapter_required_for_xmac():
+    from xsil_sem.compat import assess
+    from xsil_sem.target_schema import load_target_doc
+
+    instr = load_instruction(ROOT / "instructions" / "xmac.yaml")
+    target = load_target_doc(ROOT / "targets" / "picorv32-pcpi.yaml")
+    assert target.status == "working"
+    result = assess(instr, target)
+    assert result.status == "Adapter required"
+

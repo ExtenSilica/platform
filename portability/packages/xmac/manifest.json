@@ -1,0 +1,107 @@
+{
+  "name": "xmac",
+  "version": "1.0.0",
+  "description": "XMAC custom instruction (rd = rd + rs1 \u00d7 rs2). Portable semantic description with differential evidence across cores.",
+  "author": "extensilica",
+  "license": "Apache-2.0",
+  "homepage": "https://extensilica.com/package/xmac",
+  "keywords": [
+    "riscv",
+    "custom-instruction",
+    "xmac",
+    "portability",
+    "mvp",
+    "evidence"
+  ],
+  "isa": "RV32I_XMAC",
+  "entry": "sh tests/run.sh",
+  "testEntry": "sh tests/run.sh",
+  "readme": "README.md",
+  "toolchain": {
+    "external": true,
+    "root": "toolchain",
+    "triple": "none",
+    "version": "none"
+  },
+  "targets": {
+    "reference": {
+      "status": "working",
+      "preBuild": "Looks mappable",
+      "adapter": "Native",
+      "build": "\u2014",
+      "tests": "1200/1200",
+      "postTest": "Differentially validated",
+      "notes": "Golden interpreter in ExtenSilica portability engine"
+    },
+    "picorv32-pcpi": {
+      "status": "working",
+      "preBuild": "Adapter required",
+      "adapter": "Generated (pcpi_rsd)",
+      "build": "Passed",
+      "tests": "1200/1200",
+      "postTest": "Differentially validated",
+      "portPackage": "xmac-port-picorv32-pcpi",
+      "notes": "rd \u2192 pcpi_rsd; BFM differential validation"
+    },
+    "neorv32-cfu": {
+      "status": "working",
+      "preBuild": "Adapter required",
+      "adapter": "Generated (rsd_i)",
+      "build": "Passed",
+      "tests": "1200/1200",
+      "postTest": "Differentially validated",
+      "portPackage": "xmac-port-neorv32-cfu",
+      "notes": "rd \u2192 rsd_i; BFM differential validation"
+    },
+    "cva6-cvxif": {
+      "status": "working",
+      "preBuild": "Adapter required",
+      "adapter": "Generated (register_rsd)",
+      "build": "Passed",
+      "tests": "1200/1200",
+      "postTest": "Differentially validated",
+      "notes": "CV-X-IF MVP subset; rd \u2192 register_rsd; BFM only",
+      "portPackage": "xmac-port-cva6-cvxif"
+    },
+    "rocket-rocc": {
+      "status": "working",
+      "preBuild": "Adapter required",
+      "adapter": "Generated (cmd_rsd)",
+      "build": "Passed",
+      "tests": "1200/1200",
+      "postTest": "Differentially validated",
+      "portPackage": "xmac-port-rocket-rocc",
+      "notes": "RoCC MVP subset; rd \u2192 cmd_rsd; BFM only; RV32"
+    }
+  },
+  "metadata": {
+    "portability": {
+      "schema_version": 1,
+      "kind": "extension",
+      "instruction": "xmac",
+      "semanticPath": "instructions/xmac.yaml",
+      "portPackages": [
+        "xmac-port-picorv32-pcpi",
+        "xmac-port-neorv32-cfu",
+        "xmac-port-cva6-cvxif",
+        "xmac-port-rocket-rocc"
+      ],
+      "vocabulary": {
+        "preBuild": [
+          "Not assessed",
+          "Candidate",
+          "Looks mappable",
+          "Adapter required",
+          "Unsupported capability"
+        ],
+        "postTest": [
+          "Differentially validated",
+          "Verified on target"
+        ],
+        "never": [
+          "Compatible"
+        ]
+      }
+    }
+  }
+}

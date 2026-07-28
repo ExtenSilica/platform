@@ -1,0 +1,48 @@
+# CLZ — Count Leading Zeros
+#
+# Provenance: RISC-V Bit-Manipulation extension Zbb, ratified.
+# Semantics match the Zbb `clz rd, rs1` definition exactly.
+#
+# Encoding note: the official Zbb opcode is OP-IMM (0x13). PicoRV32 PCPI and
+# NEORV32 CFU deliver unsupported / custom instructions on the custom-0/1
+# (and related) paths, so this package remaps the *same semantics* onto
+# custom-0 with the Zbb funct7/funct3 pattern (funct7=0x30, funct3=0x1).
+# That is an interface delivery choice, not a redefinition of behaviour.
+#
+# This is the third MVP instruction: an external, published ISA operation
+# exercised by the same portability pipeline as XMAC/XROLADD.
+instruction: clz
+description: "Count leading zeros (RISC-V Zbb semantics): rd = clz(rs1)."
+xlen: 32
+provenance:
+  isa: "RISC-V Zbb"
+  mnemonic: "clz"
+  note: "Official encoding remapped to custom-0 for PCPI/CFU delivery."
+
+encoding:
+  length: 32
+  mask: 0xfe00707f
+  # funct7=0110000, funct3=001, opcode=custom-0 (0x0b)
+  match: 0x6000100b
+
+operands:
+  inputs: [rs1]
+  outputs: [rd]
+
+overflow: wrap
+
+effects:
+  memory: none
+  csr: none
+  exceptions: none
+  persistent_state: false
+
+execution:
+  latency: fixed
+  cycles: 1
+  may_stall: false
+
+semantics:
+  expression:
+    clz:
+      - read: rs1

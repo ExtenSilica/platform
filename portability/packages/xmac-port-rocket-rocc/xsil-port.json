@@ -1,0 +1,15 @@
+{
+  "target": "rocket-rocc",
+  "status": "Adapter required",
+  "artifacts": [
+    "rtl/xsil_rocc.v"
+  ],
+  "instructions": [
+    "xmac"
+  ],
+  "schema": "experimental",
+  "schema_version": 1,
+  "parentPackage": "xmac",
+  "adapter_backend": "rocc",
+  "generated_by": "tools/build_port_packages.py"
+}

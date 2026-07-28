@@ -1,0 +1,53 @@
+{
+  "name": "xmac-port-rocket-rocc",
+  "version": "1.0.0",
+  "description": "XMAC \u2192 Rocket RoCC port evidence: generated Verilog MVP adapter + differential test report.",
+  "author": "extensilica",
+  "license": "Apache-2.0",
+  "homepage": "https://extensilica.com/package/xmac-port-rocket-rocc",
+  "keywords": [
+    "riscv",
+    "rocket",
+    "rocc",
+    "xmac",
+    "port",
+    "evidence"
+  ],
+  "isa": "RV32I_XMAC",
+  "entry": "sh tests/run.sh",
+  "testEntry": "sh tests/run.sh",
+  "readme": "README.md",
+  "toolchain": {
+    "external": true,
+    "root": "toolchain",
+    "triple": "none",
+    "version": "none"
+  },
+  "targets": {
+    "rocket-rocc": {
+      "status": "working",
+      "interface": "rocc",
+      "language": "verilog",
+      "preBuild": "Adapter required",
+      "adapter": "Generated (cmd_rsd)",
+      "build": "Passed",
+      "tests": "1200/1200",
+      "postTest": "Differentially validated",
+      "parentPackage": "xmac"
+    }
+  },
+  "metadata": {
+    "portability": {
+      "schema_version": 1,
+      "kind": "port",
+      "extension": "xmac",
+      "parentPackage": "xmac",
+      "target": "rocket-rocc",
+      "adapterBackend": "rocc",
+      "preBuild": "Adapter required",
+      "rtl": "rtl/xsil_rocc.v",
+      "evidence": "evidence/differential.json",
+      "subset": "RoCC MVP (no memory port; BFM only; RV32)"
+    }
+  }
+}

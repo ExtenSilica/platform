@@ -4,7 +4,7 @@
 **Last updated:** May 2026  
 **Audience:** Developers, operators, and contributors who need one place to see what the system does today.
 
-ExtenSilica is a **public registry and website** for reproducible **RISC-V extension packages** (`.xsil`), plus the open-source **`xsil` CLI** that publishes, installs, and runs them. There are **no payments, wallets, or commercial license tokens** on the platform.
+ExtenSilica helps you **port and evaluate RISC-V extensions across cores**: describe an instruction once, check a target interface, generate an adapter when possible, and prove it with shared differential tests. The **public registry** and **`xsil` CLI** remain the distribution layer for reproducible **`.xsil`** packages. There are **no payments, wallets, or commercial license tokens** on the platform.
 
 ---
 
@@ -88,9 +88,9 @@ Stack: **Next.js 14** (`store-frontend`), talks to registry API (`store-backend`
 
 | Route | Features |
 |-------|----------|
-| `/` | Hero search, catalog stats by `standardStatus`, animated CLI quickstart, “how it works”, diverse “latest extensions” |
+| `/` | Portability hero (“across cores”), XMAC evidence demo, how-it-works, supported targets, secondary registry browse/search |
 | `/search` | Server-rendered search; filters (keywords, ISA, standard status, readiness) |
-| `/package/[slug]` | README render, versions, install command, download stats chart, reviews, readiness badge, external citations, claim ownership, open implementation requests |
+| `/package/[slug]` | README render, versions, install command, download stats chart, reviews, readiness badge, **portability matrix** (when `targets` declare pre-build / post-test fields — never “Compatible” from flags), external citations, claim ownership, open implementation requests |
 | `/users/[username]` | Public profile, published packages, contributions |
 | `/orgs/[slug]` | Organization profile, members, scoped packages |
 | `/adoption` | Aggregated adoption metrics (honest early-stage framing) |

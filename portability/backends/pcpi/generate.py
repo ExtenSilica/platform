@@ -80,6 +80,23 @@ module {module} (
   localparam S_BUSY = 2'd1;
   localparam S_DONE = 2'd2;
 
+  // Shared IR helpers (used when an instruction's expression references them).
+  function automatic [31:0] xsil_clz;
+    input [31:0] a;
+    integer i;
+    reg found;
+    begin
+      xsil_clz = 32'd32;
+      found = 1'b0;
+      for (i = 31; i >= 0; i = i - 1) begin
+        if (!found && a[i]) begin
+          xsil_clz = 31 - i;
+          found = 1'b1;
+        end
+      end
+    end
+  endfunction
+
   // Combinational decode of the live instruction word.
 {chr(10).join('  ' + l for l in decode_lines)}
   wire match_any = {matches_or};

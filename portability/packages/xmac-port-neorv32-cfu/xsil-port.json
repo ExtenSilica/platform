@@ -1,0 +1,15 @@
+{
+  "target": "neorv32-cfu",
+  "status": "Adapter required",
+  "artifacts": [
+    "rtl/xsil_cfu.vhd"
+  ],
+  "instructions": [
+    "xmac"
+  ],
+  "schema": "experimental",
+  "schema_version": 1,
+  "parentPackage": "xmac",
+  "adapter_backend": "neorv32-cfu",
+  "generated_by": "tools/build_port_packages.py"
+}

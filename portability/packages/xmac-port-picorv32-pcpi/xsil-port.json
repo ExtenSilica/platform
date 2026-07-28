@@ -1,0 +1,15 @@
+{
+  "target": "picorv32-pcpi",
+  "status": "Adapter required",
+  "artifacts": [
+    "rtl/xsil_pcpi.v"
+  ],
+  "instructions": [
+    "xmac"
+  ],
+  "schema": "experimental",
+  "schema_version": 1,
+  "parentPackage": "xmac",
+  "adapter_backend": "pcpi",
+  "generated_by": "tools/build_port_packages.py"
+}

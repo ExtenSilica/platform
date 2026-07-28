@@ -1,0 +1,52 @@
+{
+  "name": "xmac-port-neorv32-cfu",
+  "version": "1.0.0",
+  "description": "XMAC \u2192 NEORV32 CFU port evidence: generated VHDL adapter + differential test report.",
+  "author": "extensilica",
+  "license": "Apache-2.0",
+  "homepage": "https://extensilica.com/package/xmac-port-neorv32-cfu",
+  "keywords": [
+    "riscv",
+    "neorv32",
+    "cfu",
+    "xmac",
+    "port",
+    "evidence"
+  ],
+  "isa": "RV32I_XMAC",
+  "entry": "sh tests/run.sh",
+  "testEntry": "sh tests/run.sh",
+  "readme": "README.md",
+  "toolchain": {
+    "external": true,
+    "root": "toolchain",
+    "triple": "none",
+    "version": "none"
+  },
+  "targets": {
+    "neorv32-cfu": {
+      "status": "working",
+      "interface": "cfu",
+      "language": "vhdl",
+      "preBuild": "Adapter required",
+      "adapter": "Generated (rsd_i)",
+      "build": "Passed",
+      "tests": "1200/1200",
+      "postTest": "Differentially validated",
+      "parentPackage": "xmac"
+    }
+  },
+  "metadata": {
+    "portability": {
+      "schema_version": 1,
+      "kind": "port",
+      "extension": "xmac",
+      "parentPackage": "xmac",
+      "target": "neorv32-cfu",
+      "adapterBackend": "neorv32-cfu",
+      "preBuild": "Adapter required",
+      "rtl": "rtl/xsil_cfu.vhd",
+      "evidence": "evidence/differential.json"
+    }
+  }
+}

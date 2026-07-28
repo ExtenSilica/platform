@@ -12,8 +12,8 @@ export function Footer() {
               <p className="font-bold text-foreground">ExtenSilica</p>
             </div>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Public registry for reproducible RISC-V extensions, operated as interim
-              technical steward by ExtenSilica.
+              Port and evaluate RISC-V extensions across cores. The registry
+              remembers versions and verified ports.
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               <Link href="/about" className="hover:text-riscv-accent transition-colors">

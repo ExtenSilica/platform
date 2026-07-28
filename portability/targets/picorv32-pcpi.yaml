@@ -1,16 +1,10 @@
 # PicoRV32 Pico Co-Processor Interface (PCPI) — target capability model.
-#
-# STATUS VOCABULARY (pre-build):
-#   Not assessed | Candidate | Looks mappable | Adapter required | Unsupported capability
-# Never call this "Compatible" from flags alone.
-#
-# Stock PicoRV32 PCPI forwards only rs1/rs2 *values*. Instructions that also
-# read the current destination register (rd) as a source — including XMAC and
-# XROLADD — require a one-line register-file tap that also presents rd's value
-# on an adapter port `pcpi_rsd`. That is an Adapter, not a free mapping.
+# schema_version: 1 (see docs/target-capability-model.md)
 
+schema_version: 1
 target: picorv32-pcpi
 description: "PicoRV32 external PCPI coprocessor interface."
+status: working
 
 architecture:
   xlen: [32]
@@ -18,9 +12,7 @@ architecture:
 interface:
   name: pcpi
   operands:
-    # Values presented by stock PicoRV32:
     inputs_native: [rs1, rs2]
-    # Extra value required by the generated adapter for rd-as-source ops:
     inputs_adapter: [rd]   # bound to port pcpi_rsd
     outputs: [rd]
   variable_latency: true
@@ -30,6 +22,7 @@ interface:
   exceptions: limited      # illegal insn if no PCPI ack within 16 cycles
   custom_state: false
   max_ack_cycles_without_wait: 16
+  start_is_pulse: false
 
 implementation:
   language: verilog

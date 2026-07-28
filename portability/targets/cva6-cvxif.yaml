@@ -1,0 +1,35 @@
+# CVA6 / CV-X-IF — ExtenSilica portability target (MVP subset).
+schema_version: 1
+target: cva6-cvxif
+description: "CVA6-style core via CV-X-IF coprocessor interface (MVP subset)."
+status: working
+
+architecture:
+  xlen: [32]
+
+interface:
+  name: cvxif
+  operands:
+    inputs_native: [rs1, rs2]
+    inputs_adapter: [rd]    # bound to port register_rsd
+    outputs: [rd]
+  variable_latency: true
+  stall: true               # issue_ready can delay accept
+  ready: true               # result_ready / issue_ready
+  memory_access: false
+  exceptions: limited       # reject → illegal insn on CPU
+  custom_state: false
+  max_ack_cycles_without_wait: null
+  start_is_pulse: false
+
+implementation:
+  language: verilog
+  adapter_backend: cvxif
+  reference_core: openhwgroup/cva6
+  entity: xsil_cvxif
+
+adapter_notes: |
+  MVP subset of OpenHW CV-X-IF: RV32, issue+register (SPLIT=0 style), commit,
+  result writeback. No compressed interface. Stock CV-X-IF presents rs1/rs2;
+  instructions that read rd need adapter port register_rsd. Differential tests
+  use a BFM — not a full CVA6 SoC. See docs/cvxif-backend.md.

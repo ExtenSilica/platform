@@ -117,6 +117,18 @@ architecture rtl of {entity} is
     end if;
   end function;
 
+  function xsil_clz(a : std_ulogic_vector(31 downto 0)) return std_ulogic_vector is
+    variable r : integer := 32;
+  begin
+    for i in 31 downto 0 loop
+      if a(i) = '1' then
+        r := 31 - i;
+        exit;
+      end if;
+    end loop;
+    return std_ulogic_vector(to_unsigned(r, 32));
+  end function;
+
   {match_signals}
   {match_q}
   signal match_any : boolean;

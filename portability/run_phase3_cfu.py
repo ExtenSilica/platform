@@ -18,8 +18,9 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 from backends.cfu.generate import write_entity  # noqa: E402
-from xsil_sem import Interpreter, generate_cases, load_instruction  # noqa: E402
+from xsil_sem import Interpreter, generate_cases  # noqa: E402
 from xsil_sem.compat import assess, load_target  # noqa: E402
+from xsil_sem.mvp import load_mvp_instructions  # noqa: E402
 
 GHDL = ROOT / "third_party" / "oss-cad-suite" / "bin" / "ghdl"
 TB = ROOT / "backends" / "cfu" / "tb_xsil_cfu.vhd"
@@ -67,10 +68,7 @@ def main() -> int:
         print("Re-run: bash tools/fetch_sim.sh")
         return 2
 
-    instrs = [
-        load_instruction(ROOT / "instructions" / "xmac.yaml"),
-        load_instruction(ROOT / "instructions" / "xroladd.yaml"),
-    ]
+    instrs = load_mvp_instructions()
     target = load_target(ROOT / "targets" / "neorv32-cfu.yaml")
 
     print("[compat] pre-build assessment (flags only — not Compatible):")
