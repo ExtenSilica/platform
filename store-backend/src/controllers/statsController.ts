@@ -91,9 +91,15 @@ export const getCatalogStats = async (_req: Request, res: Response) => {
   const [grouped, verifiedPorts, targets] = await Promise.all([
     prisma.extension.groupBy({
       by: ['standardStatus'],
+      where: { recordKind: 'extension' },
       _count: { _all: true },
     }),
-    prisma.port.count({ where: { verificationStatus: 'verified' } }),
+    prisma.port.count({
+      where: {
+        verificationStatus: 'verified',
+        extension: { recordKind: 'extension' },
+      },
+    }),
     prisma.target.count(),
   ]);
 
@@ -147,46 +153,46 @@ export const getAdoptionStats = async (req: Request, res: Response) => {
     rawDownloadsDaily,
     topByViews,
   ] = await Promise.all([
-    prisma.extension.count(),
+    prisma.extension.count({ where: { recordKind: 'extension' } }),
     prisma.packageViewEvent.aggregate({
-      where: { day: { gte: since } },
-      _sum: { count: true },
-    }),
-    prisma.packageViewEvent.aggregate({
-      where: { day: { gte: since7 } },
+      where: { day: { gte: since }, package: { recordKind: 'extension' } },
       _sum: { count: true },
     }),
     prisma.packageViewEvent.aggregate({
-      where: { day: { gte: since30 } },
+      where: { day: { gte: since7 }, package: { recordKind: 'extension' } },
+      _sum: { count: true },
+    }),
+    prisma.packageViewEvent.aggregate({
+      where: { day: { gte: since30 }, package: { recordKind: 'extension' } },
       _sum: { count: true },
     }),
     prisma.downloadEvent.aggregate({
-      where: { day: { gte: since } },
+      where: { day: { gte: since }, package: { recordKind: 'extension' } },
       _sum: { count: true },
     }),
     prisma.downloadEvent.aggregate({
-      where: { day: { gte: since7 } },
+      where: { day: { gte: since7 }, package: { recordKind: 'extension' } },
       _sum: { count: true },
     }),
     prisma.downloadEvent.aggregate({
-      where: { day: { gte: since30 } },
+      where: { day: { gte: since30 }, package: { recordKind: 'extension' } },
       _sum: { count: true },
     }),
     prisma.packageViewEvent.groupBy({
       by: ['day'],
-      where: { day: { gte: since } },
+      where: { day: { gte: since }, package: { recordKind: 'extension' } },
       _sum: { count: true },
       orderBy: { day: 'asc' },
     }),
     prisma.downloadEvent.groupBy({
       by: ['day'],
-      where: { day: { gte: since } },
+      where: { day: { gte: since }, package: { recordKind: 'extension' } },
       _sum: { count: true },
       orderBy: { day: 'asc' },
     }),
     prisma.packageViewEvent.groupBy({
       by: ['packageId'],
-      where: { day: { gte: since } },
+      where: { day: { gte: since }, package: { recordKind: 'extension' } },
       _sum: { count: true },
       orderBy: { _sum: { count: 'desc' } },
       take: 10,
@@ -197,7 +203,7 @@ export const getAdoptionStats = async (req: Request, res: Response) => {
   const packages =
     packageIds.length > 0
       ? await prisma.extension.findMany({
-          where: { id: { in: packageIds } },
+          where: { id: { in: packageIds }, recordKind: 'extension' },
           select: { id: true, slug: true, name: true },
         })
       : [];

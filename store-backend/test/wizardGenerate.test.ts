@@ -47,6 +47,7 @@ describe('generateXsilSkeleton', () => {
           summary: 'rd = rs1 + rs2',
         },
       ],
+      // Legacy target flags are ignored: the definition Wizard cannot assert support.
       targets: { qemu: true, binutils: true, llvm: true },
     });
 
@@ -79,10 +80,10 @@ describe('generateXsilSkeleton', () => {
       );
       expect(manifest.checksums.payload).toBe(r.payloadChecksum);
       expect(manifest.payloadSize).toBeGreaterThan(0);
-      expect(manifest.entry).toBe('sh sim/run.sh');
-      expect(manifest.testEntry).toBe('sh tests/run.sh');
-      expect(manifest.targets.spike.status).toBe('skeleton');
-      expect(manifest.targets.qemu).toBeUndefined();
+      expect(manifest.entry).toBeUndefined();
+      expect(manifest.testEntry).toBeUndefined();
+      expect(manifest.toolchain).toBeUndefined();
+      expect(manifest.targets).toBeUndefined();
     } finally {
       fs.rmSync(path.dirname(dir), { recursive: true, force: true });
     }
@@ -112,25 +113,15 @@ describe('generateXsilSkeleton', () => {
         'docs/overview.md',
         'examples/demo.S',
         'examples/x_add.S',
-        'sim/run.sh',
-        'sim/spike.yaml',
-        'sim/spike-extension/tree_ext_extension.cc',
-        'sim/spike-extension/Makefile',
-        'sim/spike-extension/README.md',
-        'tests/run.sh',
-        'tests/basic.S',
-        'tests/expected.txt',
-        'tests/instructions.S',
-        'toolchain/README.md',
       ];
       for (const rel of expected) {
         const p = path.join(dir, rel);
         expect(fs.existsSync(p), `missing ${rel}`).toBe(true);
         expect(fs.statSync(p).size).toBeGreaterThan(0);
       }
-      // Executables should be marked as such.
-      expect(fs.statSync(path.join(dir, 'sim/run.sh')).mode & 0o111).toBeGreaterThan(0);
-      expect(fs.statSync(path.join(dir, 'tests/run.sh')).mode & 0o111).toBeGreaterThan(0);
+      expect(fs.existsSync(path.join(dir, 'sim'))).toBe(false);
+      expect(fs.existsSync(path.join(dir, 'tests'))).toBe(false);
+      expect(fs.existsSync(path.join(dir, 'toolchain'))).toBe(false);
     } finally {
       fs.rmSync(path.dirname(dir), { recursive: true, force: true });
     }
@@ -162,29 +153,25 @@ describe('generateXsilSkeleton', () => {
     }
   });
 
-  it('Spike extension skeleton registers a handler per instruction', async () => {
+  it('does not manufacture Target support from legacy Wizard flags', async () => {
     const r = await generateXsilSkeleton({
       name: 'spike-ext',
-      description: 'Spike skeleton smoke check.',
+      description: 'Definition-only archive check.',
       repository: REPO,
       standardStatus: STATUS,
       authority: AUTHORITY,
       instructions: [
         { mnemonic: 'x.add', format: 'R', opcode: 'custom-0', funct3: '0b000', funct7: '0b0000000', operands: ['rd', 'rs1', 'rs2'] },
       ],
+      targets: { spike: true, qemu: true, binutils: true, llvm: true },
     });
     const dir = extractToTmp(r.buffer);
     try {
-      const cpp = fs.readFileSync(path.join(dir, 'sim/spike-extension/spike_ext_extension.cc'), 'utf8');
-      expect(cpp).toContain('class spike_ext_t : public extension_t');
-      // REGISTER_EXTENSION needs a C identifier, so the safe ident is used.
-      expect(cpp).toContain('REGISTER_EXTENSION(spike_ext,');
-      expect(cpp).toContain('static reg_t do_x_add(');
-      expect(cpp).toContain('insns.push_back({');
-
-      const mk = fs.readFileSync(path.join(dir, 'sim/spike-extension/Makefile'), 'utf8');
-      expect(mk).toContain('NAME    := spike_ext');
-      expect(mk).toContain('lib$(NAME)_spike.so');
+      const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+      expect(manifest.targets).toBeUndefined();
+      expect(fs.existsSync(path.join(dir, 'sim'))).toBe(false);
+      const readme = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
+      expect(readme).toContain('makes no Target support claim');
     } finally {
       fs.rmSync(path.dirname(dir), { recursive: true, force: true });
     }
@@ -229,6 +216,23 @@ describe('generateXsilSkeleton', () => {
       expect(opcodes.instructions).toHaveLength(2);
       expect(opcodes.instructions[0].mnemonic).toBe('x.alpha');
       expect(opcodes.instructions[1].format).toBe('R');
+    } finally {
+      fs.rmSync(path.dirname(dir), { recursive: true, force: true });
+    }
+  });
+
+  it('does not invent a placeholder instruction when none is declared', async () => {
+    const r = await generateXsilSkeleton({
+      name: 'empty-opcodes',
+      description: 'Definition with no instruction rows yet.',
+      repository: REPO,
+      standardStatus: STATUS,
+      authority: AUTHORITY,
+    });
+    const dir = extractToTmp(r.buffer);
+    try {
+      const opcodes = JSON.parse(fs.readFileSync(path.join(dir, 'opcodes.json'), 'utf8'));
+      expect(opcodes.instructions).toEqual([]);
     } finally {
       fs.rmSync(path.dirname(dir), { recursive: true, force: true });
     }

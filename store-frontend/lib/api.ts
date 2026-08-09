@@ -1005,6 +1005,8 @@ export interface AdminHealthResponse {
   counts: {
     users: number;
     packages: number;
+    extensions: number;
+    portArtifacts: number;
     versions: number;
     organizations: number;
   };
@@ -1050,6 +1052,7 @@ export interface AdminPackageRow {
   totalDownloads: number;
   weeklyDownloads: number;
   isDeprecated: boolean;
+  recordKind: "extension" | "port_artifact";
   versionCount: number;
   /** RL 1–5 (preferred; same value as legacy maturityLevel). */
   readinessLevel: number;

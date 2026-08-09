@@ -404,7 +404,7 @@ async function loadExtensionsAndInstructions(
 
   const [extensions, instructions] = await Promise.all([
     prisma.extension.findMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ids }, recordKind: 'extension' },
       select: {
         id: true,
         name: true,
@@ -418,7 +418,10 @@ async function loadExtensionsAndInstructions(
       },
     }),
     prisma.instruction.findMany({
-      where: { extensionId: { in: ids } },
+      where: {
+        extensionId: { in: ids },
+        extension: { recordKind: 'extension' },
+      },
       select: {
         id: true,
         extensionId: true,
@@ -462,7 +465,7 @@ export async function detectCollisions(
     ? againstIds.filter((id) => id !== sourceId)
     : (
         await prisma.extension.findMany({
-          where: { id: { not: sourceId } },
+          where: { id: { not: sourceId }, recordKind: 'extension' },
           select: { id: true },
         })
       ).map((x) => x.id);
@@ -521,6 +524,7 @@ export async function checkCandidateOpcode(
       funct7: candidateFunct7,
       funct12: candidateFunct12,
       ...(excludeId ? { extensionId: { not: excludeId } } : {}),
+      extension: { recordKind: 'extension' },
     },
     select: {
       extensionId: true,

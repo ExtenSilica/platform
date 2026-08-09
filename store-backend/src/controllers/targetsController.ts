@@ -4,14 +4,21 @@ import { prisma } from '../db';
 /** Public target catalog with live Port and reward-opportunity counts. */
 export async function listTargets(_req: Request, res: Response): Promise<void> {
   try {
-    const [targets, verified, openRequests] = await Promise.all([
+    const [targets, allPorts, verified, openRequests] = await Promise.all([
       prisma.target.findMany({
         orderBy: [{ kind: 'asc' }, { name: 'asc' }],
-        include: { _count: { select: { ports: true } } },
       }),
       prisma.port.groupBy({
         by: ['targetId'],
-        where: { verificationStatus: 'verified' },
+        where: { extension: { recordKind: 'extension' } },
+        _count: { _all: true },
+      }),
+      prisma.port.groupBy({
+        by: ['targetId'],
+        where: {
+          verificationStatus: 'verified',
+          extension: { recordKind: 'extension' },
+        },
         _count: { _all: true },
       }),
       prisma.implementationRequest.groupBy({
@@ -19,12 +26,14 @@ export async function listTargets(_req: Request, res: Response): Promise<void> {
         where: {
           targetId: { not: null },
           status: { in: ['open', 'in_progress', 'submitted'] },
+          package: { recordKind: 'extension' },
         },
         _count: { _all: true },
         _sum: { rewardXsil: true },
       }),
     ]);
 
+    const portsByTarget = new Map(allPorts.map((row) => [row.targetId, row._count._all]));
     const verifiedByTarget = new Map(verified.map((row) => [row.targetId, row._count._all]));
     const requestsByTarget = new Map(
       openRequests
@@ -42,7 +51,7 @@ export async function listTargets(_req: Request, res: Response): Promise<void> {
         description: target.description,
         homepageUrl: target.homepageUrl,
         architecture: target.architecture,
-        portCount: target._count.ports,
+        portCount: portsByTarget.get(target.id) ?? 0,
         verifiedPortCount: verifiedByTarget.get(target.id) ?? 0,
         openPortRequestCount: request?._count._all ?? 0,
         availableRewardXsil: request?._sum.rewardXsil ?? 0,

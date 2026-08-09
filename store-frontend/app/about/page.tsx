@@ -12,28 +12,29 @@ import { CONTACT_EMAIL, LEGAL_EMAIL, SUPPORT_EMAIL } from "@/lib/site-contact";
 export const metadata: Metadata = {
   title: "About — ExtenSilica",
   description:
-    "What ExtenSilica is, who operates the public RISC-V extension registry, and where the team is based.",
+    "What ExtenSilica verifies, who operates the public RISC-V portability registry, and where the team is based.",
 };
 
 export default function AboutPage() {
   return (
     <InfoPage
       title="About ExtenSilica"
-      subtitle="Public registry for reproducible RISC-V extensions and the open .xsil packaging format."
-      updated="May 2026"
+      subtitle="Public evidence for RISC-V extension implementations across cores and tools."
+      updated="August 2026"
       current="/about"
     >
       <div className="space-y-10">
         <InfoSection id="mission" title="What we build">
           <p>
-            ExtenSilica is a <InfoStrong>free, public registry</InfoStrong> for versioned{" "}
-            <InfoC>.xsil</InfoC> packages — self-describing archives that bundle simulation assets,
-            toolchains, tests, and documentation for RISC-V extension work. The open-source{" "}
-            <InfoC>xsil</InfoC> CLI publishes, installs, and runs packages from the same catalog.
+            ExtenSilica is a <InfoStrong>free, public portability registry</InfoStrong>.
+            An Extension records architectural intent, encoding, dependencies, and provenance.
+            Each implementation or support claim is attached to a concrete Target and backed by
+            reproducible evidence.
           </p>
           <p>
-            The goal is reproducible extension development with honest metadata, public adoption
-            metrics, and a path toward neutral long-term governance of the registry format.
+            Versioned <InfoC>.xsil</InfoC> archives transport Extension definitions and preserved
+            Port artifacts. The catalog does not promote implementation artifacts into new
+            Extensions, and it never infers support for an Extension as a whole.
           </p>
         </InfoSection>
 
@@ -62,7 +63,7 @@ export default function AboutPage() {
           </p>
           <p>
             The registry and website are built and maintained from São Paulo. Community
-            contributors and package maintainers participate from many countries; the registry
+            contributors and Extension maintainers participate from many countries; the registry
             itself is global and not limited to a single jurisdiction.
           </p>
         </InfoSection>

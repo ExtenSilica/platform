@@ -42,12 +42,17 @@ type PortWithRelations = Port & {
   target: Target;
   contributor?: Pick<User, 'id' | 'username' | 'avatarUrl'> | null;
   version?: Pick<Version, 'id' | 'version'> | null;
+  artifactExtension?: Pick<Extension, 'id' | 'slug' | 'latestVersion'> | null;
 };
 
 export type ExtensionWithVersions = Extension & {
   versions: Version[];
   ports?: PortWithRelations[];
   org?: { slug: string; displayName: string } | null;
+  artifactForPort?: (Port & {
+    extension: Pick<Extension, 'id' | 'slug' | 'name'>;
+    target: Target;
+  }) | null;
 };
 
 const SEMVER_RE =
@@ -231,6 +236,15 @@ function mapPort(port: PortWithRelations) {
     },
     versionId: port.versionId,
     version: port.version?.version ?? null,
+    backendSlug: port.backendSlug,
+    backendName: port.backendName,
+    artifact: port.artifactExtension
+      ? {
+          id: port.artifactExtension.id,
+          slug: port.artifactExtension.slug,
+          latestVersion: port.artifactExtension.latestVersion,
+        }
+      : null,
     contributor: port.contributor
       ? {
           id: port.contributor.id,
@@ -304,6 +318,18 @@ export function mapPackage(
     weeklyDownloads: ext.weeklyDownloads,
     isDeprecated: ext.isDeprecated,
     deprecationMessage: (ext as Extension & { deprecationMessage?: string | null }).deprecationMessage ?? null,
+    recordKind: ext.recordKind,
+    artifactFor: ext.artifactForPort
+      ? {
+          portId: ext.artifactForPort.id,
+          extensionSlug: ext.artifactForPort.extension.slug,
+          extensionName: ext.artifactForPort.extension.name,
+          targetSlug: ext.artifactForPort.target.slug,
+          targetName: ext.artifactForPort.target.name,
+          backendSlug: ext.artifactForPort.backendSlug,
+          backendName: ext.artifactForPort.backendName,
+        }
+      : null,
     reviewCount: reviewStats.reviewCount,
     averageRating: reviewStats.averageRating,
     createdAt: ext.createdAt.toISOString(),
@@ -340,7 +366,7 @@ export const listPackages = async (req: Request, res: Response) => {
   const orderRaw = typeof req.query.order === 'string' ? req.query.order.trim().toLowerCase() : '';
   const limitRaw = req.query.limit;
 
-  const where: Prisma.ExtensionWhereInput = {};
+  const where: Prisma.ExtensionWhereInput = { recordKind: 'extension' };
 
   if (q) {
     where.OR = [
@@ -423,6 +449,7 @@ export const listPackages = async (req: Request, res: Response) => {
             target: true,
             contributor: { select: { id: true, username: true, avatarUrl: true } },
             version: { select: { id: true, version: true } },
+            artifactExtension: { select: { id: true, slug: true, latestVersion: true } },
           },
         },
         versions: {
@@ -470,6 +497,13 @@ export const getPackageBySlug = async (req: Request, res: Response) => {
               target: true,
               contributor: { select: { id: true, username: true, avatarUrl: true } },
               version: { select: { id: true, version: true } },
+              artifactExtension: { select: { id: true, slug: true, latestVersion: true } },
+            },
+          },
+          artifactForPort: {
+            include: {
+              extension: { select: { id: true, slug: true, name: true } },
+              target: true,
             },
           },
           versions: { orderBy: { publishedAt: 'desc' } },
@@ -1301,7 +1335,7 @@ export const getMyPackages = async (req: Request, res: Response) => {
 
   try {
     const packages = await prisma.extension.findMany({
-      where: { ownerId: user.id },
+      where: { ownerId: user.id, recordKind: 'extension' },
       include: {
         org: { select: { slug: true, displayName: true } },
         versions: {

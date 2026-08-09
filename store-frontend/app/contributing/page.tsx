@@ -12,27 +12,27 @@ import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 export const metadata: Metadata = {
   title: "Contributing — ExtenSilica",
   description:
-    "How to publish .xsil packages, coordinate implementation work, and contribute to the registry platform.",
+    "How to define Extensions, implement them on concrete Targets, and submit reproducible evidence.",
 };
 
 export default function ContributingPage() {
   return (
     <InfoPage
       title="Contributing"
-      subtitle="Open technical contribution — reputation and citation, not platform payments."
-      updated="May 2026"
+      subtitle="Define the architecture once. Prove each Target and backend independently."
+      updated="August 2026"
       current="/contributing"
     >
       <div className="space-y-10">
         <InfoSection id="principles" title="Principles">
           <p>
             ExtenSilica is built for <InfoStrong>reproducible RISC-V extension work</InfoStrong>.
-            Contribution is measured by useful packages, verified implementations, public
-            profiles, and citable artifacts — not by payments processed on this site.
+            Contribution is measured by verified implementations and support evidence, public
+            profiles, and citable artifacts — not by catalog volume or platform payments.
           </p>
         </InfoSection>
 
-        <InfoSection id="packages" title="Publish a package">
+        <InfoSection id="packages" title="Define an Extension">
           <InfoUl>
             <li>
               Scaffold with the{" "}
@@ -42,15 +42,15 @@ export default function ContributingPage() {
               or <InfoC>xsil new</InfoC>, then publish with <InfoC>xsil publish</InfoC>.
             </li>
             <li>
-              Set honest <InfoC>standardStatus</InfoC> and readiness metadata; do not
+              Set honest <InfoC>standardStatus</InfoC>, encoding, dependencies, and provenance; do not
               imply ratification or official endorsement without authority.
             </li>
             <li>
-              Add a README on the package page and link your source repository when
+              Add a README on the Extension page and link your source repository when
               public.
             </li>
             <li>
-              Use the package page <InfoStrong>Cite</InfoStrong> block (CFF + BibTeX) for
+              Use the Extension page <InfoStrong>Cite</InfoStrong> block (CFF + BibTeX) for
               papers and Zenodo deposits — see our{" "}
               <a
                 href="https://github.com/ExtenSilica/ExtenSilica/blob/main/docs/zenodo-doi.md"
@@ -67,11 +67,11 @@ export default function ContributingPage() {
 
         <InfoSection id="implementation" title="Implementation requests">
           <p>
-            Package maintainers and the community can open{" "}
+            Extension maintainers and the community can open{" "}
             <Link href="/requests" className="text-primary underline">
               implementation requests
             </Link>{" "}
-            to coordinate porting, tests, or verification work:
+            to coordinate one concrete Target and backend:
           </p>
           <InfoUl>
             <li>Express interest with your public implementer profile</li>
@@ -90,7 +90,7 @@ export default function ContributingPage() {
         <InfoSection id="ownership" title="Ownership claims">
           <p>
             If you maintain an upstream extension but do not yet own the registry
-            listing, use the ownership-claim flow on the package page. Claims are
+            listing, use the ownership-claim flow on the Extension page. Claims are
             reviewed by platform admins with evidence you control the work.
           </p>
         </InfoSection>
@@ -139,11 +139,12 @@ export default function ContributingPage() {
 
         <InfoSection id="xsil" title="XSIL contribution tokens">
           <p>
-            Eligible registry work may earn{" "}
+            Verified Target support may earn{" "}
             <Link href="/token" className="text-primary underline">
               XSIL
             </Link>{" "}
-            governance points. Grants are reviewed before they count toward your balance; linking a
+            governance points. Publishing metadata earns nothing. Grants are issued after evidence
+            passes verification; linking a
             wallet is optional and only used for on-chain claim when enabled.
           </p>
           <XsilDisclaimerNotice variant="box" className="mt-4" />

@@ -16,25 +16,25 @@ const ROWS: {
     label: "PicoRV32 PCPI",
     detail: "Adapter required → 1200/1200 tests",
     ok: true,
-    href: "/package/xmac-port-picorv32-pcpi",
+    href: "/package/xmac#support-picorv32-pcpi",
   },
   {
     label: "NEORV32 CFU",
     detail: "Adapter required → 1200/1200 tests",
     ok: true,
-    href: "/package/xmac-port-neorv32-cfu",
+    href: "/package/xmac#support-neorv32-cfu",
   },
   {
     label: "CVA6 / CV-X-IF",
     detail: "Adapter required → differentially validated (MVP)",
     ok: true,
-    href: "/package/xmac-port-cva6-cvxif",
+    href: "/package/xmac#support-cva6-cvxif",
   },
   {
     label: "Rocket / RoCC",
     detail: "Adapter required → differentially validated (MVP)",
     ok: true,
-    href: "/package/xmac-port-rocket-rocc",
+    href: "/package/xmac#support-rocket-rocc",
   },
 ];
 

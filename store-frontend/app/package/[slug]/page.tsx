@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import ReactMarkdown from "react-markdown";
@@ -32,6 +32,7 @@ import { RequestImplementationCard } from "@/components/request-implementation-c
 import { StandardStatusBadge } from "@/components/standard-status-badge";
 import { PortStatusBadge } from "@/components/port-status-badge";
 import { PORT_STATUS_INFO, isRealConflict } from "@/lib/types";
+import { legacyPortArtifactDestination, supportAnchor } from "@/lib/support-model";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -144,15 +145,27 @@ export default async function PackagePage({
 }: {
   params: { slug: string };
 }) {
-  const [pkg, reviews, stats, citation, targetCatalog] = await Promise.all([
-    fetchPackage(params.slug).catch(() => null),
+  const legacyDestination = legacyPortArtifactDestination(params.slug);
+  if (legacyDestination) {
+    redirect(`/package/${legacyDestination.extensionSlug}#${legacyDestination.anchor}`);
+  }
+  const pkg = await fetchPackage(params.slug).catch(() => null);
+  if (!pkg) notFound();
+  if (pkg.recordKind === "port_artifact" && pkg.artifactFor) {
+    redirect(
+      `/package/${encodeURIComponent(pkg.artifactFor.extensionSlug)}#${supportAnchor(
+        pkg.artifactFor.targetSlug,
+        pkg.artifactFor.backendSlug,
+      )}`,
+    );
+  }
+
+  const [reviews, stats, citation, targetCatalog] = await Promise.all([
     fetchPackageReviews(params.slug).catch((): Review[] => []),
     fetchPackageStats(params.slug).catch((): PackageStats | null => null),
     fetchPackageCitation(params.slug).catch(() => null),
     fetchTargets().catch((): RegistryTarget[] => []),
   ]);
-
-  if (!pkg) notFound();
 
   const conflictsResponse = await fetchPackageConflicts(pkg.id).catch(() => null);
   const conflicts = conflictsResponse?.conflicts ?? [];
@@ -236,7 +249,7 @@ export default async function PackagePage({
   );
 
   const NAV: { id: string; label: string }[] = [
-    { id: "ports", label: `Ports${ports.length ? ` (${ports.length})` : ""}` },
+    { id: "ports", label: `Support${ports.length ? ` (${ports.length})` : ""}` },
   ];
   if (evidenceRows.length > 0) {
     NAV.push({ id: "evidence", label: "Evidence" });
@@ -297,7 +310,7 @@ export default async function PackagePage({
               <Badge variant="destructive">latest yanked</Badge>
             )}
             <Badge variant="secondary" className="text-xs">
-              {verifiedPortCount} verified port{verifiedPortCount !== 1 ? "s" : ""}
+              {verifiedPortCount} verified support record{verifiedPortCount !== 1 ? "s" : ""}
             </Badge>
           </div>
 
@@ -645,22 +658,23 @@ export default async function PackagePage({
           <main className="order-1 min-w-0 flex-1 space-y-0 lg:order-2">
 
             {/* Extension status is architectural; technical status belongs here. */}
-            <Section id="ports" title="Ports" icon={Layers}>
+            <Section id="ports" title="Implementations & support" icon={Layers}>
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="max-w-2xl text-sm text-muted-foreground">
-                    A Port is this Extension running on one Target with reproducible evidence.
-                    Status, tests, contributor, and reward are evaluated independently per Target.
+                    Each technical claim belongs to a concrete Target and, for core
+                    implementations, an explicit backend. Simulation, toolchain, hardware,
+                    and reference evidence are evaluated in separate groups below.
                   </p>
                   <p className="mt-2 text-xs font-medium text-foreground">
-                    {ports.length} port{ports.length !== 1 ? "s" : ""} · {verifiedPortCount} verified · {targets.length} targets
+                    {ports.length} support record{ports.length !== 1 ? "s" : ""} · {verifiedPortCount} verified · {targets.length} targets
                   </p>
                 </div>
                 <a
                   href="#port-work"
                   className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                  Port this Extension, earn XSIL
+                  Contribute support, earn XSIL
                 </a>
               </div>
               <PortsMatrix slug={pkg.slug} ports={ports} targets={targets} />

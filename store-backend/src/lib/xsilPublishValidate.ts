@@ -258,14 +258,6 @@ function validatePublishManifestFields(m: ManifestJson): void {
   const version = (m.version ?? '').trim();
   const description = (m.description ?? '').trim();
   const author = (m.author ?? '').trim();
-  const legacyEntry = m.entry != null ? String(m.entry).trim() : '';
-  const exec = m.execution as Record<string, unknown> | undefined;
-  const execEntry =
-    exec && typeof exec === 'object' && typeof exec.entry === 'string'
-      ? String(exec.entry).trim()
-      : '';
-  const entry = execEntry || legacyEntry;
-
   if (!name) throw new XsilValidationError('manifest.name is required.');
   if (!version) throw new XsilValidationError('manifest.version is required.');
   if (!semver.valid(version)) {
@@ -273,7 +265,9 @@ function validatePublishManifestFields(m: ManifestJson): void {
   }
   if (!description) throw new XsilValidationError('manifest.description is required.');
   if (!author) throw new XsilValidationError('manifest.author is required.');
-  if (!entry) throw new XsilValidationError('manifest.entry is required.');
+  // `entry` is optional for an architectural Extension definition. Executable
+  // entry points belong to concrete Target support and are validated when a
+  // Port artifact claims them.
 }
 
 function assertSafeTarMember(memberPath: string): void {

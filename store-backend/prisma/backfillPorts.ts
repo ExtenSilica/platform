@@ -3,6 +3,7 @@ import { syncPortsFromVersion } from '../src/lib/ports';
 
 async function main() {
   const extensions = await prisma.extension.findMany({
+    where: { recordKind: 'extension' },
     include: {
       versions: {
         where: { isYanked: false },

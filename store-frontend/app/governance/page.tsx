@@ -15,23 +15,23 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Governance — ExtenSilica",
   description:
-    "How ExtenSilica is stewarded today and our path toward neutral, long-term governance of the public RISC-V extension registry.",
+    "How ExtenSilica stewards verified RISC-V extension portability evidence and contributor governance.",
 };
 
 export default async function GovernancePage() {
   return (
     <InfoPage
       title="Governance"
-      subtitle="Interim stewardship of the public registry and .xsil format, with a clear path to neutral governance."
-      updated="May 2026"
+      subtitle="Stewardship of Extension definitions, verified Target support, and preserved evidence."
+      updated="August 2026"
       current="/governance"
     >
       <div className="space-y-10">
         <InfoSection id="steward" title="Interim steward">
           <p>
             <InfoStrong>ExtenSilica</InfoStrong> operates as interim technical steward of the
-            public RISC-V extension registry and the{" "}
-            <InfoC>.xsil</InfoC> packaging format. Our goal is neutral, long-term
+            public RISC-V portability registry and the{" "}
+            <InfoC>.xsil</InfoC> evidence format. Our goal is neutral, long-term
             governance — including transfer to{" "}
             <InfoStrong>RISC-V International</InfoStrong> or an affiliated foundation
             when the catalog, processes, and community are ready.
@@ -47,23 +47,23 @@ export default async function GovernancePage() {
         <InfoSection id="scope" title="What we coordinate">
           <p>We coordinate <InfoStrong>open technical work</InfoStrong> on the registry:</p>
           <InfoUl>
-            <li>Package publication, versioning, and yanks</li>
-            <li>Ownership claims and maintainer roles</li>
+            <li>Versioned Extension definitions and upstream provenance</li>
+            <li>Target and backend identities for concrete implementations</li>
             <li>
               <Link href="/requests" className="text-primary underline">
                 Implementation requests
               </Link>{" "}
-              — open coordination from idea to verified submission
+              — open coordination from a missing support record to verified evidence
             </li>
-            <li>Readiness levels, provenance labels, and adoption metrics</li>
+            <li>Reproducible tests, verification records, and preserved Port artifacts</li>
             <li>
               <Link href="/token" className="text-primary underline">
                 XSIL governance points
               </Link>{" "}
-              — non-monetary contribution ledger (optional EVM link for future Aragon claim)
+              — non-monetary rewards for verified support and governance participation
             </li>
             <li>
-              External citations and canonical CFF / BibTeX on each package page for
+              External citations and canonical CFF / BibTeX on each Extension page for
               academic reuse
             </li>
           </InfoUl>
@@ -92,7 +92,7 @@ export default async function GovernancePage() {
             <li>No financial schema drift in the database or API</li>
           </InfoUl>
           <p>
-            When governance moves to a foundation, registry packages remain under their
+            When governance moves to a foundation, Extension definitions and Port artifacts remain under their
             upstream licenses; only platform code and operational runbooks transfer.
           </p>
         </InfoSection>
@@ -122,7 +122,7 @@ export default async function GovernancePage() {
         <InfoSection id="contribute" title="Get involved">
           <p>
             See <Link href="/contributing" className="text-primary underline">Contributing</Link>{" "}
-            for how to publish packages, join implementation work, and help improve the
+            for how to define Extensions, join Target implementation work, and help improve the
             registry. Questions about stewardship can be directed through the contact
             channels listed in our{" "}
             <Link href="/legal/terms" className="text-primary underline">

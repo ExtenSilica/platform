@@ -99,6 +99,7 @@ async function readArchiveBytes(xsilUrl: string): Promise<Buffer> {
 async function main(): Promise<void> {
   const startedAt = Date.now();
   const extensions = await prisma.extension.findMany({
+    where: { recordKind: 'extension' },
     select: {
       id: true,
       slug: true,

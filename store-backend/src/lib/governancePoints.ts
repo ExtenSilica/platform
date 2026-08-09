@@ -8,8 +8,8 @@ export const GOVERNANCE_DISCLAIMER = XSIL_LEGAL_DISCLAIMER;
 export const TOKEN_ACCRUAL_AMOUNTS: Partial<Record<TokenGrantReason, number>> = {
   FIRST_PACKAGE_PUBLISH: 0,
   PACKAGE_PUBLISH: 0,
-  OWNERSHIP_CLAIM_APPROVED: 1000,
-  IMPLEMENTATION_SUBMISSION_ACCEPTED: 2000,
+  OWNERSHIP_CLAIM_APPROVED: 0,
+  IMPLEMENTATION_SUBMISSION_ACCEPTED: 0,
 };
 
 export const TOKEN_SUPPLY_ROWS = [
@@ -36,13 +36,12 @@ export const TOKEN_SUPPLY_ROWS = [
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
-  { action: 'Claim upstream ownership (approved)', xsil: '1,000', notes: 'After admin approval', automated: true },
-  { action: 'Deliver a verified Target Port', xsil: 'Request reward', notes: 'After verifier approval', automated: true },
-  { action: 'Complete verification run (pass)', xsil: '1,500', notes: 'As verifier', automated: true },
-  { action: 'Paper citing ExtenSilica (documented)', xsil: '3,000', notes: 'Admin-verified citation', automated: false },
-  { action: 'Contribute code to xsil CLI (merged PR)', xsil: '1,000–5,000', notes: 'Discretionary, admin-assigned', automated: false },
-  { action: 'Vendor official claim (approved)', xsil: '5,000', notes: 'Org-level, not per-user', automated: false },
-  { action: 'Report valid security issue', xsil: '2,000', notes: 'After fix is deployed', automated: false },
+  { action: 'Verified simulator support', xsil: '500', notes: 'Per accepted Extension/Target record', automated: true },
+  { action: 'Verified emulator support', xsil: '750', notes: 'Per accepted Extension/Target record', automated: true },
+  { action: 'Verified toolchain support', xsil: '1,000', notes: 'Per accepted Extension/Target record', automated: true },
+  { action: 'Verified core implementation', xsil: '1,500', notes: 'Target and backend required', automated: true },
+  { action: 'Verified hardware evidence', xsil: '2,000', notes: 'Reproducible physical-board run', automated: true },
+  { action: 'Validated reference model', xsil: '500', notes: 'Accepted semantic comparison oracle', automated: true },
 ] as const;
 
 const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;

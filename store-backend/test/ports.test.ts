@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractManifestPorts, portRewardForTargetKind } from '../src/lib/ports';
+import { extractManifestPorts, portRewardForTargetKind, resolvePortBackend } from '../src/lib/ports';
 
 describe('extractManifestPorts', () => {
   it('turns evidence-backed working targets into verified Ports', () => {
@@ -29,9 +29,40 @@ describe('extractManifestPorts', () => {
     }));
 
     expect(ports).toEqual(expect.arrayContaining([
-      expect.objectContaining({ targetSlug: 'cva6', verificationStatus: 'tested' }),
-      expect.objectContaining({ targetSlug: 'rocket', verificationStatus: 'built' }),
+      expect.objectContaining({
+        targetSlug: 'cva6',
+        backendSlug: 'cvxif',
+        backendName: 'CV-X-IF',
+        verificationStatus: 'tested',
+      }),
+      expect.objectContaining({
+        targetSlug: 'rocket',
+        backendSlug: 'rocc',
+        backendName: 'RoCC',
+        verificationStatus: 'built',
+      }),
     ]));
+  });
+
+  it('keeps multiple backends on the same Target as separate Ports', () => {
+    const ports = extractManifestPorts(JSON.stringify({
+      cva6: { status: 'built' },
+      'cva6-cvxif': { status: 'working', tests: '10/10' },
+    }));
+
+    expect(ports.filter((port) => port.targetSlug === 'cva6')).toHaveLength(2);
+    expect(ports.map((port) => port.backendSlug)).toEqual(expect.arrayContaining(['default', 'cvxif']));
+  });
+
+  it('uses known interfaces for new core implementation requests', () => {
+    expect(resolvePortBackend({ targetSlug: 'neorv32' })).toEqual({
+      backendSlug: 'cfu',
+      backendName: 'CFU',
+    });
+    expect(resolvePortBackend({ targetSlug: 'custom-core', backendName: 'My Bus' })).toEqual({
+      backendSlug: 'my-bus',
+      backendName: 'My Bus',
+    });
   });
 
   it('returns no candidates for malformed targets JSON', () => {

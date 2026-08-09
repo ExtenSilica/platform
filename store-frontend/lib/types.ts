@@ -193,6 +193,8 @@ export type PortVerificationStatus =
   | "failed"
   | "archived";
 
+export type ExtensionRecordKind = "extension" | "port_artifact";
+
 export interface RegistryTarget {
   id: number;
   slug: string;
@@ -212,6 +214,9 @@ export interface RegistryPort {
   extensionId: number;
   targetId: number;
   target: RegistryTarget;
+  backendSlug: string;
+  backendName?: string | null;
+  artifact?: { id: number; slug: string; latestVersion?: string | null } | null;
   versionId?: number | null;
   version?: string | null;
   contributor?: { id: number; username: string; avatarUrl?: string | null } | null;
@@ -263,6 +268,16 @@ export interface RegistryPackage {
   weeklyDownloads: number;
   isDeprecated: boolean;
   deprecationMessage?: string | null;
+  recordKind?: ExtensionRecordKind;
+  artifactFor?: {
+    portId: number;
+    extensionSlug: string;
+    extensionName: string;
+    targetSlug: string;
+    targetName: string;
+    backendSlug: string;
+    backendName?: string | null;
+  } | null;
   reviewCount?: number;
   averageRating?: number | null;
   createdAt: string;
@@ -652,6 +667,8 @@ export interface ImplementationRequest {
   targetCapability?: string | null;
   targetId?: number | null;
   target?: Pick<RegistryTarget, "id" | "slug" | "name" | "kind"> | null;
+  backendSlug?: string | null;
+  backendName?: string | null;
   rewardXsil?: number | null;
   acceptanceCriteriaSummary?: string | null;
   fundingContactEmail?: string | null;
@@ -717,6 +734,8 @@ export interface CreateImplementationRequestInput {
   visibility?: ImplementationRequestVisibility;
   targetCapability?: string | null;
   targetId?: number | null;
+  backendSlug?: string | null;
+  backendName?: string | null;
   rewardXsil?: number | null;
   acceptanceCriteriaSummary?: string | null;
   fundingContactEmail?: string | null;
@@ -730,6 +749,8 @@ export interface PatchImplementationRequestInput {
   visibility?: ImplementationRequestVisibility;
   targetCapability?: string | null;
   targetId?: number | null;
+  backendSlug?: string | null;
+  backendName?: string | null;
   rewardXsil?: number | null;
   acceptanceCriteriaSummary?: string | null;
   fundingContactEmail?: string | null;

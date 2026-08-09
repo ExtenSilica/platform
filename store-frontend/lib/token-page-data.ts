@@ -39,15 +39,12 @@ export const TOKEN_SUPPLY_ROWS = [
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
-  { action: "Publish first package", xsil: "500", notes: "One-time per user", icon: "package" as const },
-  { action: "Publish each additional package", xsil: "200", notes: "Per new package", icon: "package" as const },
-  { action: "Claim upstream ownership (approved)", xsil: "1,000", notes: "After admin approval", icon: "shield" as const },
-  { action: "Submit implementation (accepted)", xsil: "2,000", notes: "After verifier approval", icon: "code" as const },
-  { action: "Complete verification run (pass)", xsil: "1,500", notes: "As verifier", icon: "check" as const, automated: true },
-  { action: "Paper citing ExtenSilica (documented)", xsil: "3,000", notes: "Admin-verified citation", icon: "book" as const },
-  { action: "Contribute code to xsil CLI (merged PR)", xsil: "1,000–5,000", notes: "Discretionary, admin-assigned", icon: "terminal" as const },
-  { action: "Vendor official claim (approved)", xsil: "5,000", notes: "Org-level, not per-user", icon: "building" as const },
-  { action: "Report valid security issue", xsil: "2,000", notes: "After fix is deployed", icon: "alert" as const },
+  { action: "Verified simulator support", xsil: "500", notes: "Per accepted Extension/Target record", icon: "check" as const },
+  { action: "Verified emulator support", xsil: "750", notes: "Per accepted Extension/Target record", icon: "check" as const },
+  { action: "Verified toolchain support", xsil: "1,000", notes: "Per accepted Extension/Target record", icon: "terminal" as const },
+  { action: "Verified core implementation", xsil: "1,500", notes: "Target and backend required", icon: "code" as const },
+  { action: "Verified hardware evidence", xsil: "2,000", notes: "Reproducible run on a physical board", icon: "building" as const },
+  { action: "Validated reference model", xsil: "500", notes: "Accepted semantic comparison oracle", icon: "check" as const },
 ] as const;
 
 export const WHAT_IS_XSIL = [
@@ -62,7 +59,7 @@ export const WHAT_IS_XSIL = [
     icon: "vote" as const,
   },
   {
-    title: "No monetary value today",
+    title: "Contribution, not payment",
     body: "XSIL tokens have no monetary value today and may never have. They are not securities or investments. They record governance participation and contribution history only.",
     icon: "info" as const,
   },

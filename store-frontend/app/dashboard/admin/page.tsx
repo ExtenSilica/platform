@@ -641,7 +641,7 @@ export default function PlatformAdminPage() {
           [
             { id: "health", label: "Health", icon: Activity },
             { id: "users", label: "Users", icon: Users },
-            { id: "packages", label: "Packages", icon: Package },
+            { id: "packages", label: "Catalog", icon: Package },
             { id: "ownership", label: "Ownership", icon: ShieldQuestion },
             { id: "implementation", label: "Implementation", icon: ClipboardList },
             { id: "citations", label: "Citations", icon: BookMarked },
@@ -677,7 +677,7 @@ export default function PlatformAdminPage() {
 
       {tab === "health" && (
         <section className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Overall</CardTitle>
@@ -744,10 +744,18 @@ export default function PlatformAdminPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Packages</CardTitle>
+                <CardTitle className="text-sm font-medium">Extensions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{health?.counts.packages ?? "—"}</div>
+                <div className="text-3xl font-bold">{health?.counts.extensions ?? health?.counts.packages ?? "—"}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Port artifacts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{health?.counts.portArtifacts ?? "—"}</div>
               </CardContent>
             </Card>
             <Card>
@@ -1041,7 +1049,7 @@ export default function PlatformAdminPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-medium">
-              Packages{" "}
+              Catalog records{" "}
               <span className="text-sm font-normal text-muted-foreground">
                 ({pkgTotal} total)
               </span>

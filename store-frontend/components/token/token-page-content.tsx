@@ -44,15 +44,15 @@ export function TokenPageContent({ governance }: Props) {
   return (
     <InfoPage
       title="XSIL — The ExtenSilica Contributor Token"
-      subtitle="Governance participation for people who help build the RISC-V extension ecosystem."
+      subtitle="Verified technical contribution and governance participation."
       updated="May 2026"
       current="/token"
-      note="No monetary value · Governance only · Earn by contributing"
+      note="No monetary value · Earned through verified support · Used in governance"
     >
       <div className="space-y-16">
         <section className="-mt-4 space-y-6">
           <Badge variant="outline" className="text-xs font-normal">
-            No monetary value · Governance only · Earn by contributing
+            No monetary value · Verified contribution · Governance participation
           </Badge>
           <XsilDisclaimerNotice variant="box" className="max-w-3xl" />
           <TokenHeroActions />
@@ -132,23 +132,7 @@ export function TokenPageContent({ governance }: Props) {
               >
                 <div className="flex items-start gap-3">
                   <TokenIcon
-                    name={
-                      row.action.includes("package")
-                        ? "package"
-                        : row.action.includes("ownership")
-                          ? "shield"
-                          : row.action.includes("implementation")
-                            ? "code"
-                            : row.action.includes("verification")
-                              ? "check"
-                              : row.action.includes("Paper")
-                                ? "book"
-                                : row.action.includes("CLI")
-                                  ? "terminal"
-                                  : row.action.includes("Vendor")
-                                    ? "building"
-                                    : "alert"
-                    }
+                    name={"icon" in row ? row.icon : "check"}
                     className="mt-0.5 h-5 w-5 shrink-0"
                   />
                   <div>

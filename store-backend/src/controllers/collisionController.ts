@@ -179,6 +179,7 @@ let cachedGraph: { at: number; payload: GraphPayload } | null = null;
 
 async function buildCollisionGraph(): Promise<GraphPayload> {
   const exts = await prisma.extension.findMany({
+    where: { recordKind: 'extension' },
     select: {
       id: true,
       slug: true,

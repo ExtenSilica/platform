@@ -5,27 +5,46 @@ export interface ManifestPortCandidate {
   targetSlug: string;
   targetName: string;
   targetKind: TargetKind;
+  backendSlug: string;
+  backendName: string | null;
   verificationStatus: PortVerificationStatus;
   testSummary: string | null;
   evidence: string | null;
 }
 
-const TARGET_ALIASES: Record<string, { slug: string; name: string; kind: TargetKind }> = {
-  spike: { slug: 'spike', name: 'Spike', kind: 'simulator' },
-  qemu: { slug: 'qemu', name: 'QEMU', kind: 'emulator' },
-  cva6: { slug: 'cva6', name: 'CVA6', kind: 'core' },
-  'cva6-cvxif': { slug: 'cva6', name: 'CVA6', kind: 'core' },
-  cvxif: { slug: 'cva6', name: 'CVA6', kind: 'core' },
-  cv32e40x: { slug: 'cv32e40x', name: 'CV32E40X', kind: 'core' },
-  neorv32: { slug: 'neorv32', name: 'NEORV32', kind: 'core' },
-  'neorv32-cfu': { slug: 'neorv32', name: 'NEORV32', kind: 'core' },
-  rocket: { slug: 'rocket', name: 'Rocket', kind: 'core' },
-  'rocket-rocc': { slug: 'rocket', name: 'Rocket', kind: 'core' },
-  llvm: { slug: 'llvm', name: 'LLVM', kind: 'toolchain' },
-  'milk-v-duo': { slug: 'milk-v-duo-c906', name: 'Milk-V Duo / C906', kind: 'board' },
-  'milk-v-duo-c906': { slug: 'milk-v-duo-c906', name: 'Milk-V Duo / C906', kind: 'board' },
-  reference: { slug: 'reference', name: 'Reference model', kind: 'reference' },
-  'picorv32-pcpi': { slug: 'picorv32', name: 'PicoRV32', kind: 'core' },
+type TargetIdentity = {
+  slug: string;
+  name: string;
+  kind: TargetKind;
+  backendSlug: string;
+  backendName: string | null;
+};
+
+const TARGET_ALIASES: Record<string, TargetIdentity> = {
+  spike: { slug: 'spike', name: 'Spike', kind: 'simulator', backendSlug: 'default', backendName: null },
+  qemu: { slug: 'qemu', name: 'QEMU', kind: 'emulator', backendSlug: 'default', backendName: null },
+  cva6: { slug: 'cva6', name: 'CVA6', kind: 'core', backendSlug: 'default', backendName: null },
+  'cva6-cvxif': { slug: 'cva6', name: 'CVA6', kind: 'core', backendSlug: 'cvxif', backendName: 'CV-X-IF' },
+  cvxif: { slug: 'cva6', name: 'CVA6', kind: 'core', backendSlug: 'cvxif', backendName: 'CV-X-IF' },
+  cv32e40x: { slug: 'cv32e40x', name: 'CV32E40X', kind: 'core', backendSlug: 'default', backendName: null },
+  neorv32: { slug: 'neorv32', name: 'NEORV32', kind: 'core', backendSlug: 'default', backendName: null },
+  'neorv32-cfu': { slug: 'neorv32', name: 'NEORV32', kind: 'core', backendSlug: 'cfu', backendName: 'CFU' },
+  rocket: { slug: 'rocket', name: 'Rocket', kind: 'core', backendSlug: 'default', backendName: null },
+  'rocket-rocc': { slug: 'rocket', name: 'Rocket', kind: 'core', backendSlug: 'rocc', backendName: 'RoCC' },
+  picorv32: { slug: 'picorv32', name: 'PicoRV32', kind: 'core', backendSlug: 'default', backendName: null },
+  'picorv32-pcpi': { slug: 'picorv32', name: 'PicoRV32', kind: 'core', backendSlug: 'pcpi', backendName: 'PCPI' },
+  llvm: { slug: 'llvm', name: 'LLVM', kind: 'toolchain', backendSlug: 'default', backendName: null },
+  'milk-v-duo': { slug: 'milk-v-duo-c906', name: 'Milk-V Duo / C906', kind: 'board', backendSlug: 'default', backendName: null },
+  'milk-v-duo-c906': { slug: 'milk-v-duo-c906', name: 'Milk-V Duo / C906', kind: 'board', backendSlug: 'default', backendName: null },
+  reference: { slug: 'reference', name: 'Reference model', kind: 'reference', backendSlug: 'semantic-model', backendName: 'Semantic model' },
+};
+
+const DEFAULT_TARGET_BACKENDS: Record<string, { slug: string; name: string }> = {
+  cva6: { slug: 'cvxif', name: 'CV-X-IF' },
+  neorv32: { slug: 'cfu', name: 'CFU' },
+  picorv32: { slug: 'pcpi', name: 'PCPI' },
+  rocket: { slug: 'rocc', name: 'RoCC' },
+  reference: { slug: 'semantic-model', name: 'Semantic model' },
 };
 
 const STATUS_RANK: Record<PortVerificationStatus, number> = {
@@ -83,7 +102,29 @@ function targetIdentity(raw: string) {
     slug: normalized,
     name: titleFromSlug(normalized),
     kind: inferKind(normalized),
+    backendSlug: 'default',
+    backendName: null,
   };
+}
+
+export function resolvePortBackend(input: {
+  targetSlug: string;
+  backendSlug?: unknown;
+  backendName?: unknown;
+}): { backendSlug: string; backendName: string | null } {
+  const explicitName = typeof input.backendName === 'string' ? input.backendName.trim().slice(0, 80) : '';
+  const explicitSlug = typeof input.backendSlug === 'string' ? slugify(input.backendSlug) : '';
+  if (explicitSlug || explicitName) {
+    const backendSlug = explicitSlug || slugify(explicitName);
+    return {
+      backendSlug: backendSlug || 'default',
+      backendName: explicitName || (backendSlug === 'default' ? null : titleFromSlug(backendSlug)),
+    };
+  }
+  const fallback = DEFAULT_TARGET_BACKENDS[input.targetSlug];
+  return fallback
+    ? { backendSlug: fallback.slug, backendName: fallback.name }
+    : { backendSlug: 'default', backendName: null };
 }
 
 function cleanSummary(value: unknown): string | null {
@@ -137,13 +178,16 @@ export function extractManifestPorts(targetsJson: string | null | undefined): Ma
       targetSlug: identity.slug,
       targetName: identity.name,
       targetKind: identity.kind,
+      backendSlug: identity.backendSlug,
+      backendName: identity.backendName,
       verificationStatus: statusFromTarget(data),
       testSummary,
       evidence: Object.keys(row).length > 0 ? JSON.stringify(row) : null,
     };
-    const previous = candidates.get(identity.slug);
+    const candidateKey = `${identity.slug}:${identity.backendSlug}`;
+    const previous = candidates.get(candidateKey);
     if (!previous || STATUS_RANK[candidate.verificationStatus] > STATUS_RANK[previous.verificationStatus]) {
-      candidates.set(identity.slug, candidate);
+      candidates.set(candidateKey, candidate);
     }
   }
   return Array.from(candidates.values());
@@ -170,7 +214,13 @@ export async function syncPortsFromVersion(input: {
     });
 
     const existing = await prisma.port.findUnique({
-      where: { extensionId_targetId: { extensionId: input.extensionId, targetId: target.id } },
+      where: {
+        extensionId_targetId_backendSlug: {
+          extensionId: input.extensionId,
+          targetId: target.id,
+          backendSlug: candidate.backendSlug,
+        },
+      },
       select: { verificationStatus: true, implementationRequestId: true },
     });
     // A formally verified Port is an auditable result tied to a request and
@@ -183,10 +233,18 @@ export async function syncPortsFromVersion(input: {
       : candidate.verificationStatus;
 
     await prisma.port.upsert({
-      where: { extensionId_targetId: { extensionId: input.extensionId, targetId: target.id } },
+      where: {
+        extensionId_targetId_backendSlug: {
+          extensionId: input.extensionId,
+          targetId: target.id,
+          backendSlug: candidate.backendSlug,
+        },
+      },
       create: {
         extensionId: input.extensionId,
         targetId: target.id,
+        backendSlug: candidate.backendSlug,
+        backendName: candidate.backendName,
         versionId: input.versionId,
         contributorId: input.contributorId,
         verificationStatus: nextStatus,
@@ -196,6 +254,7 @@ export async function syncPortsFromVersion(input: {
         verifiedAt: nextStatus === 'verified' ? new Date() : null,
       },
       update: {
+        backendName: candidate.backendName,
         versionId: input.versionId,
         contributorId: input.contributorId,
         verificationStatus: nextStatus,

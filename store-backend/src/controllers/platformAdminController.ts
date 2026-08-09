@@ -51,9 +51,10 @@ export async function getAdminHealth(_req: Request, res: Response): Promise<void
     console.error('[admin/health] storage', err);
   }
 
-  const [userCount, packageCount, versionCount, orgCount] = await Promise.all([
+  const [userCount, extensionCount, portArtifactCount, versionCount, orgCount] = await Promise.all([
     prisma.user.count(),
-    prisma.extension.count(),
+    prisma.extension.count({ where: { recordKind: 'extension' } }),
+    prisma.extension.count({ where: { recordKind: 'port_artifact' } }),
     prisma.version.count(),
     prisma.organization.count(),
   ]);
@@ -66,7 +67,9 @@ export async function getAdminHealth(_req: Request, res: Response): Promise<void
     storage: { ok: storageOk, driver: storage.name, error: storageError },
     counts: {
       users: userCount,
-      packages: packageCount,
+      packages: extensionCount,
+      extensions: extensionCount,
+      portArtifacts: portArtifactCount,
       versions: versionCount,
       organizations: orgCount,
     },
@@ -95,7 +98,7 @@ export async function listAdminUsers(req: Request, res: Response): Promise<void>
         updatedAt: true,
         _count: {
           select: {
-            ownedPackages: true,
+            ownedPackages: { where: { recordKind: 'extension' } },
             orgMemberships: true,
             // Count of currently-live ApiToken rows for this user. `where`
             // inside `_count.select` requires Prisma Client ≥ 5.0, which we use.
@@ -174,6 +177,7 @@ export async function listAdminPackages(req: Request, res: Response): Promise<vo
         standardStatus: p.standardStatus ?? null,
         authority: p.authority ?? null,
         portStatus: p.portStatus ?? null,
+        recordKind: p.recordKind,
         owner: p.owner
           ? { id: p.owner.id, username: p.owner.username, email: p.owner.email }
           : null,

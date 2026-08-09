@@ -42,7 +42,7 @@ import {
   notifyNewSubmissionEmails,
   notifyVerificationFailedEmail,
 } from '../lib/notifyImplementationFlow';
-import { portRewardForTargetKind } from '../lib/ports';
+import { portRewardForTargetKind, resolvePortBackend } from '../lib/ports';
 
 // ── Includes / serializers ────────────────────────────────────────────────────
 
@@ -101,6 +101,8 @@ function serializeRequest(row: {
   status: ImplementationRequestStatus;
   targetCapability: string | null;
   targetId: number | null;
+  backendSlug: string | null;
+  backendName: string | null;
   rewardXsil: number | null;
   acceptanceCriteriaSummary: string | null;
   fundingContactEmail: string | null;
@@ -143,6 +145,8 @@ function serializeRequest(row: {
     targetCapability: row.targetCapability,
     targetId: row.targetId,
     target: row.target ?? null,
+    backendSlug: row.backendSlug,
+    backendName: row.backendName,
     rewardXsil: row.rewardXsil,
     acceptanceCriteriaSummary: row.acceptanceCriteriaSummary,
     fundingContactEmail: row.fundingContactEmail,
@@ -340,17 +344,24 @@ export async function createPackageImplementationRequest(
     deny(res, 400, targetParsed.error);
     return;
   }
-  let target: { id: number; name: string; kind: TargetKind } | null = null;
+  let target: { id: number; slug: string; name: string; kind: TargetKind } | null = null;
   if (targetParsed.value) {
     target = await prisma.target.findUnique({
       where: { id: targetParsed.value },
-      select: { id: true, name: true, kind: true },
+      select: { id: true, slug: true, name: true, kind: true },
     });
     if (!target) {
       deny(res, 400, 'targetId does not match a registered target.');
       return;
     }
   }
+  const backend = target
+    ? resolvePortBackend({
+        targetSlug: target.slug,
+        backendSlug: body.backendSlug,
+        backendName: body.backendName,
+      })
+    : null;
   const defaultReward = target ? portRewardForTargetKind(target.kind) : null;
   const rewardRaw = target && isPlatformAdminUser(req.user)
     ? body.rewardXsil ?? defaultReward
@@ -406,6 +417,8 @@ export async function createPackageImplementationRequest(
           ? body.targetCapability.trim()
           : null,
       targetId: target?.id ?? null,
+      backendSlug: backend?.backendSlug ?? null,
+      backendName: backend?.backendName ?? null,
       rewardXsil: target ? rewardXsil : null,
       acceptanceCriteriaSummary:
         typeof body.acceptanceCriteriaSummary === 'string' &&
@@ -646,12 +659,25 @@ export async function patchImplementationRequest(
         ? body.targetCapability.trim()
         : null;
   }
-  if (body.targetId !== undefined || body.rewardXsil !== undefined) {
+  if (
+    body.targetId !== undefined ||
+    body.backendSlug !== undefined ||
+    body.backendName !== undefined ||
+    body.rewardXsil !== undefined
+  ) {
     if (loaded.row.status !== 'draft') {
-      deny(res, 400, 'targetId and rewardXsil can only be changed while the request is a draft.');
+      deny(res, 400, 'Target, backend, and reward can only be changed while the request is a draft.');
       return;
     }
     let patchedTargetKind: TargetKind | null = null;
+    let patchedTargetSlug: string | null = null;
+    if (body.targetId === undefined && loaded.row.targetId) {
+      const currentTarget = await prisma.target.findUnique({
+        where: { id: loaded.row.targetId },
+        select: { slug: true },
+      });
+      patchedTargetSlug = currentTarget?.slug ?? null;
+    }
     if (body.targetId !== undefined) {
       const parsed = parsePositiveInt(body.targetId, 'targetId');
       if (parsed.error) {
@@ -659,15 +685,34 @@ export async function patchImplementationRequest(
         return;
       }
       if (parsed.value) {
-        const target = await prisma.target.findUnique({ where: { id: parsed.value }, select: { id: true, kind: true } });
+        const target = await prisma.target.findUnique({
+          where: { id: parsed.value },
+          select: { id: true, slug: true, kind: true },
+        });
         if (!target) {
           deny(res, 400, 'targetId does not match a registered target.');
           return;
         }
         patchedTargetKind = target.kind;
+        patchedTargetSlug = target.slug;
       }
       data.targetId = parsed.value;
       data.rewardXsil = patchedTargetKind ? portRewardForTargetKind(patchedTargetKind) : null;
+      if (!parsed.value) patchedTargetSlug = null;
+    }
+    if (body.targetId !== undefined || body.backendSlug !== undefined || body.backendName !== undefined) {
+      if (patchedTargetSlug) {
+        const backend = resolvePortBackend({
+          targetSlug: patchedTargetSlug,
+          backendSlug: body.backendSlug,
+          backendName: body.backendName,
+        });
+        data.backendSlug = backend.backendSlug;
+        data.backendName = backend.backendName;
+      } else {
+        data.backendSlug = null;
+        data.backendName = null;
+      }
     }
     if (body.rewardXsil !== undefined) {
       if (!isPlatformAdminUser(req.user)) {
@@ -1270,16 +1315,24 @@ export async function createVerificationRun(
       });
 
       if (submission.request.targetId) {
+        const backend = resolvePortBackend({
+          targetSlug: submission.request.targetCapability ?? 'target',
+          backendSlug: submission.request.backendSlug,
+          backendName: submission.request.backendName,
+        });
         port = await tx.port.upsert({
           where: {
-            extensionId_targetId: {
+            extensionId_targetId_backendSlug: {
               extensionId: submission.request.packageId,
               targetId: submission.request.targetId,
+              backendSlug: backend.backendSlug,
             },
           },
           create: {
             extensionId: submission.request.packageId,
             targetId: submission.request.targetId,
+            backendSlug: backend.backendSlug,
+            backendName: backend.backendName,
             versionId: submission.versionId,
             contributorId: submission.submittedById,
             implementationRequestId: submission.requestId,
@@ -1290,6 +1343,7 @@ export async function createVerificationRun(
             verifiedAt: new Date(),
           },
           update: {
+            backendName: backend.backendName,
             versionId: submission.versionId,
             contributorId: submission.submittedById,
             implementationRequestId: submission.requestId,
@@ -1307,23 +1361,18 @@ export async function createVerificationRun(
   });
   const { run, port } = result;
 
-  if (outcome === 'pass') {
+  if (outcome === 'pass' && port && submission.request.rewardXsil) {
     const { createTokenGrantSafe } = await import('../lib/tokenGrants');
     createTokenGrantSafe(
       submission.submittedById,
       'IMPLEMENTATION_SUBMISSION_ACCEPTED',
-      port ? `port:${port.id}` : `submission:${submissionId}`,
+      `port:${port.id}`,
       {
         autoApprove: true,
-        ...(port && submission.request.rewardXsil
-          ? { amount: submission.request.rewardXsil }
-          : {}),
-        note: port ? 'Verified Extension/Target port' : 'Verified implementation',
+        amount: submission.request.rewardXsil,
+        note: 'Verified Extension/Target/backend support',
       },
     );
-    createTokenGrantSafe(req.user!.id, 'VERIFICATION_RUN_COMPLETED', `verification:${run.id}`, {
-      autoApprove: true,
-    });
   }
 
   if (outcome === 'fail') {

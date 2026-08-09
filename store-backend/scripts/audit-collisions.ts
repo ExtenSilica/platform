@@ -460,6 +460,7 @@ function detectPairCollisions(a: ExtensionClaims, b: ExtensionClaims): Collision
 
 async function loadExtensionClaims(): Promise<ExtensionClaims[]> {
   const extensions = await prisma.extension.findMany({
+    where: { recordKind: 'extension' },
     select: {
       slug: true,
       authority: true,

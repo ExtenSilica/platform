@@ -205,6 +205,14 @@ enum PortStatus {
   archived
 }
 
+/// Distinguishes architectural catalog entries from legacy downloadable
+/// artifacts that belong to one concrete Port. Port artifacts remain
+/// addressable for installs and redirects, but never appear as Extensions.
+enum ExtensionRecordKind {
+  extension
+  port_artifact
+}
+
 /// Coupling style declared by the extension for compatibility planning.
 enum Coupling {
   TIGHTLY_COUPLED
@@ -279,6 +287,7 @@ model Extension {
   weeklyDownloads      Int                @default(0)
   isDeprecated         Boolean            @default(false)
   deprecationMessage   String? // optional reason / migration hint shown in the banner
+  recordKind           ExtensionRecordKind @default(extension)
   /// Honest classification: ratified | draft | vendor | research | custom.
   /// Nullable for legacy packages published before this field existed; new
   /// publishes (CLI / wizard / catalog-seed) MUST set it explicitly.
@@ -312,6 +321,7 @@ model Extension {
   ownershipRequests    OwnershipRequest[]
   implementationRequests ImplementationRequest[]
   ports                Port[]
+  artifactForPort      Port?              @relation("PortArtifactExtension")
   instructions         Instruction[]
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
@@ -323,6 +333,7 @@ model Extension {
   @@index([latestReadinessLevel])
   @@index([standardStatus])
   @@index([portStatus])
+  @@index([recordKind, createdAt])
 }
 
 /// Normalized instruction encodings extracted from package opcodes.json on publish.
@@ -622,9 +633,15 @@ model Port {
   id                    Int                    @id @default(autoincrement())
   extensionId           Int
   targetId              Int
+  /// Stable integration/interface discriminator. This allows one Extension to
+  /// have multiple implementations on the same Target (for example CV-X-IF
+  /// and another CVA6 integration) without turning either into an Extension.
+  backendSlug           String                 @default("default")
+  backendName           String?
   versionId             Int?
   contributorId         Int?
   implementationRequestId Int?                @unique
+  artifactExtensionId   Int?                    @unique
   verificationStatus    PortVerificationStatus @default(declared)
   testSummary           String?
   toolchain             String?
@@ -641,8 +658,9 @@ model Port {
   version              Version?               @relation(fields: [versionId], references: [id], onDelete: SetNull)
   contributor          User?                  @relation("PortContributor", fields: [contributorId], references: [id], onDelete: SetNull)
   implementationRequest ImplementationRequest? @relation(fields: [implementationRequestId], references: [id], onDelete: SetNull)
+  artifactExtension    Extension?              @relation("PortArtifactExtension", fields: [artifactExtensionId], references: [id], onDelete: SetNull)
 
-  @@unique([extensionId, targetId])
+  @@unique([extensionId, targetId, backendSlug])
   @@index([targetId, verificationStatus])
   @@index([extensionId, verificationStatus])
   @@index([contributorId])
@@ -662,6 +680,8 @@ model ImplementationRequest {
   /// Optional capability target (e.g. RL2, spike, tests).
   targetCapability          String?
   targetId                  Int?
+  backendSlug               String?
+  backendName               String?
   rewardXsil                Int?
   acceptanceCriteriaSummary String?
   /// Off-platform funding contact only — not a payment rail.

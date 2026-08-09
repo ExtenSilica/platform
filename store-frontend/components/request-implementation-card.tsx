@@ -12,6 +12,7 @@ import {
   ApiError,
 } from "@/lib/api";
 import type { ImplementationRequest, MyOrg, RegistryTarget } from "@/lib/types";
+import { defaultBackendForTarget } from "@/lib/support-model";
 import {
   IMPLEMENTATION_TITLE_MIN,
   IMPLEMENTATION_TITLE_MAX,
@@ -63,6 +64,8 @@ export function RequestImplementationCard({
     "public",
   );
   const [selectedTargetId, setSelectedTargetId] = useState("");
+  const [backendSlug, setBackendSlug] = useState("");
+  const [backendName, setBackendName] = useState("");
   const [acceptanceCriteriaSummary, setAcceptanceCriteriaSummary] = useState("");
   const [createdByOrgId, setCreatedByOrgId] = useState("");
   const [myOrgs, setMyOrgs] = useState<MyOrg[]>([]);
@@ -91,7 +94,11 @@ export function RequestImplementationCard({
   useEffect(() => {
     const requested = searchParams.get("portTarget");
     if (!requested || !targets.some((target) => String(target.id) === requested)) return;
+    const target = targets.find((row) => String(row.id) === requested)!;
+    const fallback = defaultBackendForTarget(target.slug);
     setSelectedTargetId(requested);
+    setBackendSlug(searchParams.get("portBackend") ?? fallback.slug);
+    setBackendName(fallback.name);
     if (token) setOpen(true);
   }, [searchParams, targets, token]);
 
@@ -117,7 +124,9 @@ export function RequestImplementationCard({
     titleLen <= IMPLEMENTATION_TITLE_MAX &&
     descLen >= IMPLEMENTATION_DESCRIPTION_MIN &&
     descLen <= IMPLEMENTATION_DESCRIPTION_MAX &&
-    Boolean(selectedTargetId);
+    Boolean(selectedTargetId) &&
+    (targets.find((target) => String(target.id) === selectedTargetId)?.kind !== "core" ||
+      Boolean(backendName.trim()));
 
   const selectedTarget = targets.find((target) => String(target.id) === selectedTargetId);
   const selectedReward = selectedTarget
@@ -142,6 +151,8 @@ export function RequestImplementationCard({
         visibility,
         targetId: Number(selectedTargetId),
         targetCapability: selectedTarget?.slug ?? null,
+        backendSlug: backendSlug || null,
+        backendName: backendName.trim() || null,
         acceptanceCriteriaSummary: acceptanceCriteriaSummary.trim() || null,
         createdByOrgId: createdByOrgId ? Number(createdByOrgId) : null,
       });
@@ -153,6 +164,8 @@ export function RequestImplementationCard({
       setTitle("");
       setDescription("");
       setSelectedTargetId("");
+      setBackendSlug("");
+      setBackendName("");
       setAcceptanceCriteriaSummary("");
       reload();
     } catch (err) {
@@ -179,10 +192,10 @@ export function RequestImplementationCard({
         <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground">
-            Port requests
+            Support requests
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Extension + Target + reproducible evidence. Verification earns XSIL.
+            Extension + Target + backend + reproducible evidence. Verification earns XSIL.
           </p>
         </div>
       </div>
@@ -211,6 +224,7 @@ export function RequestImplementationCard({
               </div>
               <p className="mt-1 text-[10px] text-muted-foreground">
                 {r.target?.name ?? r.targetCapability ?? "Target pending"}
+                {r.backendName ? ` / ${r.backendName}` : ""}
                 {r.rewardXsil ? ` · ${r.rewardXsil.toLocaleString()} XSIL` : ""}
               </p>
               {r.createdBy && (
@@ -224,7 +238,7 @@ export function RequestImplementationCard({
         </ul>
       ) : (
         <p className="mt-2 text-xs text-muted-foreground">
-          No open Port requests yet.
+          No open support requests yet.
         </p>
       )}
 
@@ -236,7 +250,7 @@ export function RequestImplementationCard({
           >
             Sign in
           </Link>{" "}
-          to port this Extension and earn XSIL after verification.
+          to contribute verified support and earn XSIL.
         </p>
       ) : !open ? (
         <Button
@@ -247,7 +261,7 @@ export function RequestImplementationCard({
           onClick={() => setOpen(true)}
         >
           <Plus className="h-3.5 w-3.5" />
-          Port this Extension
+          Contribute support
         </Button>
       ) : (
         <form
@@ -328,7 +342,16 @@ export function RequestImplementationCard({
               <select
                 id="impl-target"
                 value={selectedTargetId}
-                onChange={(e) => setSelectedTargetId(e.target.value)}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  const nextTarget = targets.find((target) => String(target.id) === nextId);
+                  const fallback = nextTarget
+                    ? defaultBackendForTarget(nextTarget.slug)
+                    : { slug: "", name: "" };
+                  setSelectedTargetId(nextId);
+                  setBackendSlug(fallback.slug);
+                  setBackendName(fallback.name);
+                }}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
               >
@@ -347,6 +370,26 @@ export function RequestImplementationCard({
               </div>
             </div>
           </div>
+
+          {selectedTarget?.kind === "core" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="impl-backend" className="text-xs font-semibold">
+                Integration interface
+              </Label>
+              <Input
+                id="impl-backend"
+                value={backendName}
+                onChange={(e) => {
+                  setBackendName(e.target.value);
+                  setBackendSlug("");
+                }}
+                placeholder="e.g. CV-X-IF, PCPI, CFU, RoCC"
+                maxLength={80}
+                required
+                className="text-sm"
+              />
+            </div>
+          )}
 
           <AcceptanceCriteriaField
             value={acceptanceCriteriaSummary}

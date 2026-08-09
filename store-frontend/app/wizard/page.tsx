@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/field";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft,
@@ -156,10 +155,6 @@ export default function WizardPage() {
   const [standardStatus, setStandardStatus] = useState<StandardStatus>("custom");
   const [authority, setAuthority] = useState("");
   const [instructions, setInstructions] = useState<InstructionDraft[]>([]);
-  const [targetSpike] = useState(true); // always on, kept as constant
-  const [targetQemu, setTargetQemu] = useState(false);
-  const [targetBinutils, setTargetBinutils] = useState(false);
-  const [targetLlvm, setTargetLlvm] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -214,19 +209,6 @@ export default function WizardPage() {
     authorityOk;
 
   const manifestPreview = useMemo(() => {
-    const targetsObj: Record<string, unknown> = {
-      spike: {
-        isa: isa.toLowerCase(),
-        priv: "msu",
-        mem: "256m",
-        config: "sim/spike.yaml",
-        status: "skeleton",
-      },
-    };
-    if (targetQemu) targetsObj.qemu = { status: "planned" };
-    if (targetBinutils) targetsObj.binutils = { status: "planned" };
-    if (targetLlvm) targetsObj.llvm = { status: "planned" };
-
     return {
       name: slug || "your-extension",
       version: semverOk ? version : "0.1.0",
@@ -234,17 +216,8 @@ export default function WizardPage() {
       author: author || user?.username || slug || "you",
       license,
       isa,
-      entry: "sh sim/run.sh",
-      testEntry: "sh tests/run.sh",
       readme: "README.md",
       keywords: ["risc-v", "extension", "xsil", "wizard"],
-      toolchain: {
-        root: "toolchain",
-        triple: "riscv64-unknown-elf",
-        version: "14.2.0",
-        external: true,
-      },
-      targets: targetsObj,
       repository: repositoryTrimmed || `https://github.com/${author || user?.username || "you"}/${slug || "your-extension"}`,
       ...(homepageTrimmed ? { homepage: homepageTrimmed } : {}),
       standardStatus,
@@ -259,9 +232,6 @@ export default function WizardPage() {
     user?.username,
     license,
     isa,
-    targetQemu,
-    targetBinutils,
-    targetLlvm,
     repositoryTrimmed,
     homepageTrimmed,
     standardStatus,
@@ -269,7 +239,6 @@ export default function WizardPage() {
   ]);
 
   const fileTreePreview = useMemo(() => {
-    const slugId = (slug || "ext").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
     const safeMnemonics = instructions
       .map((i) => i.mnemonic.trim())
       .filter(Boolean)
@@ -285,16 +254,6 @@ export default function WizardPage() {
       "docs/overview.md",
       "examples/demo.S",
       ...safeMnemonics.map((m) => `examples/${m}.S`),
-      "sim/run.sh",
-      "sim/spike.yaml",
-      `sim/spike-extension/${slugId}_extension.cc`,
-      "sim/spike-extension/Makefile",
-      "sim/spike-extension/README.md",
-      "tests/run.sh",
-      "tests/basic.S",
-      "tests/expected.txt",
-      "tests/instructions.S",
-      "toolchain/README.md",
       ".xsilignore",
     ];
   }, [slug, instructions]);
@@ -504,12 +463,7 @@ export default function WizardPage() {
             .filter(Boolean),
           summary: ins.summary?.trim() || undefined,
         })),
-        targets: {
-          spike: targetSpike,
-          qemu: targetQemu,
-          binutils: targetBinutils,
-          llvm: targetLlvm,
-        },
+        targets: {},
       };
 
       const { blob, filename } = await apiGenerateXsil(input);
@@ -554,9 +508,9 @@ export default function WizardPage() {
           <Badge variant="secondary">beta</Badge>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          Describe your RISC-V ISA extension and download a runnable{" "}
-          <code className="font-mono text-xs">.xsil</code> skeleton — manifest, Spike
-          stub, tests, examples, and toolchain placeholder. No account required.
+          Describe the architectural intent and download an{" "}
+          <code className="font-mono text-xs">.xsil</code> Extension definition with
+          encoding metadata, documentation, and examples. No Target support is claimed.
         </p>
       </div>
 
@@ -1125,57 +1079,6 @@ export default function WizardPage() {
                 ))}
               </div>
             )}
-          </section>
-
-          {/* 4. Targets */}
-          <section className="space-y-3 rounded-lg border bg-card p-6">
-            <header>
-              <h2 className="text-base font-semibold">4. Targets</h2>
-              <p className="text-xs text-muted-foreground">
-                Spike is always wired (skeleton). Other targets are declared as{" "}
-                <code className="font-mono">status: planned</code> in the manifest;
-                no fake skeletons are generated.
-              </p>
-            </header>
-            <div className="grid gap-2 md:grid-cols-2">
-              <label className="flex cursor-default items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
-                <Checkbox checked readOnly aria-label="Spike (always on)" />
-                <span className="font-medium">spike</span>
-                <Badge variant="secondary" className="ml-auto">
-                  skeleton
-                </Badge>
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm">
-                <Checkbox
-                  checked={targetQemu}
-                  onCheckedChange={(c) => setTargetQemu(c === true)}
-                />
-                <span className="font-medium">qemu</span>
-                <Badge variant="outline" className="ml-auto">
-                  planned
-                </Badge>
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm">
-                <Checkbox
-                  checked={targetBinutils}
-                  onCheckedChange={(c) => setTargetBinutils(c === true)}
-                />
-                <span className="font-medium">binutils</span>
-                <Badge variant="outline" className="ml-auto">
-                  planned
-                </Badge>
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm">
-                <Checkbox
-                  checked={targetLlvm}
-                  onCheckedChange={(c) => setTargetLlvm(c === true)}
-                />
-                <span className="font-medium">llvm</span>
-                <Badge variant="outline" className="ml-auto">
-                  planned
-                </Badge>
-              </label>
-            </div>
           </section>
 
           {/* Errors / success / submit */}

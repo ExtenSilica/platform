@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { CircuitBackground, PipelineBackground, HexOverlay, ChipDie } from "@/components/circuit-bg";
 import { HowItWorks } from "@/components/how-it-works";
+import { SUPPORT_GROUPS } from "@/lib/support-model";
 
 function CardSkeleton() {
   return <div className="h-44 animate-pulse rounded-lg border border-border/60 bg-muted/40 shadow-sm" />;
@@ -55,7 +56,7 @@ const FEATURES = [
     icon: Cpu,
     title: "Built for RISC-V",
     description:
-      "Custom instructions and extension packages aimed at pre-silicon evaluation — not a generic software marketplace.",
+      "Custom instructions and verified Target support aimed at pre-silicon evaluation — not a generic software marketplace.",
   },
   {
     icon: Package,
@@ -221,7 +222,7 @@ export function HomeIndex() {
             </div>
             <div className="px-2">
               <p className="text-2xl font-bold tabular-nums">{(stats.verifiedPorts ?? 0).toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Verified ports</p>
+              <p className="text-xs text-muted-foreground">Verified support</p>
             </div>
             <div className="px-2">
               <p className="text-2xl font-bold tabular-nums">{(stats.targets ?? targets.length).toLocaleString()}</p>
@@ -236,28 +237,38 @@ export function HomeIndex() {
         <div className="container max-w-6xl">
           <div className="mb-8 max-w-2xl">
             <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-foreground">
-              Target capability model
+              Support model
             </p>
             <h2 className="text-2xl font-bold tracking-tight">Targets</h2>
             <p className="mt-2 text-muted-foreground">
-              Simulators, emulators, cores, boards, and toolchains. Technical support is counted
-              per Extension/Target Port, never claimed for an Extension as a whole.
+              Core implementations, simulation, toolchains, hardware evidence, and reference
+              models are separate technical claims. Nothing is inferred for an Extension as a whole.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {targets.map((t) => (
-              <div
-                key={t.id}
-                className="rounded-lg border border-riscv/15 bg-background p-4 shadow-sm"
-              >
-                <p className="font-mono text-xs text-muted-foreground">{t.slug}</p>
-                <p className="mt-1 font-semibold text-foreground">{t.name}</p>
-                <p className="mt-2 font-mono text-[10px] uppercase text-muted-foreground">{t.kind}</p>
-                <p className="mt-3 text-xs font-medium text-foreground">
-                  {t.verifiedPortCount} verified / {t.portCount} ports
-                </p>
-              </div>
-            ))}
+          <div className="space-y-7">
+            {SUPPORT_GROUPS.map((group) => {
+              const rows = targets.filter((target) => group.kinds.includes(target.kind));
+              if (rows.length === 0) return null;
+              return (
+                <section key={group.id}>
+                  <h3 className="mb-2 text-sm font-semibold text-foreground">{group.title}</h3>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                    {rows.map((target) => (
+                      <div
+                        key={target.id}
+                        className="rounded-lg border border-riscv/15 bg-background p-4 shadow-sm"
+                      >
+                        <p className="font-mono text-xs text-muted-foreground">{target.slug}</p>
+                        <p className="mt-1 font-semibold text-foreground">{target.name}</p>
+                        <p className="mt-3 text-xs font-medium text-foreground">
+                          {target.verifiedPortCount} verified / {target.portCount} records
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         </div>
       </section>
