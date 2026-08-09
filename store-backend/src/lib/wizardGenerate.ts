@@ -566,9 +566,9 @@ function opcodesHeaderTemplate(slug: string, instructions: WizardInstruction[]):
 }
 
 /**
- * Generate a standalone runnable example for a single instruction, demonstrating
- * how to emit it via `.insn`. The program initialises the source operands,
- * issues the custom instruction, and exits cleanly under newlib's `pk` ABI.
+ * Generate a standalone encoding example for a single instruction, demonstrating
+ * how to emit it via `.insn`. The example initialises the source operands and
+ * issues the custom instruction without claiming support for an execution target.
  */
 function instructionExampleTemplate(slug: string, ins: WizardInstruction): string {
   const op = parseOpcode(ins.opcode);
@@ -582,8 +582,8 @@ function instructionExampleTemplate(slug: string, ins: WizardInstruction): strin
 # Encoded via GAS .insn directive — no toolchain patching required.
 # ${summary}
 #
-# Build: riscv64-unknown-elf-gcc -march=rv64gc -nostdlib -static $< -o demo.elf
-# Run  : spike pk demo.elf
+# Integrate this encoding example with the toolchain and execution environment
+# chosen by a separate Target support record.
 
 .text
 .globl _start

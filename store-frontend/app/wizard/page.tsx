@@ -712,9 +712,8 @@ export default function WizardPage() {
             <header>
               <h2 className="text-base font-semibold">2. ISA</h2>
               <p className="text-xs text-muted-foreground">
-                Base ISA the extension targets. Used for{" "}
-                <code className="font-mono">manifest.isa</code> and the Spike{" "}
-                <code className="font-mono">--isa</code> string. Pick a preset or
+                Base ISA required by the extension. Stored as the architectural{" "}
+                <code className="font-mono">manifest.isa</code> dependency. Pick a preset or
                 type your own (e.g.{" "}
                 <code className="font-mono">RV64GC_Zicsr_Zifencei</code>).
               </p>
