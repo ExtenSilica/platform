@@ -45,6 +45,7 @@ model User {
   implementationSubmissions      ImplementationSubmission[]
   implementationInterests        ImplementationInterest[]
   verificationRuns               VerificationRun[]          @relation("VerificationRunVerifier")
+  contributedPorts               Port[]                     @relation("PortContributor")
   portStatusDecisions            Extension[]                @relation("PortStatusDecider")
   externalCitationsCreated       ExternalCitation[]         @relation("ExternalCitationCreator")
   tokenBalance                   TokenBalance?
@@ -310,6 +311,7 @@ model Extension {
   externalCitations    ExternalCitation[]
   ownershipRequests    OwnershipRequest[]
   implementationRequests ImplementationRequest[]
+  ports                Port[]
   instructions         Instruction[]
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
@@ -437,6 +439,7 @@ model Version {
   downloadEvents   DownloadEvent[]
   toolDependencies VersionToolDependency[]
   implementationSubmissions ImplementationSubmission[]
+  ports            Port[]
 
   @@unique([extensionId, version])
 }
@@ -574,7 +577,79 @@ enum ImplementationRequestStatus {
   cancelled
 }
 
-/// Open technical work on a package (no payments on-platform).
+enum TargetKind {
+  simulator
+  emulator
+  core
+  board
+  toolchain
+  reference
+  other
+}
+
+enum PortVerificationStatus {
+  declared
+  built
+  tested
+  verified
+  failed
+  archived
+}
+
+/// A concrete execution or integration destination. A Target can be a simulator,
+/// emulator, RTL core, board, toolchain, or reference model.
+model Target {
+  id           Int        @id @default(autoincrement())
+  slug         String     @unique
+  name         String
+  kind         TargetKind @default(other)
+  description  String?
+  homepageUrl  String?
+  architecture String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  ports                  Port[]
+  implementationRequests ImplementationRequest[]
+
+  @@index([kind, name])
+}
+
+/// Extension X running on Target Y with reproducible evidence. This is the
+/// technical unit that can be verified and rewarded; Extension provenance is
+/// deliberately kept separate.
+model Port {
+  id                    Int                    @id @default(autoincrement())
+  extensionId           Int
+  targetId              Int
+  versionId             Int?
+  contributorId         Int?
+  implementationRequestId Int?                @unique
+  verificationStatus    PortVerificationStatus @default(declared)
+  testSummary           String?
+  toolchain             String?
+  sourceUrl             String?
+  evidenceUrl           String?
+  evidence              String?
+  rewardXsil            Int?
+  verifiedAt            DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  extension            Extension              @relation(fields: [extensionId], references: [id], onDelete: Cascade)
+  target               Target                 @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  version              Version?               @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  contributor          User?                  @relation("PortContributor", fields: [contributorId], references: [id], onDelete: SetNull)
+  implementationRequest ImplementationRequest? @relation(fields: [implementationRequestId], references: [id], onDelete: SetNull)
+
+  @@unique([extensionId, targetId])
+  @@index([targetId, verificationStatus])
+  @@index([extensionId, verificationStatus])
+  @@index([contributorId])
+}
+
+/// Open technical work. When targetId is present this is a Port request and
+/// rewardXsil is the non-monetary XSIL reward unlocked by verification.
 model ImplementationRequest {
   id                        Int                             @id @default(autoincrement())
   packageId                 Int
@@ -586,6 +661,8 @@ model ImplementationRequest {
   status                    ImplementationRequestStatus     @default(draft)
   /// Optional capability target (e.g. RL2, spike, tests).
   targetCapability          String?
+  targetId                  Int?
+  rewardXsil                Int?
   acceptanceCriteriaSummary String?
   /// Off-platform funding contact only — not a payment rail.
   fundingContactEmail       String?
@@ -603,6 +680,8 @@ model ImplementationRequest {
   createdBy            User                       @relation("ImplementationRequestCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
   createdByOrg         Organization?              @relation("ImplementationRequestOrg", fields: [createdByOrgId], references: [id], onDelete: SetNull)
   assignedImplementer  User?                      @relation("ImplementationRequestAssignee", fields: [assignedImplementerUserId], references: [id], onDelete: SetNull)
+  target               Target?                    @relation(fields: [targetId], references: [id], onDelete: SetNull)
+  port                 Port?
   milestones           ImplementationMilestone[]
   submissions          ImplementationSubmission[]
   interests            ImplementationInterest[]
@@ -611,6 +690,7 @@ model ImplementationRequest {
   @@index([createdByUserId, status])
   @@index([status, createdAt])
   @@index([assignedImplementerUserId])
+  @@index([targetId, status])
 }
 
 model ImplementationMilestone {

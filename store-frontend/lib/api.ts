@@ -13,6 +13,7 @@ import type {
   OwnershipEligibility,
   StandardStatus,
   CatalogStats,
+  RegistryTarget,
   AdoptionStats,
   PortStatus,
   ImplementationRequest,
@@ -399,6 +400,11 @@ export async function fetchPackages(
 /** Aggregated counts for the homepage hero ("X ratified + Y vendor + …"). */
 export async function apiCatalogStats(): Promise<CatalogStats> {
   return apiFetch<CatalogStats>(`/stats/catalog`);
+}
+
+/** Execution and integration destinations used by the Port matrix. */
+export async function fetchTargets(): Promise<RegistryTarget[]> {
+  return apiFetch<RegistryTarget[]>(`/targets`);
 }
 
 /** Registry-wide page views and downloads (PR-G1 / adoption page). */

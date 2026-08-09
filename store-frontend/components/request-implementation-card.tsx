@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import {
   apiListPackageImplementationRequests,
@@ -10,15 +11,14 @@ import {
   apiGetMyOrgs,
   ApiError,
 } from "@/lib/api";
-import type { ImplementationRequest, MyOrg } from "@/lib/types";
+import type { ImplementationRequest, MyOrg, RegistryTarget } from "@/lib/types";
 import {
   IMPLEMENTATION_TITLE_MIN,
   IMPLEMENTATION_TITLE_MAX,
   IMPLEMENTATION_DESCRIPTION_MIN,
   IMPLEMENTATION_DESCRIPTION_MAX,
-  IMPLEMENTATION_TARGET_CAPABILITY_MAX,
   IMPLEMENTATION_ACCEPTANCE_CRITERIA_MAX,
-  IMPLEMENTATION_FUNDING_NOTE_MAX,
+  PORT_REWARD_XSIL_BY_TARGET_KIND,
 } from "@/lib/types";
 import { ImplementationRequestStatusBadge } from "@/components/implementation-request-status-badge";
 import { Button } from "@/components/ui/button";
@@ -40,11 +40,18 @@ const LISTABLE_STATUSES = new Set([
 ]);
 
 /**
- * Sidebar card on a package page: lists open coordination requests and lets
- * signed-in users file new technical work (draft or publish as open).
+ * Port work panel on an Extension page. A target is mandatory and a passing
+ * verification creates the Port and unlocks the displayed XSIL reward.
  */
-export function RequestImplementationCard({ slug }: { slug: string }) {
+export function RequestImplementationCard({
+  slug,
+  targets,
+}: {
+  slug: string;
+  targets: RegistryTarget[];
+}) {
   const { token, user } = useAuth();
+  const searchParams = useSearchParams();
   const [requests, setRequests] = useState<ImplementationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -55,10 +62,8 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
   const [visibility, setVisibility] = useState<"public" | "org_only" | "unlisted">(
     "public",
   );
-  const [targetCapability, setTargetCapability] = useState("");
+  const [selectedTargetId, setSelectedTargetId] = useState("");
   const [acceptanceCriteriaSummary, setAcceptanceCriteriaSummary] = useState("");
-  const [fundingContactEmail, setFundingContactEmail] = useState("");
-  const [fundingNote, setFundingNote] = useState("");
   const [createdByOrgId, setCreatedByOrgId] = useState("");
   const [myOrgs, setMyOrgs] = useState<MyOrg[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -84,6 +89,13 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
   }, [reload]);
 
   useEffect(() => {
+    const requested = searchParams.get("portTarget");
+    if (!requested || !targets.some((target) => String(target.id) === requested)) return;
+    setSelectedTargetId(requested);
+    if (token) setOpen(true);
+  }, [searchParams, targets, token]);
+
+  useEffect(() => {
     if (!open || !token) return;
     let cancelled = false;
     apiGetMyOrgs(token)
@@ -104,12 +116,18 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
     titleLen >= IMPLEMENTATION_TITLE_MIN &&
     titleLen <= IMPLEMENTATION_TITLE_MAX &&
     descLen >= IMPLEMENTATION_DESCRIPTION_MIN &&
-    descLen <= IMPLEMENTATION_DESCRIPTION_MAX;
+    descLen <= IMPLEMENTATION_DESCRIPTION_MAX &&
+    Boolean(selectedTargetId);
+
+  const selectedTarget = targets.find((target) => String(target.id) === selectedTargetId);
+  const selectedReward = selectedTarget
+    ? PORT_REWARD_XSIL_BY_TARGET_KIND[selectedTarget.kind]
+    : null;
 
   const listed = requests
     .filter((r) => {
-      if (r.status === "draft") return user?.id === r.createdByUserId;
-      return LISTABLE_STATUSES.has(r.status);
+      if (r.status === "draft") return Boolean(r.targetId) && user?.id === r.createdByUserId;
+      return Boolean(r.targetId) && LISTABLE_STATUSES.has(r.status);
     })
     .slice(0, 8);
 
@@ -122,10 +140,9 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
         title: title.trim(),
         description: description.trim(),
         visibility,
-        targetCapability: targetCapability.trim() || null,
+        targetId: Number(selectedTargetId),
+        targetCapability: selectedTarget?.slug ?? null,
         acceptanceCriteriaSummary: acceptanceCriteriaSummary.trim() || null,
-        fundingContactEmail: fundingContactEmail.trim() || null,
-        fundingNote: fundingNote.trim() || null,
         createdByOrgId: createdByOrgId ? Number(createdByOrgId) : null,
       });
       if (publish) {
@@ -135,10 +152,8 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
       setOpen(false);
       setTitle("");
       setDescription("");
-      setTargetCapability("");
+      setSelectedTargetId("");
       setAcceptanceCriteriaSummary("");
-      setFundingContactEmail("");
-      setFundingNote("");
       reload();
     } catch (err) {
       setSubmitError(
@@ -164,11 +179,10 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
         <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground">
-            Implementation requests
+            Port requests
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Coordinate open technical work — ports, tests, readiness — without
-            on-platform payments.
+            Extension + Target + reproducible evidence. Verification earns XSIL.
           </p>
         </div>
       </div>
@@ -195,11 +209,10 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
                 </Link>
                 <ImplementationRequestStatusBadge status={r.status} />
               </div>
-              {r.targetCapability && (
-                <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                  {r.targetCapability}
-                </p>
-              )}
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {r.target?.name ?? r.targetCapability ?? "Target pending"}
+                {r.rewardXsil ? ` · ${r.rewardXsil.toLocaleString()} XSIL` : ""}
+              </p>
               {r.createdBy && (
                 <p className="mt-1 text-[10px] text-muted-foreground">
                   by @{r.createdBy.username}
@@ -211,7 +224,7 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
         </ul>
       ) : (
         <p className="mt-2 text-xs text-muted-foreground">
-          No open implementation requests yet.
+          No open Port requests yet.
         </p>
       )}
 
@@ -223,7 +236,7 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
           >
             Sign in
           </Link>{" "}
-          to propose technical work on this package.
+          to port this Extension and earn XSIL after verification.
         </p>
       ) : !open ? (
         <Button
@@ -234,7 +247,7 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
           onClick={() => setOpen(true)}
         >
           <Plus className="h-3.5 w-3.5" />
-          New request
+          Port this Extension
         </Button>
       ) : (
         <form
@@ -276,7 +289,7 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
               id="impl-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Spike port with Zbkb smoke tests at RL3"
+              placeholder="e.g. Port this extension to Spike with reproducible tests"
               maxLength={IMPLEMENTATION_TITLE_MAX}
               className="text-sm"
             />
@@ -309,19 +322,30 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
             </select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="impl-capability" className="text-xs font-semibold">
-              Target capability{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
-            </Label>
-            <Input
-              id="impl-capability"
-              value={targetCapability}
-              onChange={(e) => setTargetCapability(e.target.value)}
-              placeholder="e.g. RL3, spike, tests"
-              maxLength={IMPLEMENTATION_TARGET_CAPABILITY_MAX}
-              className="text-sm"
-            />
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
+            <div className="space-y-1.5">
+              <Label htmlFor="impl-target" className="text-xs font-semibold">Target</Label>
+              <select
+                id="impl-target"
+                value={selectedTargetId}
+                onChange={(e) => setSelectedTargetId(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                required
+              >
+                <option value="">Select target</option>
+                {targets.map((target) => (
+                  <option key={target.id} value={String(target.id)}>
+                    {target.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Reward</Label>
+              <div className="flex h-9 items-center rounded-md border bg-muted/30 px-3 text-sm font-semibold tabular-nums">
+                {selectedReward ? `${selectedReward.toLocaleString()} XSIL` : "Select target"}
+              </div>
+            </div>
           </div>
 
           <AcceptanceCriteriaField
@@ -329,19 +353,12 @@ export function RequestImplementationCard({ slug }: { slug: string }) {
             onChange={setAcceptanceCriteriaSummary}
           />
 
-          <FundingFields
-            fundingContactEmail={fundingContactEmail}
-            setFundingContactEmail={setFundingContactEmail}
-            fundingNote={fundingNote}
-            setFundingNote={setFundingNote}
-          />
-
           <Alert className="bg-muted/40">
             <Info className="h-4 w-4" />
-            <AlertTitle className="text-xs">Off-platform funding only</AlertTitle>
+            <AlertTitle className="text-xs">Reward requires verification</AlertTitle>
             <AlertDescription className="text-xs text-muted-foreground">
-              ExtenSilica does not hold funds or process payments. Optional contact
-              fields point to arrangements outside the registry.
+              Publishing metadata earns nothing. XSIL is granted only after the
+              submitted Port and its evidence pass verification.
             </AlertDescription>
           </Alert>
 
@@ -465,52 +482,6 @@ function AcceptanceCriteriaField({
         maxLength={IMPLEMENTATION_ACCEPTANCE_CRITERIA_MAX}
         className="text-sm"
       />
-    </div>
-  );
-}
-
-function FundingFields({
-  fundingContactEmail,
-  setFundingContactEmail,
-  fundingNote,
-  setFundingNote,
-}: {
-  fundingContactEmail: string;
-  setFundingContactEmail: (v: string) => void;
-  fundingNote: string;
-  setFundingNote: (v: string) => void;
-}) {
-  return (
-    <div className="space-y-3 border-t border-border/60 pt-3">
-      <div className="space-y-1.5">
-        <Label htmlFor="impl-funding-email" className="text-xs font-semibold">
-          Funding contact email{" "}
-          <span className="font-normal text-muted-foreground">(optional)</span>
-        </Label>
-        <Input
-          id="impl-funding-email"
-          type="email"
-          value={fundingContactEmail}
-          onChange={(e) => setFundingContactEmail(e.target.value)}
-          placeholder="sponsor@university.edu"
-          className="text-sm"
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="impl-funding-note" className="text-xs font-semibold">
-          Funding note{" "}
-          <span className="font-normal text-muted-foreground">(optional)</span>
-        </Label>
-        <Textarea
-          id="impl-funding-note"
-          value={fundingNote}
-          onChange={(e) => setFundingNote(e.target.value)}
-          placeholder="e.g. Grant-funded; arrangements off ExtenSilica."
-          rows={2}
-          maxLength={IMPLEMENTATION_FUNDING_NOTE_MAX}
-          className="text-sm"
-        />
-      </div>
     </div>
   );
 }

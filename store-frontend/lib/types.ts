@@ -74,6 +74,10 @@ export const STANDARD_STATUS_INFO: Record<
 };
 
 export interface CatalogStats {
+  extensions: number;
+  verifiedPorts: number;
+  targets: number;
+  /** @deprecated Use extensions. */
   total: number;
   byStatus: Record<StandardStatus, number>;
   unclassified: number;
@@ -162,6 +166,67 @@ export const PORT_STATUS_INFO: Record<
   },
 };
 
+export type TargetKind =
+  | "simulator"
+  | "emulator"
+  | "core"
+  | "board"
+  | "toolchain"
+  | "reference"
+  | "other";
+
+export const PORT_REWARD_XSIL_BY_TARGET_KIND: Record<TargetKind, number> = {
+  simulator: 500,
+  emulator: 750,
+  toolchain: 1000,
+  core: 1500,
+  board: 2000,
+  reference: 500,
+  other: 1000,
+};
+
+export type PortVerificationStatus =
+  | "declared"
+  | "built"
+  | "tested"
+  | "verified"
+  | "failed"
+  | "archived";
+
+export interface RegistryTarget {
+  id: number;
+  slug: string;
+  name: string;
+  kind: TargetKind;
+  description?: string | null;
+  homepageUrl?: string | null;
+  architecture?: string | null;
+  portCount: number;
+  verifiedPortCount: number;
+  openPortRequestCount: number;
+  availableRewardXsil: number;
+}
+
+export interface RegistryPort {
+  id: number;
+  extensionId: number;
+  targetId: number;
+  target: RegistryTarget;
+  versionId?: number | null;
+  version?: string | null;
+  contributor?: { id: number; username: string; avatarUrl?: string | null } | null;
+  verificationStatus: PortVerificationStatus;
+  testSummary?: string | null;
+  toolchain?: string | null;
+  sourceUrl?: string | null;
+  evidenceUrl?: string | null;
+  evidence?: string | null;
+  rewardXsil?: number | null;
+  verifiedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Required when an admin sets `portStatus` to `official` (PR-C4). */
 export const PORT_STATUS_DECISION_NOTE_MIN = 10;
 export const PORT_STATUS_DECISION_NOTE_MAX = 1000;
@@ -187,6 +252,8 @@ export interface RegistryPackage {
   authority?: string | null;
   /** Provenance on ExtenSilica (server-set; never from the manifest). */
   portStatus?: PortStatus | null;
+  /** Clear public name for the legacy portStatus provenance field. */
+  provenance?: PortStatus | null;
   /** Audit note when `portStatus` is `official` (platform admin). */
   portStatusDecisionNote?: string | null;
   portStatusDecidedAt?: string | null;
@@ -201,6 +268,8 @@ export interface RegistryPackage {
   createdAt: string;
   updatedAt: string;
   versions: RegistryVersion[];
+  ports?: RegistryPort[];
+  verifiedPortCount?: number;
   /** Present when the registry includes org scope on list/detail responses. */
   org?: { slug: string; displayName: string } | null;
 }
@@ -581,6 +650,9 @@ export interface ImplementationRequest {
   visibility: ImplementationRequestVisibility;
   status: ImplementationRequestStatus;
   targetCapability?: string | null;
+  targetId?: number | null;
+  target?: Pick<RegistryTarget, "id" | "slug" | "name" | "kind"> | null;
+  rewardXsil?: number | null;
   acceptanceCriteriaSummary?: string | null;
   fundingContactEmail?: string | null;
   fundingNote?: string | null;
@@ -644,6 +716,8 @@ export interface CreateImplementationRequestInput {
   description: string;
   visibility?: ImplementationRequestVisibility;
   targetCapability?: string | null;
+  targetId?: number | null;
+  rewardXsil?: number | null;
   acceptanceCriteriaSummary?: string | null;
   fundingContactEmail?: string | null;
   fundingNote?: string | null;
@@ -655,6 +729,8 @@ export interface PatchImplementationRequestInput {
   description?: string;
   visibility?: ImplementationRequestVisibility;
   targetCapability?: string | null;
+  targetId?: number | null;
+  rewardXsil?: number | null;
   acceptanceCriteriaSummary?: string | null;
   fundingContactEmail?: string | null;
   fundingNote?: string | null;

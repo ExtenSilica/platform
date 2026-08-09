@@ -114,7 +114,7 @@ export function TokenDocumentationArticle() {
       <div className="space-y-10">
         <DocSection id="introduction" title="1. Introduction">
           <p>
-            ExtenSilica is a public registry for reproducible RISC-V extension packages. The XSIL
+            ExtenSilica is a public registry for RISC-V Extensions and reproducible Target Ports. The XSIL
             token is a governance token that represents contribution history and participation rights
             in the ExtenSilica ecosystem.
           </p>

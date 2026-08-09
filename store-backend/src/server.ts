@@ -22,6 +22,7 @@ import meRoutes from './routes/me';
 import implementationRequestRoutes from './routes/implementationRequests';
 import submissionRoutes from './routes/submissions';
 import collisionRoutes from './routes/collision';
+import targetRoutes from './routes/targets';
 import { initStorage, storage } from './storage';
 import { specs } from './swagger';
 import { prisma } from './db';
@@ -157,6 +158,12 @@ app.use('/api/stats', statsRoutes);
 // Authenticated: POST /packages, POST /packages/:slug/versions, PATCH /packages/:slug
 app.use('/packages', packageRoutes);
 app.use('/api/packages', packageRoutes);
+// Extension is the public domain term. Package routes remain as a backwards-
+// compatible transport alias for the CLI and existing links.
+app.use('/extensions', packageRoutes);
+app.use('/api/extensions', packageRoutes);
+app.use('/targets', targetRoutes);
+app.use('/api/targets', targetRoutes);
 
 // ── Organizations ───────────────────────────────────────────────
 // Public: GET /orgs, GET /orgs/:slug, GET /orgs/:slug/members

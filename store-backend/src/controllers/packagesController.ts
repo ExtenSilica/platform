@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Extension, Version } from '@prisma/client';
+import { Extension, Port, Target, User, Version } from '@prisma/client';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -36,9 +36,17 @@ import {
   type PortStatusAuditPatch,
 } from '../lib/portStatus';
 import { isCatalogBotUser, isPlatformAdminUser } from '../lib/platformAdmin';
+import { syncPortsFromVersion } from '../lib/ports';
+
+type PortWithRelations = Port & {
+  target: Target;
+  contributor?: Pick<User, 'id' | 'username' | 'avatarUrl'> | null;
+  version?: Pick<Version, 'id' | 'version'> | null;
+};
 
 export type ExtensionWithVersions = Extension & {
   versions: Version[];
+  ports?: PortWithRelations[];
   org?: { slug: string; displayName: string } | null;
 };
 
@@ -207,6 +215,42 @@ function mapVersion(v: Version) {
   };
 }
 
+function mapPort(port: PortWithRelations) {
+  return {
+    id: port.id,
+    extensionId: port.extensionId,
+    targetId: port.targetId,
+    target: {
+      id: port.target.id,
+      slug: port.target.slug,
+      name: port.target.name,
+      kind: port.target.kind,
+      description: port.target.description,
+      homepageUrl: port.target.homepageUrl,
+      architecture: port.target.architecture,
+    },
+    versionId: port.versionId,
+    version: port.version?.version ?? null,
+    contributor: port.contributor
+      ? {
+          id: port.contributor.id,
+          username: port.contributor.username,
+          avatarUrl: port.contributor.avatarUrl,
+        }
+      : null,
+    verificationStatus: port.verificationStatus,
+    testSummary: port.testSummary,
+    toolchain: port.toolchain,
+    sourceUrl: port.sourceUrl,
+    evidenceUrl: port.evidenceUrl,
+    evidence: port.evidence,
+    rewardXsil: port.rewardXsil,
+    verifiedAt: port.verifiedAt?.toISOString() ?? null,
+    createdAt: port.createdAt.toISOString(),
+    updatedAt: port.updatedAt.toISOString(),
+  };
+}
+
 interface ReviewStats {
   reviewCount: number;
   averageRating: number | null;
@@ -219,6 +263,9 @@ export function mapPackage(
   // Always return versions in semver descending order so clients can rely on ordering.
   const versions = sortBySemverDesc(ext.versions.map(mapVersion));
   const latest = versions.find((v) => !v.isYanked) ?? versions[0];
+  const ports = (ext.ports ?? [])
+    .map(mapPort)
+    .sort((a, b) => a.target.name.localeCompare(b.target.name));
 
   return {
     id: ext.id,
@@ -236,6 +283,8 @@ export function mapPackage(
     homepageUrl: ext.homepageUrl,
     standardStatus: ext.standardStatus ?? null,
     authority: ext.authority ?? null,
+    provenance: (ext as Extension & { portStatus?: PortStatus | null }).portStatus ?? null,
+    /** @deprecated Use provenance. Retained for existing clients. */
     portStatus: (ext as Extension & { portStatus?: PortStatus | null }).portStatus ?? null,
     coupling: (ext as Extension & { coupling?: string | null }).coupling ?? 'UNKNOWN',
     encodingSpace: (ext as Extension & { encodingSpace?: string[] | null }).encodingSpace ?? [],
@@ -260,6 +309,8 @@ export function mapPackage(
     createdAt: ext.createdAt.toISOString(),
     updatedAt: ext.updatedAt.toISOString(),
     versions,
+    ports,
+    verifiedPortCount: ports.filter((port) => port.verificationStatus === 'verified').length,
     org:
       ext.org != null
         ? { slug: ext.org.slug, displayName: ext.org.displayName }
@@ -367,6 +418,13 @@ export const listPackages = async (req: Request, res: Response) => {
       where,
       include: {
         org: { select: { slug: true, displayName: true } },
+        ports: {
+          include: {
+            target: true,
+            contributor: { select: { id: true, username: true, avatarUrl: true } },
+            version: { select: { id: true, version: true } },
+          },
+        },
         versions: {
           where: { isYanked: false },
           orderBy: { publishedAt: 'desc' },
@@ -407,6 +465,13 @@ export const getPackageBySlug = async (req: Request, res: Response) => {
         where: { slug: name },
         include: {
           org: { select: { slug: true, displayName: true } },
+          ports: {
+            include: {
+              target: true,
+              contributor: { select: { id: true, username: true, avatarUrl: true } },
+              version: { select: { id: true, version: true } },
+            },
+          },
           versions: { orderBy: { publishedAt: 'desc' } },
         },
       }),
@@ -945,11 +1010,17 @@ export const publishVersion = async (req: Request, res: Response) => {
 
     await syncExtensionLatestReadiness(pkg.id);
 
-    const { createTokenGrantSafe, checkFirstPublishGrant } = await import('../lib/tokenGrants');
-    createTokenGrantSafe(user.id, 'PACKAGE_PUBLISH', `version:${pkg.id}:${version}`, {
-      autoApprove: true,
+    await syncPortsFromVersion({
+      extensionId: pkg.id,
+      versionId: newVersion.id,
+      targets: newVersion.targets,
+      toolchain: newVersion.toolchain,
+      contributorId: user.id,
+    }).catch((error) => {
+      // Publishing remains available if a deploy missed the backfill. The
+      // idempotent backfill:ports command repairs the matrix afterwards.
+      console.error('[ports/sync-version]', error);
     });
-    checkFirstPublishGrant(user.id, pkg.id);
 
     res.status(201).json(mapVersion(newVersion));
   } catch (error) {

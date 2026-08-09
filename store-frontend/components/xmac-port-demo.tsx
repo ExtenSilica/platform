@@ -39,8 +39,8 @@ const ROWS: {
 ];
 
 /**
- * Hero-adjacent proof: one extension description, two cores, shared tests.
- * Links to package pages when published; still readable offline as static proof copy.
+ * Hero-adjacent proof: one Extension, multiple Targets, shared tests.
+ * Links to Extension pages when published; still readable offline as static proof copy.
  */
 export function XmacPortDemo() {
   return (
@@ -54,7 +54,7 @@ export function XmacPortDemo() {
           href="/package/xmac"
           className="text-xs font-medium text-riscv-accent underline-offset-4 hover:underline"
         >
-          Package page
+          Extension page
         </Link>
       </div>
       <ul className="divide-y divide-border/60">

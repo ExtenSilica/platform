@@ -4,8 +4,10 @@ import { ensureTokenBalanceForUser } from './governancePoints';
 import { sendTokenGrantNotificationEmail } from '../mailer';
 
 export const TOKEN_AMOUNTS: Record<TokenGrantReason, number> = {
-  FIRST_PACKAGE_PUBLISH: 500,
-  PACKAGE_PUBLISH: 200,
+  // Historical reasons remain in the enum for audit compatibility. Publishing
+  // catalog metadata no longer earns XSIL; verified Port work does.
+  FIRST_PACKAGE_PUBLISH: 0,
+  PACKAGE_PUBLISH: 0,
   OWNERSHIP_CLAIM_APPROVED: 1000,
   IMPLEMENTATION_SUBMISSION_ACCEPTED: 2000,
   VERIFICATION_RUN_COMPLETED: 1500,
@@ -290,10 +292,10 @@ export async function getTokenBalanceForUser(userId: number) {
 }
 
 export const GRANT_REASON_LABELS: Record<TokenGrantReason, string> = {
-  FIRST_PACKAGE_PUBLISH: 'First package published',
-  PACKAGE_PUBLISH: 'Package published',
+  FIRST_PACKAGE_PUBLISH: 'Legacy first extension publication',
+  PACKAGE_PUBLISH: 'Legacy extension publication',
   OWNERSHIP_CLAIM_APPROVED: 'Ownership claim approved',
-  IMPLEMENTATION_SUBMISSION_ACCEPTED: 'Implementation accepted',
+  IMPLEMENTATION_SUBMISSION_ACCEPTED: 'Verified port accepted',
   VERIFICATION_RUN_COMPLETED: 'Verification run completed',
   EXTERNAL_CITATION_VERIFIED: 'External citation verified',
   CODE_CONTRIBUTION_MERGED: 'Code contribution merged',

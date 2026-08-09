@@ -108,14 +108,14 @@ export function buildSearchPageTitle(parsed: ParsedSearchParams): string {
     return `Search: ${parsed.query} — ExtenSilica`;
   }
   if (hasStructuredFilters(parsed)) {
-    return "Filtered packages — ExtenSilica";
+    return "Filtered Extensions — ExtenSilica";
   }
-  return "Browse RISC-V extension packages — ExtenSilica";
+  return "Browse RISC-V Extensions — ExtenSilica";
 }
 
 export function buildSearchPageDescription(parsed: ParsedSearchParams): string {
   if (parsed.query) {
-    return `Search results for “${parsed.query}” on the ExtenSilica public registry of reproducible RISC-V .xsil extension packages.`;
+    return `Search results for “${parsed.query}” on the ExtenSilica registry of RISC-V Extensions and verified Target Ports.`;
   }
-  return "Browse and search reproducible RISC-V extension packages on ExtenSilica — simulator assets, toolchains, tests, and optional FPGA metadata in .xsil format.";
+  return "Browse RISC-V Extensions and inspect independently verified Ports for simulators, cores, boards, and toolchains.";
 }

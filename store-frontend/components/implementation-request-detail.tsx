@@ -30,7 +30,7 @@ import {
   ClipboardList,
   ExternalLink,
   Info,
-  Package,
+  Layers,
   User,
 } from "lucide-react";
 
@@ -200,8 +200,12 @@ export function ImplementationRequestDetail({ id }: { id: string }) {
           </p>
         </section>
 
-        {request.targetCapability && (
-          <MetaRow label="Target capability" value={request.targetCapability} mono />
+        {(request.target || request.targetCapability) && (
+          <MetaRow label="Target" value={request.target?.name ?? request.targetCapability ?? ""} mono />
+        )}
+
+        {request.rewardXsil && (
+          <MetaRow label="Verification reward" value={`${request.rewardXsil.toLocaleString()} XSIL`} />
         )}
 
         {request.acceptanceCriteriaSummary && (
@@ -338,8 +342,8 @@ export function ImplementationRequestDetail({ id }: { id: string }) {
               <Info className="h-4 w-4" />
               <AlertTitle className="text-xs">Verification</AlertTitle>
               <AlertDescription className="text-xs text-muted-foreground">
-                Deliverables are verified separately; a pass does not change package
-                provenance or imply an institutional endorsement.
+                A passing run creates or updates the Extension/Target Port and unlocks
+                its XSIL reward. Extension provenance is never changed by Port verification.
               </AlertDescription>
             </Alert>
           </section>
@@ -368,7 +372,7 @@ function BackLink() {
       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
     >
       <ArrowLeft className="h-3.5 w-3.5" />
-      All requests
+      All Port requests
     </Link>
   );
 }
@@ -391,7 +395,7 @@ function RequestHeaderBody({ request }: { request: ImplementationRequest }) {
           href={`/package/${encodeURIComponent(request.package.slug)}`}
           className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
         >
-          <Package className="h-3.5 w-3.5" />
+          <Layers className="h-3.5 w-3.5" />
           {request.package.name}
           <span className="font-mono text-xs text-muted-foreground">
             ({request.package.slug})

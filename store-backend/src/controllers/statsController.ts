@@ -88,10 +88,14 @@ export const getPackageStats = async (req: Request, res: Response) => {
 // `standardStatus` classification. Powers the homepage hero ("X ratified RISC-V
 // extensions, Y vendor / draft / research"). Public, cache-friendly.
 export const getCatalogStats = async (_req: Request, res: Response) => {
-  const grouped = await prisma.extension.groupBy({
-    by: ['standardStatus'],
-    _count: { _all: true },
-  });
+  const [grouped, verifiedPorts, targets] = await Promise.all([
+    prisma.extension.groupBy({
+      by: ['standardStatus'],
+      _count: { _all: true },
+    }),
+    prisma.port.count({ where: { verificationStatus: 'verified' } }),
+    prisma.target.count(),
+  ]);
 
   const byStatus: Record<StandardStatus, number> = {
     ratified: 0,
@@ -113,6 +117,10 @@ export const getCatalogStats = async (_req: Request, res: Response) => {
   }
 
   res.json({
+    extensions: total,
+    verifiedPorts,
+    targets,
+    // Legacy alias retained for clients deployed before the Extension/Port split.
     total,
     byStatus,
     unclassified,

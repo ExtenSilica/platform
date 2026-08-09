@@ -10,23 +10,19 @@ import {
   fetchPackageReviews,
   fetchPackageStats,
   fetchPackageCitation,
+  fetchTargets,
 } from "@/lib/api";
 import type {
   RegistryVersion,
   Review,
   PackageStats,
   ExtensionConflict,
+  RegistryTarget,
 } from "@/lib/types";
 import {
-  targetsDisplayFromJson,
-  toolchainToString,
-  computeCapabilityBadges,
-  displayReadinessLevel,
-  executionIndicatesTests,
   parseRegistryEvidence,
 } from "@/lib/xsil-parser";
-import { parsePortabilityMatrix } from "@/lib/portability-matrix";
-import { PortabilityMatrixTable } from "@/components/portability-matrix";
+import { PortsMatrix } from "@/components/ports-matrix";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/star-rating";
@@ -45,15 +41,10 @@ import {
   Scale,
   Cpu,
   Tag,
-  Terminal,
   User,
-  Wrench,
   BookOpen,
   History,
   BarChart2,
-  Sparkles,
-  CheckCircle2,
-  XCircle,
   Link2,
   BadgeCheck,
   AlertCircle,
@@ -86,29 +77,6 @@ function fmtBytes(b: number) {
 
 function fmtNum(n: number) {
   return n.toLocaleString();
-}
-
-function readinessName(level: number): string {
-  // Current ladder is 1–5. Keep labels conservative and stable.
-  switch (level) {
-    case 1: return "Packaged";
-    case 2: return "Runnable";
-    case 3: return "Reproducible";
-    case 4: return "Testable";
-    case 5: return "HW-evaluable";
-    default: return "Readiness";
-  }
-}
-
-function safeParseJsonObject(raw: string | null | undefined): Record<string, unknown> | null {
-  if (!raw?.trim()) return null;
-  try {
-    const j = JSON.parse(raw) as unknown;
-    if (j && typeof j === "object" && !Array.isArray(j)) return j as Record<string, unknown>;
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 /* ─── metadata ──────────────────────────────────────────────────────────────*/
@@ -176,11 +144,12 @@ export default async function PackagePage({
 }: {
   params: { slug: string };
 }) {
-  const [pkg, reviews, stats, citation] = await Promise.all([
+  const [pkg, reviews, stats, citation, targetCatalog] = await Promise.all([
     fetchPackage(params.slug).catch(() => null),
     fetchPackageReviews(params.slug).catch((): Review[] => []),
     fetchPackageStats(params.slug).catch((): PackageStats | null => null),
     fetchPackageCitation(params.slug).catch(() => null),
+    fetchTargets().catch((): RegistryTarget[] => []),
   ]);
 
   if (!pkg) notFound();
@@ -240,27 +209,20 @@ export default async function PackagePage({
 
   const latest: RegistryVersion | undefined = pkg.versions?.[0];
   const keywords = pkg.keywords ?? [];
-  const targetsUi = targetsDisplayFromJson(latest?.targets ?? null);
-  const maturity = computeCapabilityBadges({
-    isa: latest?.isa ?? null,
-    toolchain: latest?.toolchain ?? null,
-    targetsRaw: latest?.targets ?? null,
-    resolutionMode: latest?.resolutionMode ?? null,
-    dependenciesRaw: latest?.dependencies ?? null,
-    hasTests: executionIndicatesTests(latest?.execution ?? null),
-    portStatus: pkg.portStatus ?? null,
-  });
-  const readinessLevelDisplay = displayReadinessLevel(latest, maturity.level);
-  const execObj = safeParseJsonObject(latest?.execution ?? null);
-  const hasEntry = Boolean(execObj && typeof execObj.entry === "string" && execObj.entry.trim());
-  const hasTestEntry = Boolean(execObj && typeof execObj.testEntry === "string" && execObj.testEntry.trim());
-  const badgeSet = new Set(maturity.badges);
   const evidenceRows = parseRegistryEvidence(latest?.evidence ?? null);
-  const portabilityMatrix = parsePortabilityMatrix(latest?.targets ?? null);
+  const ports = pkg.ports ?? [];
+  const fallbackTargets: RegistryTarget[] = ports.map((port) => ({
+    ...port.target,
+    portCount: 1,
+    verifiedPortCount: port.verificationStatus === "verified" ? 1 : 0,
+    openPortRequestCount: 0,
+    availableRewardXsil: 0,
+  }));
+  const targets = targetCatalog.length > 0 ? targetCatalog : fallbackTargets;
+  const verifiedPortCount = ports.filter((port) => port.verificationStatus === "verified").length;
 
   const readme = pkg.longDescription || pkg.description || "";
   const installCmd = `xsil install ${pkg.slug}`;
-  const runCmd = `xsil run ${pkg.slug}`;
 
   const allTimeDl  = stats?.allTime   ?? pkg.totalDownloads;
   const last7Dl    = stats?.last7Days  ?? pkg.weeklyDownloads;
@@ -274,11 +236,8 @@ export default async function PackagePage({
   );
 
   const NAV: { id: string; label: string }[] = [
-    { id: "readiness", label: "Readiness" },
+    { id: "ports", label: `Ports${ports.length ? ` (${ports.length})` : ""}` },
   ];
-  if (portabilityMatrix) {
-    NAV.push({ id: "portability", label: "Portability" });
-  }
   if (evidenceRows.length > 0) {
     NAV.push({ id: "evidence", label: "Evidence" });
   }
@@ -298,7 +257,7 @@ export default async function PackagePage({
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
             <div className="space-y-0.5">
               <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                This package has been deprecated
+                This Extension has been deprecated
               </p>
               {pkg.deprecationMessage ? (
                 <p className="text-sm text-amber-800 dark:text-amber-300">
@@ -306,7 +265,7 @@ export default async function PackagePage({
                 </p>
               ) : (
                 <p className="text-sm text-amber-700 dark:text-amber-400">
-                  The author has marked this package as deprecated. Use it with caution.
+                  The author has marked this Extension as deprecated. Use it with caution.
                 </p>
               )}
             </div>
@@ -322,7 +281,7 @@ export default async function PackagePage({
             className="-ml-1 mb-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Browse packages
+            Browse Extensions
           </Link>
 
           {/* Name + badges */}
@@ -338,7 +297,7 @@ export default async function PackagePage({
               <Badge variant="destructive">latest yanked</Badge>
             )}
             <Badge variant="secondary" className="text-xs">
-              Readiness: <span className="font-mono ml-1">RL{readinessLevelDisplay}</span> — {readinessName(readinessLevelDisplay)}
+              {verifiedPortCount} verified port{verifiedPortCount !== 1 ? "s" : ""}
             </Badge>
           </div>
 
@@ -434,8 +393,8 @@ export default async function PackagePage({
           )}
 
           <p className="mb-4 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Pre-silicon bridge</span>: this package is
-            meant to be <span className="font-medium">evaluable</span> before RTL/FPGA/ASIC decisions.
+            <span className="font-medium text-foreground">Extension</span>: architectural intent,
+            encoding, dependencies, and provenance. Technical claims live on each Port below.
           </p>
 
           {/* Average rating */}
@@ -491,10 +450,10 @@ export default async function PackagePage({
         <div className="flex flex-col gap-10 lg:flex-row-reverse lg:gap-12">
 
           {/* ══ Sidebar ════════════════════════════════════════════════════ */}
-          <aside className="w-full shrink-0 space-y-4 lg:w-72">
+          <aside className="order-2 w-full shrink-0 space-y-4 lg:order-1 lg:w-72">
 
-            {/* Install */}
-            <SideCard title="Install">
+            {/* Extension artifact */}
+            <SideCard title="Extension archive">
               <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 font-mono text-sm">
                 <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
                   {installCmd}
@@ -503,23 +462,7 @@ export default async function PackagePage({
               </div>
             </SideCard>
 
-            {/* Run */}
-            <SideCard title="Run">
-              <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 font-mono text-sm">
-                <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                  {runCmd}
-                </span>
-                <CopyButton text={runCmd} />
-              </div>
-              {latest?.isa && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Requires ISA{" "}
-                  <code className="font-mono">{latest.isa}</code>
-                </p>
-              )}
-            </SideCard>
-
-            {/* Package metadata */}
+            {/* Extension metadata */}
             <SideCard title="Details">
               <div className="space-y-3">
                 <Row
@@ -574,65 +517,6 @@ export default async function PackagePage({
                     icon={<Cpu className="h-3.5 w-3.5" />}
                     label="ISA"
                     value={<code className="font-mono">{latest.isa}</code>}
-                  />
-                )}
-                {maturity.badges.length > 0 && (
-                  <Row
-                    icon={<Sparkles className="h-3.5 w-3.5" />}
-                    label="Readiness"
-                    value={
-                      <div className="space-y-2">
-                        <div className="text-xs text-muted-foreground">
-                          <span className="text-foreground/80">Readiness:</span>{" "}
-                          <span className="font-mono">RL{readinessLevelDisplay}</span>{" "}
-                          — {readinessName(readinessLevelDisplay)}
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {maturity.badges.map((b) => (
-                            <Badge key={b} variant="secondary" className="text-[10px]">
-                              {b}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    }
-                  />
-                )}
-                {latest?.toolchain && (
-                  <Row
-                    icon={<Wrench className="h-3.5 w-3.5" />}
-                    label="Toolchain"
-                    value={
-                      <span className="break-words font-mono text-xs leading-snug">
-                        {toolchainToString(latest.toolchain)}
-                      </span>
-                    }
-                  />
-                )}
-                {targetsUi.badges.length > 0 && (
-                  <Row
-                    icon={<Terminal className="h-3.5 w-3.5" />}
-                    label="Targets"
-                    value={
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-1">
-                          {targetsUi.badges.map((id) => (
-                            <Badge
-                              key={id}
-                              variant="outline"
-                              className="font-mono text-[10px]"
-                            >
-                              {id}
-                            </Badge>
-                          ))}
-                        </div>
-                        {targetsUi.pretty && (
-                          <pre className="max-h-48 max-w-full overflow-auto rounded-md border bg-muted/30 p-2 text-left font-mono text-[10px] leading-snug text-muted-foreground">
-                            {targetsUi.pretty}
-                          </pre>
-                        )}
-                      </div>
-                    }
                   />
                 )}
                 {pkg.license && (
@@ -755,53 +639,35 @@ export default async function PackagePage({
             {/* Authorship claim — auto-hides for owners, maintainers, org members,
                 and users with a pending request. */}
             <ClaimOwnershipCard slug={pkg.slug} />
-            <RequestImplementationCard slug={pkg.slug} />
           </aside>
 
           {/* ══ Main content ══════════════════════════════════════════════ */}
-          <main className="min-w-0 flex-1 space-y-0">
+          <main className="order-1 min-w-0 flex-1 space-y-0 lg:order-2">
 
-            {/* ── Capabilities / readiness checklist ── */}
-            <Section id="readiness" title="Readiness & capabilities" icon={Sparkles}>
-              <div className="rounded-lg border bg-background p-4">
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">Readiness:</span>{" "}
-                  <span className="font-mono">RL{readinessLevelDisplay}</span> — {readinessName(readinessLevelDisplay)}
-                </p>
-
-                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {[
-                    { label: "Runnable (entry declared)", ok: hasEntry },
-                    { label: "Testable (testEntry declared)", ok: hasTestEntry },
-                    { label: "Repro: bundled", ok: badgeSet.has("Repro: bundled") },
-                    { label: "Repro: resolved", ok: badgeSet.has("Repro: resolved") },
-                    { label: "Repro: host-dependent", ok: badgeSet.has("Repro: host-dependent") },
-                    { label: "Toolchain: bundled", ok: badgeSet.has("Toolchain: bundled") },
-                    { label: "Toolchain: external", ok: badgeSet.has("Toolchain: external") },
-                    { label: "Sim: Spike", ok: badgeSet.has("Sim: Spike") },
-                    { label: "Emu: QEMU", ok: badgeSet.has("Emu: QEMU") },
-                    { label: "RTL", ok: badgeSet.has("RTL") },
-                    { label: "FPGA", ok: badgeSet.has("FPGA") },
-                    { label: "Tests", ok: badgeSet.has("Tests") },
-                  ].map(({ label, ok }) => (
-                    <div key={label} className="flex items-center gap-2 text-sm">
-                      {ok ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-muted-foreground/70" />
-                      )}
-                      <span className={ok ? "text-foreground" : "text-muted-foreground"}>{label}</span>
-                    </div>
-                  ))}
+            {/* Extension status is architectural; technical status belongs here. */}
+            <Section id="ports" title="Ports" icon={Layers}>
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="max-w-2xl text-sm text-muted-foreground">
+                    A Port is this Extension running on one Target with reproducible evidence.
+                    Status, tests, contributor, and reward are evaluated independently per Target.
+                  </p>
+                  <p className="mt-2 text-xs font-medium text-foreground">
+                    {ports.length} port{ports.length !== 1 ? "s" : ""} · {verifiedPortCount} verified · {targets.length} targets
+                  </p>
                 </div>
+                <a
+                  href="#port-work"
+                  className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  Port this Extension, earn XSIL
+                </a>
+              </div>
+              <PortsMatrix slug={pkg.slug} ports={ports} targets={targets} />
+              <div id="port-work" className="scroll-mt-24 pt-6">
+                <RequestImplementationCard slug={pkg.slug} targets={targets} />
               </div>
             </Section>
-
-            {portabilityMatrix && (
-              <Section id="portability" title="Portability matrix" icon={Layers}>
-                <PortabilityMatrixTable matrix={portabilityMatrix} />
-              </Section>
-            )}
 
             {evidenceRows.length > 0 && (
               <Section id="evidence" title="Evidence" icon={Link2}>

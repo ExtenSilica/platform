@@ -31,7 +31,7 @@ const STEPS = [
   {
     icon: Upload,
     label: "Publish evidence",
-    detail: "Ship the extension and verified port packages with a portability matrix",
+    detail: "Publish the Extension and each verified Target Port with its evidence",
     code: "xsil publish",
   },
 ];
@@ -101,7 +101,7 @@ export function HowItWorks() {
         </div>
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How it works</h2>
         <p className="mt-2 text-muted-foreground">
-          One description. Multiple cores. Shared tests. Registry remembers what was proven.
+          One Extension. Multiple Targets. Shared tests. The registry remembers what was proven.
         </p>
       </div>
 

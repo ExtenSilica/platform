@@ -7,13 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AlertTriangle, Download, Cpu } from "lucide-react";
-import {
-  computeCapabilityBadges,
-  displayReadinessLevel,
-  executionIndicatesTests,
-} from "@/lib/xsil-parser";
-import { PackageCapabilityChips } from "@/components/package-capability-chips";
+import { AlertTriangle, Download, Cpu, GitFork } from "lucide-react";
 import { StandardStatusBadge } from "@/components/standard-status-badge";
 import { PortStatusBadge } from "@/components/port-status-badge";
 
@@ -43,17 +37,9 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
   const keywords = pkg.keywords?.slice(0, 3) ?? [];
   const isaLabel = deriveIsaLabel(pkg);
   const hasSpecificIsa = isaLabel !== "RISC-V extension";
-  const latest = pkg.versions?.[0];
-  const maturity = computeCapabilityBadges({
-    isa: latest?.isa ?? null,
-    toolchain: latest?.toolchain ?? null,
-    targetsRaw: latest?.targets ?? null,
-    resolutionMode: latest?.resolutionMode ?? null,
-    dependenciesRaw: latest?.dependencies ?? null,
-    hasTests: executionIndicatesTests(latest?.execution ?? null),
-    portStatus: pkg.portStatus ?? null,
-  });
-  const readinessLevel = displayReadinessLevel(latest, maturity.level);
+  const verifiedPorts = pkg.verifiedPortCount
+    ?? pkg.ports?.filter((port) => port.verificationStatus === "verified").length
+    ?? 0;
 
   return (
     <Link href={`/package/${pkg.slug}`} className="group block h-full">
@@ -82,7 +68,10 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
               <span>{pkg.org.displayName}</span>
             </p>
           )}
-          <PackageCapabilityChips level={readinessLevel} badges={maturity.badges} />
+          <div className="mt-2 flex w-fit items-center gap-1.5 rounded-md border bg-muted/35 px-2 py-1 text-[10px] font-semibold text-foreground/80">
+            <GitFork className="h-3 w-3 text-riscv" />
+            {verifiedPorts} verified port{verifiedPorts !== 1 ? "s" : ""}
+          </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <StandardStatusBadge
               status={pkg.standardStatus ?? null}
@@ -90,7 +79,7 @@ export function PackageCard({ pkg }: { pkg: RegistryPackage }) {
               variant="compact"
             />
             <PortStatusBadge
-              status={pkg.portStatus ?? null}
+              status={pkg.provenance ?? pkg.portStatus ?? null}
               variant="compact"
               hideWhenUnset
             />

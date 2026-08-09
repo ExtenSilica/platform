@@ -52,7 +52,7 @@ export function ImplementationRequestsList() {
         status,
         capability: capabilityParam || undefined,
       });
-      setRequests(rows);
+      setRequests(rows.filter((row) => Boolean(row.targetId)));
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Failed to load implementation requests.",
@@ -93,11 +93,11 @@ export function ImplementationRequestsList() {
           <ClipboardList className="mt-1 h-6 w-6 shrink-0 text-primary" />
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              Implementation requests
+              Port requests
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Open technical coordination on registry packages — ports, tests, and
-              readiness work. ExtenSilica does not process payments on-platform.
+              Make an Extension work on a concrete Target, submit reproducible evidence,
+              and earn the listed XSIL reward after verification.
             </p>
           </div>
         </div>
@@ -125,12 +125,12 @@ export function ImplementationRequestsList() {
           </select>
         </FilterField>
 
-        <FilterField label="Target capability" htmlFor="req-cap-filter">
+        <FilterField label="Target" htmlFor="req-cap-filter">
           <Input
             id="req-cap-filter"
             value={capabilityFilter}
             onChange={(e) => setCapabilityFilter(e.target.value)}
-            placeholder="e.g. spike, RL3"
+            placeholder="e.g. spike, CVA6"
             className="h-9 w-40 text-sm sm:w-52"
             title="Substring match on each request's optional target field"
           />
@@ -158,13 +158,13 @@ export function ImplementationRequestsList() {
         </div>
       ) : requests.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-          <p>No implementation requests match your filters.</p>
+          <p>No Port requests match your filters.</p>
           <p className="mt-2">
             Browse the{" "}
             <Link href="/search" className="font-medium text-foreground underline-offset-4 hover:underline">
               registry
             </Link>{" "}
-            and open a package page to file a new request.
+            and open an Extension page to request a Port.
           </p>
         </div>
       ) : (
@@ -247,11 +247,12 @@ function RequestListCard({ request: r }: { request: ImplementationRequest }) {
 function RequestCardMeta({ request: r }: { request: ImplementationRequest }) {
   return (
     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-      {r.targetCapability && (
+      {(r.target || r.targetCapability) && (
         <span>
-          Target: <span className="font-mono text-foreground/80">{r.targetCapability}</span>
+          Target: <span className="font-mono text-foreground/80">{r.target?.name ?? r.targetCapability}</span>
         </span>
       )}
+      {r.rewardXsil && <span className="font-semibold text-foreground/80">{r.rewardXsil.toLocaleString()} XSIL</span>}
       {r.createdBy && <span>by @{r.createdBy.username}</span>}
       {r.interestCount > 0 && <span>{r.interestCount} interested</span>}
       {r.submissionCount > 0 && <span>{r.submissionCount} submission{r.submissionCount === 1 ? "" : "s"}</span>}

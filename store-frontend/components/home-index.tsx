@@ -8,9 +8,10 @@ import {
   STANDARD_STATUS_INFO,
   STANDARD_STATUS_VALUES,
   type CatalogStats,
+  type RegistryTarget,
   type StandardStatus,
 } from "@/lib/types";
-import { fetchPackages, apiCatalogStats } from "@/lib/api";
+import { fetchPackages, apiCatalogStats, fetchTargets } from "@/lib/api";
 import { pickDiverseHomePackages } from "@/lib/home-packages";
 import { PackageCard } from "@/components/package-card";
 import { XmacPortDemo } from "@/components/xmac-port-demo";
@@ -40,7 +41,7 @@ function CardSkeleton() {
 const FEATURES = [
   {
     icon: Layers,
-    title: "Port across cores",
+    title: "Port across targets",
     description:
       "Check whether an extension fits a core interface, generate an adapter when possible, and prove it with shared tests.",
   },
@@ -70,39 +71,6 @@ const FEATURES = [
   },
 ];
 
-const TARGETS = [
-  {
-    id: "reference",
-    name: "Reference interpreter",
-    status: "working",
-    note: "Golden model",
-  },
-  {
-    id: "picorv32-pcpi",
-    name: "PicoRV32 PCPI",
-    status: "working",
-    note: "Verilog · Icarus",
-  },
-  {
-    id: "neorv32-cfu",
-    name: "NEORV32 CFU",
-    status: "working",
-    note: "VHDL · GHDL",
-  },
-  {
-    id: "cva6-cvxif",
-    name: "CVA6 / CV-X-IF",
-    status: "working",
-    note: "Verilog · Icarus (MVP)",
-  },
-  {
-    id: "rocket-rocc",
-    name: "Rocket / RoCC",
-    status: "working",
-    note: "Verilog · Icarus (MVP)",
-  },
-];
-
 export function HomeIndex() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -112,17 +80,20 @@ export function HomeIndex() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<CatalogStats | null>(null);
+  const [targets, setTargets] = useState<RegistryTarget[]>([]);
 
   const loadData = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const [data, statsData] = await Promise.all([
+      const [data, statsData, targetsData] = await Promise.all([
         fetchPackages({ limit: 80, sort: "created", order: "desc" }),
         apiCatalogStats().catch(() => null),
+        fetchTargets().catch((): RegistryTarget[] => []),
       ]);
       setPackages(pickDiverseHomePackages(data, 6));
       setStats(statsData);
+      setTargets(targetsData);
     } catch (err) {
       console.error(err);
       setError("Could not reach the registry. Is the backend running?");
@@ -204,7 +175,7 @@ export function HomeIndex() {
             Port RISC-V extensions{" "}
             <span className="relative inline-block">
               <span className="text-riscv-accent drop-shadow-[0_0_12px_hsl(var(--riscv-accent)/0.35)]">
-                across cores
+                across targets
               </span>
               <span className="absolute -bottom-1 left-0 h-px w-full bg-gradient-to-r from-transparent via-riscv-accent/50 to-transparent" />
             </span>
@@ -212,7 +183,7 @@ export function HomeIndex() {
 
           <p className="mx-auto mb-8 max-w-xl text-lg text-muted-foreground">
             Describe an extension once, check compatibility, generate target adapters, and run the
-            same tests across supported cores.
+            same tests across simulators, cores, boards, and toolchains.
           </p>
 
           <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
@@ -228,7 +199,7 @@ export function HomeIndex() {
               className="inline-flex h-11 items-center gap-2 rounded-md border border-riscv/25 bg-background/80 px-5 text-sm font-medium text-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-riscv-accent/40 hover:shadow-md"
             >
               <Layers className="h-4 w-4 text-riscv" />
-              View supported targets
+              View targets
             </a>
           </div>
 
@@ -241,6 +212,25 @@ export function HomeIndex() {
       {/* ── How it works ── */}
       <HowItWorks />
 
+      {stats && (
+        <section className="border-b bg-muted/20 px-4">
+          <div className="container grid max-w-6xl grid-cols-3 divide-x py-5 text-center">
+            <div className="px-2">
+              <p className="text-2xl font-bold tabular-nums">{(stats.extensions ?? stats.total).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Extensions</p>
+            </div>
+            <div className="px-2">
+              <p className="text-2xl font-bold tabular-nums">{(stats.verifiedPorts ?? 0).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Verified ports</p>
+            </div>
+            <div className="px-2">
+              <p className="text-2xl font-bold tabular-nums">{(stats.targets ?? targets.length).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Targets</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── Supported targets ── */}
       <section id="targets" className="scroll-mt-20 border-b px-4 py-14">
         <div className="container max-w-6xl">
@@ -248,30 +238,23 @@ export function HomeIndex() {
             <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-foreground">
               Target capability model
             </p>
-            <h2 className="text-2xl font-bold tracking-tight">Supported targets</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Targets</h2>
             <p className="mt-2 text-muted-foreground">
-              Working backends have passed differential tests for the MVP instruction class.
-              Placeholders stay <span className="font-medium text-foreground">Not assessed</span>{" "}
-              until a backend exists.
+              Simulators, emulators, cores, boards, and toolchains. Technical support is counted
+              per Extension/Target Port, never claimed for an Extension as a whole.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {TARGETS.map((t) => (
+            {targets.map((t) => (
               <div
                 key={t.id}
                 className="rounded-lg border border-riscv/15 bg-background p-4 shadow-sm"
               >
-                <p className="font-mono text-xs text-muted-foreground">{t.id}</p>
+                <p className="font-mono text-xs text-muted-foreground">{t.slug}</p>
                 <p className="mt-1 font-semibold text-foreground">{t.name}</p>
-                <p className="mt-2 text-xs text-muted-foreground">{t.note}</p>
-                <p
-                  className={`mt-3 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                    t.status === "working"
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
-                      : "border-border bg-muted/50 text-muted-foreground"
-                  }`}
-                >
-                  {t.status === "working" ? "working" : "not assessed"}
+                <p className="mt-2 font-mono text-[10px] uppercase text-muted-foreground">{t.kind}</p>
+                <p className="mt-3 text-xs font-medium text-foreground">
+                  {t.verifiedPortCount} verified / {t.portCount} ports
                 </p>
               </div>
             ))}
@@ -293,7 +276,7 @@ export function HomeIndex() {
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {FEATURES.map(({ icon: Icon, title, description }) => {
-              const isAnchor = title === "Port across cores";
+              const isAnchor = title === "Port across targets";
               return (
                 <div
                   key={title}
@@ -336,7 +319,7 @@ export function HomeIndex() {
         </div>
       </section>
 
-      {/* ── Explore packages (registry — secondary) ── */}
+      {/* ── Explore Extensions (registry — secondary) ── */}
       <section id="explore" className="scroll-mt-20 px-4 py-14">
         <div className="container max-w-6xl">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -344,7 +327,7 @@ export function HomeIndex() {
               <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-brand-foreground">
                 Explore
               </p>
-              <h2 className="text-xl font-bold">Extension packages</h2>
+              <h2 className="text-xl font-bold">Extensions</h2>
               <p className="mt-1 max-w-xl text-sm text-muted-foreground">
                 The registry catalogs versions and evidence. Start from a portability question —
                 then browse if you need a published artifact.
@@ -364,7 +347,7 @@ export function HomeIndex() {
               <input
                 ref={inputRef}
                 type="search"
-                placeholder="Search packages…"
+                placeholder="Search Extensions…"
                 className="h-10 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
             </div>

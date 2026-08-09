@@ -8,6 +8,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "run-seed": "ts-node prisma/seed.ts",
     "backfill:readiness": "ts-node prisma/backfillVersionReadiness.ts",
+    "backfill:ports": "ts-node prisma/backfillPorts.ts",
     "backfill:collision-data": "ts-node scripts/backfill-collision-data.ts",
     "audit:collisions": "ts-node scripts/audit-collisions.ts",
     "test": "vitest run"

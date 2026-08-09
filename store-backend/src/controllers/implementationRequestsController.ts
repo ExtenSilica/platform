@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import {
   ImplementationRequestStatus,
   ImplementationRequestVisibility,
+  TargetKind,
   VerificationRunOutcome,
 } from '@prisma/client';
 import { prisma } from '../db';
@@ -41,6 +42,7 @@ import {
   notifyNewSubmissionEmails,
   notifyVerificationFailedEmail,
 } from '../lib/notifyImplementationFlow';
+import { portRewardForTargetKind } from '../lib/ports';
 
 // ── Includes / serializers ────────────────────────────────────────────────────
 
@@ -53,6 +55,9 @@ const requestInclude = {
       ownerId: true,
       orgId: true,
     },
+  },
+  target: {
+    select: { id: true, slug: true, name: true, kind: true },
   },
   createdBy: {
     select: { id: true, username: true, avatarUrl: true, implementerGithubUrl: true },
@@ -95,6 +100,8 @@ function serializeRequest(row: {
   visibility: ImplementationRequestVisibility;
   status: ImplementationRequestStatus;
   targetCapability: string | null;
+  targetId: number | null;
+  rewardXsil: number | null;
   acceptanceCriteriaSummary: string | null;
   fundingContactEmail: string | null;
   fundingNote: string | null;
@@ -105,6 +112,7 @@ function serializeRequest(row: {
   createdAt: Date;
   updatedAt: Date;
   package?: { id: number; slug: string; name: string; ownerId: number | null; orgId: number | null };
+  target?: { id: number; slug: string; name: string; kind: string } | null;
   createdBy?: { id: number; username: string; avatarUrl: string | null; implementerGithubUrl: string | null };
   createdByOrg?: { id: number; slug: string; displayName: string } | null;
   assignedImplementer?: {
@@ -133,6 +141,9 @@ function serializeRequest(row: {
     visibility: row.visibility,
     status: row.status,
     targetCapability: row.targetCapability,
+    targetId: row.targetId,
+    target: row.target ?? null,
+    rewardXsil: row.rewardXsil,
     acceptanceCriteriaSummary: row.acceptanceCriteriaSummary,
     fundingContactEmail: row.fundingContactEmail,
     fundingNote: row.fundingNote,
@@ -324,6 +335,31 @@ export async function createPackageImplementationRequest(
     deny(res, 400, capErr);
     return;
   }
+  const targetParsed = parsePositiveInt(body.targetId, 'targetId');
+  if (targetParsed.error) {
+    deny(res, 400, targetParsed.error);
+    return;
+  }
+  let target: { id: number; name: string; kind: TargetKind } | null = null;
+  if (targetParsed.value) {
+    target = await prisma.target.findUnique({
+      where: { id: targetParsed.value },
+      select: { id: true, name: true, kind: true },
+    });
+    if (!target) {
+      deny(res, 400, 'targetId does not match a registered target.');
+      return;
+    }
+  }
+  const defaultReward = target ? portRewardForTargetKind(target.kind) : null;
+  const rewardRaw = target && isPlatformAdminUser(req.user)
+    ? body.rewardXsil ?? defaultReward
+    : defaultReward;
+  const rewardXsil = rewardRaw == null ? null : Number(rewardRaw);
+  if (rewardXsil !== null && (!Number.isInteger(rewardXsil) || rewardXsil < 100 || rewardXsil > 100000)) {
+    deny(res, 400, 'rewardXsil must be an integer between 100 and 100000.');
+    return;
+  }
   const accErr = validateOptionalShortText(
     body.acceptanceCriteriaSummary,
     'acceptanceCriteriaSummary',
@@ -369,6 +405,8 @@ export async function createPackageImplementationRequest(
         typeof body.targetCapability === 'string' && body.targetCapability.trim()
           ? body.targetCapability.trim()
           : null,
+      targetId: target?.id ?? null,
+      rewardXsil: target ? rewardXsil : null,
       acceptanceCriteriaSummary:
         typeof body.acceptanceCriteriaSummary === 'string' &&
         body.acceptanceCriteriaSummary.trim()
@@ -607,6 +645,42 @@ export async function patchImplementationRequest(
       typeof body.targetCapability === 'string' && body.targetCapability.trim()
         ? body.targetCapability.trim()
         : null;
+  }
+  if (body.targetId !== undefined || body.rewardXsil !== undefined) {
+    if (loaded.row.status !== 'draft') {
+      deny(res, 400, 'targetId and rewardXsil can only be changed while the request is a draft.');
+      return;
+    }
+    let patchedTargetKind: TargetKind | null = null;
+    if (body.targetId !== undefined) {
+      const parsed = parsePositiveInt(body.targetId, 'targetId');
+      if (parsed.error) {
+        deny(res, 400, parsed.error);
+        return;
+      }
+      if (parsed.value) {
+        const target = await prisma.target.findUnique({ where: { id: parsed.value }, select: { id: true, kind: true } });
+        if (!target) {
+          deny(res, 400, 'targetId does not match a registered target.');
+          return;
+        }
+        patchedTargetKind = target.kind;
+      }
+      data.targetId = parsed.value;
+      data.rewardXsil = patchedTargetKind ? portRewardForTargetKind(patchedTargetKind) : null;
+    }
+    if (body.rewardXsil !== undefined) {
+      if (!isPlatformAdminUser(req.user)) {
+        deny(res, 403, 'Only platform admins can override a Target reward.');
+        return;
+      }
+      const reward = body.rewardXsil == null ? null : Number(body.rewardXsil);
+      if (reward !== null && (!Number.isInteger(reward) || reward < 100 || reward > 100000)) {
+        deny(res, 400, 'rewardXsil must be an integer between 100 and 100000.');
+        return;
+      }
+      data.rewardXsil = reward;
+    }
   }
   if (body.acceptanceCriteriaSummary !== undefined) {
     const err = validateOptionalShortText(
@@ -1175,8 +1249,9 @@ export async function createVerificationRun(
   const logUrl =
     typeof req.body?.logUrl === 'string' && req.body.logUrl.trim() ? req.body.logUrl.trim() : null;
 
-  // PR-C4: verification records outcome only — never auto-promotes Extension.portStatus.
-  const run = await prisma.$transaction(async (tx) => {
+  // Verification promotes the Extension/Target pairing, never Extension
+  // provenance. This is the conceptual boundary between catalog and work.
+  const result = await prisma.$transaction(async (tx) => {
     const created = await tx.verificationRun.create({
       data: {
         submissionId,
@@ -1187,23 +1262,64 @@ export async function createVerificationRun(
       },
     });
 
+    let port = null;
     if (outcome === 'pass') {
       await tx.implementationRequest.update({
         where: { id: submission.requestId },
         data: { status: 'verified' },
       });
+
+      if (submission.request.targetId) {
+        port = await tx.port.upsert({
+          where: {
+            extensionId_targetId: {
+              extensionId: submission.request.packageId,
+              targetId: submission.request.targetId,
+            },
+          },
+          create: {
+            extensionId: submission.request.packageId,
+            targetId: submission.request.targetId,
+            versionId: submission.versionId,
+            contributorId: submission.submittedById,
+            implementationRequestId: submission.requestId,
+            verificationStatus: 'verified',
+            testSummary: notes,
+            evidenceUrl: submission.evidenceUrl ?? logUrl,
+            rewardXsil: submission.request.rewardXsil,
+            verifiedAt: new Date(),
+          },
+          update: {
+            versionId: submission.versionId,
+            contributorId: submission.submittedById,
+            implementationRequestId: submission.requestId,
+            verificationStatus: 'verified',
+            testSummary: notes,
+            evidenceUrl: submission.evidenceUrl ?? logUrl,
+            rewardXsil: submission.request.rewardXsil,
+            verifiedAt: new Date(),
+          },
+        });
+      }
     }
 
-    return created;
+    return { run: created, port };
   });
+  const { run, port } = result;
 
   if (outcome === 'pass') {
     const { createTokenGrantSafe } = await import('../lib/tokenGrants');
     createTokenGrantSafe(
       submission.submittedById,
       'IMPLEMENTATION_SUBMISSION_ACCEPTED',
-      `submission:${submissionId}`,
-      { autoApprove: true },
+      port ? `port:${port.id}` : `submission:${submissionId}`,
+      {
+        autoApprove: true,
+        ...(port && submission.request.rewardXsil
+          ? { amount: submission.request.rewardXsil }
+          : {}),
+        note: port ? 'Verified Extension/Target port' : 'Verified implementation',
+      },
     );
     createTokenGrantSafe(req.user!.id, 'VERIFICATION_RUN_COMPLETED', `verification:${run.id}`, {
       autoApprove: true,

@@ -6,8 +6,8 @@ import { getXsilContractAddress } from './xsilContract';
 export const GOVERNANCE_DISCLAIMER = XSIL_LEGAL_DISCLAIMER;
 
 export const TOKEN_ACCRUAL_AMOUNTS: Partial<Record<TokenGrantReason, number>> = {
-  FIRST_PACKAGE_PUBLISH: 500,
-  PACKAGE_PUBLISH: 200,
+  FIRST_PACKAGE_PUBLISH: 0,
+  PACKAGE_PUBLISH: 0,
   OWNERSHIP_CLAIM_APPROVED: 1000,
   IMPLEMENTATION_SUBMISSION_ACCEPTED: 2000,
 };
@@ -36,10 +36,8 @@ export const TOKEN_SUPPLY_ROWS = [
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
-  { action: 'Publish first package', xsil: '500', notes: 'One-time per user', automated: true },
-  { action: 'Publish each additional package', xsil: '200', notes: 'Per new package', automated: true },
   { action: 'Claim upstream ownership (approved)', xsil: '1,000', notes: 'After admin approval', automated: true },
-  { action: 'Submit implementation (accepted)', xsil: '2,000', notes: 'After verifier approval', automated: true },
+  { action: 'Deliver a verified Target Port', xsil: 'Request reward', notes: 'After verifier approval', automated: true },
   { action: 'Complete verification run (pass)', xsil: '1,500', notes: 'As verifier', automated: true },
   { action: 'Paper citing ExtenSilica (documented)', xsil: '3,000', notes: 'Admin-verified citation', automated: false },
   { action: 'Contribute code to xsil CLI (merged PR)', xsil: '1,000–5,000', notes: 'Discretionary, admin-assigned', automated: false },

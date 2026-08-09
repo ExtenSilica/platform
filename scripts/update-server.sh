@@ -20,6 +20,7 @@ cd "$ROOT/store-backend"
 npm ci
 npx prisma generate
 npx prisma migrate deploy
+npm run backfill:ports
 npm run build
 pm2 restart extensilica-api
 

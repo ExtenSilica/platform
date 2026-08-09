@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { ImplementationRequestsList } from "@/components/implementation-requests-list";
 
 export const metadata: Metadata = {
-  title: "Implementation requests",
+  title: "Port requests",
   description:
-    "Browse open technical coordination work on RISC-V extension packages.",
+    "Browse open work to port RISC-V Extensions to concrete Targets with reproducible evidence.",
 };
 
 export default function RequestsPage() {

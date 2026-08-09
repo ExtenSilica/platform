@@ -86,7 +86,7 @@ export function Navbar() {
             className="inline-flex items-center gap-1 transition-colors hover:text-riscv-accent"
           >
             <ClipboardList className="h-3.5 w-3.5" />
-            Requests
+            Port work
           </Link>
           <Link href="/faq" className="transition-colors hover:text-riscv-accent">
             FAQ
@@ -105,7 +105,7 @@ export function Navbar() {
                 className="hidden sm:inline-flex h-8 items-center gap-1.5 rounded-md border border-transparent bg-primary px-3 text-xs font-medium text-primary-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-riscv-accent/45 hover:bg-primary/90 hover:shadow-[0_8px_20px_-6px_hsl(var(--riscv-accent)/0.35)]"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Publish
+                Publish Extension
               </Link>
 
               {/* User menu */}
@@ -151,7 +151,7 @@ export function Navbar() {
                         className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors sm:hidden"
                       >
                         <Plus className="h-4 w-4 text-muted-foreground" />
-                        Publish package
+                        Publish Extension
                       </Link>
                     </div>
                     <div className="border-t py-1">

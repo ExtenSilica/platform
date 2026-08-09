@@ -53,7 +53,7 @@ export const TOKEN_EARN_ROWS = [
 export const WHAT_IS_XSIL = [
   {
     title: "Contribution record",
-    body: "Every XSIL token represents a verified action that helped build the ExtenSilica ecosystem — publishing packages, claiming ownership, submitting implementations.",
+    body: "Every XSIL token represents verified work that helped an Extension run on a concrete Target. Publishing catalog metadata earns nothing.",
     icon: "layers" as const,
   },
   {

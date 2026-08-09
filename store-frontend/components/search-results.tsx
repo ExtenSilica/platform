@@ -62,7 +62,6 @@ export function SearchResults({
     query,
     author,
     org,
-    level,
     activeStatuses,
     activePortStatuses,
     sort,
@@ -110,14 +109,12 @@ export function SearchResults({
     const q = String(fd.get("q") ?? "").trim();
     const au = String(fd.get("author") ?? "").trim();
     const og = String(fd.get("org") ?? "").trim().replace(/^@+/, "");
-    const lv = String(fd.get("level") ?? "").trim();
     const st = String(fd.get("sort") ?? "created").trim();
     const ord = String(fd.get("order") ?? "desc").trim();
 
     if (q) params.set("q", q);
     if (au) params.set("author", au);
     if (og) params.set("org", og);
-    if (lv && lv !== "any") params.set("level", lv);
     if (activeStatuses.length) {
       params.set("standardStatus", activeStatuses.join(","));
     }
@@ -258,10 +255,10 @@ export function SearchResults({
             <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
             Filters &amp; sort
             <span className="ml-auto text-xs font-normal text-muted-foreground group-open:hidden">
-              Author, organization, readiness level, downloads
+              Author, organization, and downloads
             </span>
           </summary>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="registry-author" className="text-xs">
                 Author contains
@@ -287,24 +284,6 @@ export function SearchResults({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="registry-level" className="text-xs">
-                Readiness level
-              </Label>
-              <select
-                id="registry-level"
-                name="level"
-                defaultValue={level || "any"}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="any">Any readiness</option>
-                <option value="1">RL1</option>
-                <option value="2">RL2</option>
-                <option value="3">RL3</option>
-                <option value="4">RL4</option>
-                <option value="5">RL5</option>
-              </select>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
               <Label htmlFor="registry-sort" className="text-xs">
                 Sort by
               </Label>
@@ -363,7 +342,6 @@ export function SearchResults({
                   {[
                     author && `Author: ${author}`,
                     org && `Org: @${org}`,
-                    level && `RL${level}`,
                     activeStatuses.length &&
                       `Status: ${activeStatuses.map((s) => STANDARD_STATUS_INFO[s].label).join(", ")}`,
                     activePortStatuses.length &&
@@ -375,7 +353,7 @@ export function SearchResults({
               )}
             </>
           ) : (
-            "All packages"
+            "All Extensions"
           )}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -385,7 +363,7 @@ export function SearchResults({
         </div>
         {!loading && !error && (
           <p className="shrink-0 text-sm text-muted-foreground">
-            {packages.length} package{packages.length !== 1 ? "s" : ""}
+            {packages.length} Extension{packages.length !== 1 ? "s" : ""}
           </p>
         )}
       </div>
@@ -410,7 +388,7 @@ export function SearchResults({
         </div>
       ) : packages.length === 0 ? (
         <div className="rounded-lg border border-dashed bg-muted/20 py-20 text-center">
-          <p className="font-medium text-foreground">No packages found</p>
+          <p className="font-medium text-foreground">No Extensions found</p>
           {query || structuredFilters ? (
             <p className="mt-2 text-sm text-muted-foreground">
               Try different keywords or filters, or{" "}
@@ -419,12 +397,12 @@ export function SearchResults({
                 onClick={() => router.replace("/search")}
                 className="underline hover:text-foreground"
               >
-                browse all packages
+                browse all Extensions
               </button>
             </p>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">
-              No packages have been published yet.
+              No Extensions have been published yet.
             </p>
           )}
         </div>
