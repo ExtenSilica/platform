@@ -12,29 +12,29 @@ import { CONTACT_EMAIL, LEGAL_EMAIL, SUPPORT_EMAIL } from "@/lib/site-contact";
 export const metadata: Metadata = {
   title: "About — ExtenSilica",
   description:
-    "What ExtenSilica verifies, who operates the public RISC-V portability registry, and where the team is based.",
+    "What the ExtenSilica RISC-V extension registry stores, who operates it, and where the team is based.",
 };
 
 export default function AboutPage() {
   return (
     <InfoPage
       title="About ExtenSilica"
-      subtitle="Public evidence for RISC-V extension implementations across cores and tools."
+      subtitle="A public catalog for versioned RISC-V ISA extension packages."
       updated="August 2026"
       current="/about"
     >
       <div className="space-y-10">
         <InfoSection id="mission" title="What we build">
           <p>
-            ExtenSilica is a <InfoStrong>free, public portability registry</InfoStrong>.
-            An Extension records architectural intent, encoding, dependencies, and provenance.
-            Each implementation or support claim is attached to a concrete Target and backed by
-            reproducible evidence.
+            ExtenSilica is a <InfoStrong>free, public registry for RISC-V ISA extensions</InfoStrong>.
+            It gives maintainers one place to publish versioned packages and gives users one place
+            to discover, inspect, install, and cite them.
           </p>
           <p>
-            Versioned <InfoC>.xsil</InfoC> archives transport Extension definitions and preserved
-            Port artifacts. The catalog does not promote implementation artifacts into new
-            Extensions, and it never infers support for an Extension as a whole.
+            The open <InfoC>.xsil</InfoC> format carries identity, upstream provenance, ISA
+            requirements, encodings, dependencies, documentation, checksums, and optional
+            simulator, toolchain, RTL, test, example, or hardware artifacts. ExtenSilica stores
+            and indexes that package metadata without making claims beyond what the archive declares.
           </p>
         </InfoSection>
 

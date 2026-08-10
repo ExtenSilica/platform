@@ -265,9 +265,8 @@ function validatePublishManifestFields(m: ManifestJson): void {
   }
   if (!description) throw new XsilValidationError('manifest.description is required.');
   if (!author) throw new XsilValidationError('manifest.author is required.');
-  // `entry` is optional for an architectural Extension definition. Executable
-  // entry points belong to concrete Target support and are validated when a
-  // Port artifact claims them.
+  // `entry` is optional. Definition-only packages are valid; executable
+  // packages may add entry points and support metadata when those assets exist.
 }
 
 function assertSafeTarMember(memberPath: string): void {

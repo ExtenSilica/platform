@@ -12,14 +12,14 @@ import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 export const metadata: Metadata = {
   title: "Contributing — ExtenSilica",
   description:
-    "How to define Extensions, implement them on concrete Targets, and submit reproducible evidence.",
+    "How to publish, maintain, and improve RISC-V extension packages in ExtenSilica.",
 };
 
 export default function ContributingPage() {
   return (
     <InfoPage
       title="Contributing"
-      subtitle="Define the architecture once. Prove each Target and backend independently."
+      subtitle="Improve the public technical record for RISC-V extensions."
       updated="August 2026"
       current="/contributing"
     >
@@ -27,8 +27,9 @@ export default function ContributingPage() {
         <InfoSection id="principles" title="Principles">
           <p>
             ExtenSilica is built for <InfoStrong>reproducible RISC-V extension work</InfoStrong>.
-            Contribution is measured by verified implementations and support evidence, public
-            profiles, and citable artifacts — not by catalog volume or platform payments.
+            Useful contributions improve a real package: provenance, specifications, encodings,
+            dependencies, artifacts, tests, examples, or documentation. Catalog volume alone is
+            not a contribution.
           </p>
         </InfoSection>
 
@@ -65,25 +66,20 @@ export default function ContributingPage() {
           </InfoUl>
         </InfoSection>
 
-        <InfoSection id="implementation" title="Implementation requests">
+        <InfoSection id="package-work" title="Improve an existing package">
           <p>
-            Extension maintainers and the community can open{" "}
-            <Link href="/requests" className="text-primary underline">
-              implementation requests
-            </Link>{" "}
-            to coordinate one concrete Target and backend:
+            Package maintainers and community contributors can improve the technical archive without
+            turning ExtenSilica into a separate porting framework:
           </p>
           <InfoUl>
-            <li>Express interest with your public implementer profile</li>
-            <li>Submit work and record verification runs</li>
-            <li>
-              Optional funding-contact fields are <InfoStrong>off-platform only</InfoStrong>{" "}
-              — the registry does not hold funds or broker contracts
-            </li>
+            <li>Update a specification, version, encoding, CSR range, or dependency</li>
+            <li>Add reproducible simulator, toolchain, RTL, test, example, or hardware artifacts</li>
+            <li>Correct provenance and claim maintenance of a package you control upstream</li>
+            <li>Report duplicate, misleading, stale, or unverifiable metadata</li>
           </InfoUl>
           <p>
-            Build reputation via your{" "}
-            <InfoC>/users/&lt;username&gt;</InfoC> page and verified submissions.
+            Coordinate changes in the package&apos;s upstream repository or through the contact channels
+            on its registry page. Published versions remain immutable; corrections ship as a new version.
           </p>
         </InfoSection>
 
@@ -139,13 +135,13 @@ export default function ContributingPage() {
 
         <InfoSection id="xsil" title="XSIL contribution tokens">
           <p>
-            Verified Target support may earn{" "}
+            Verified engineering work that improves the extension catalog may earn{" "}
             <Link href="/token" className="text-primary underline">
               XSIL
             </Link>{" "}
-            governance points. Publishing metadata earns nothing. Grants are issued after evidence
-            passes verification; linking a
-            wallet is optional and only used for on-chain claim when enabled.
+            governance tokens. Publishing empty or duplicate metadata earns nothing. Grants are
+            reviewed according to the value, provenance, and reproducibility of the contribution;
+            linking a wallet is optional and only used for on-chain claim when enabled.
           </p>
           <XsilDisclaimerNotice variant="box" className="mt-4" />
         </InfoSection>

@@ -12,8 +12,8 @@ export function Footer() {
               <p className="font-bold text-foreground">ExtenSilica</p>
             </div>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Port and evaluate RISC-V extensions across cores. The registry
-              remembers versions and verified ports.
+              The public registry for versioned RISC-V ISA extension packages
+              in the open <code className="font-mono text-xs">.xsil</code> format.
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               <Link href="/about" className="hover:text-riscv-accent transition-colors">

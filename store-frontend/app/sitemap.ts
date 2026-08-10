@@ -15,7 +15,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${site}/token/documentation`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${site}/contributing`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${site}/faq`, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${site}/requests`, changeFrequency: "daily", priority: 0.7 },
   ];
 
   let packageRoutes: MetadataRoute.Sitemap = [];

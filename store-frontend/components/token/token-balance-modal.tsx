@@ -106,7 +106,7 @@ export function TokenBalanceModal({ open, onOpenChange }: Props) {
               </ul>
             ) : (
               <p className="text-sm text-muted-foreground">
-                No accruals yet. Publish or claim to earn XSIL.
+                No grants yet. Verified catalog contributions may earn XSIL after review.
               </p>
             )}
           </div>

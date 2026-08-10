@@ -10,29 +10,27 @@ import {
   fetchPackageReviews,
   fetchPackageStats,
   fetchPackageCitation,
-  fetchTargets,
 } from "@/lib/api";
 import type {
   RegistryVersion,
   Review,
   PackageStats,
   ExtensionConflict,
-  RegistryTarget,
 } from "@/lib/types";
 import {
   parseRegistryEvidence,
+  targetsDisplayFromJson,
+  toolchainToString,
 } from "@/lib/xsil-parser";
-import { PortsMatrix } from "@/components/ports-matrix";
 import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/star-rating";
 import { ReviewsSection } from "@/components/reviews-section";
 import { ClaimOwnershipCard } from "@/components/claim-ownership-card";
-import { RequestImplementationCard } from "@/components/request-implementation-card";
 import { StandardStatusBadge } from "@/components/standard-status-badge";
 import { PortStatusBadge } from "@/components/port-status-badge";
 import { PORT_STATUS_INFO, isRealConflict } from "@/lib/types";
-import { legacyPortArtifactDestination, supportAnchor } from "@/lib/support-model";
+import { legacyPortArtifactDestination } from "@/lib/support-model";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -49,7 +47,7 @@ import {
   Link2,
   BadgeCheck,
   AlertCircle,
-  Layers,
+  Package,
 } from "lucide-react";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -78,6 +76,25 @@ function fmtBytes(b: number) {
 
 function fmtNum(n: number) {
   return n.toLocaleString();
+}
+
+function parseStringArray(raw: string | null | undefined): string[] {
+  if (!raw?.trim()) return [];
+  try {
+    const value = JSON.parse(raw) as unknown;
+    return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
+  } catch {
+    return raw.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+}
+
+function prettyJson(raw: string | null | undefined): string | null {
+  if (!raw?.trim()) return null;
+  try {
+    return JSON.stringify(JSON.parse(raw), null, 2);
+  } catch {
+    return raw.trim();
+  }
 }
 
 /* ─── metadata ──────────────────────────────────────────────────────────────*/
@@ -147,24 +164,18 @@ export default async function PackagePage({
 }) {
   const legacyDestination = legacyPortArtifactDestination(params.slug);
   if (legacyDestination) {
-    redirect(`/package/${legacyDestination.extensionSlug}#${legacyDestination.anchor}`);
+    redirect(`/package/${legacyDestination.extensionSlug}`);
   }
   const pkg = await fetchPackage(params.slug).catch(() => null);
   if (!pkg) notFound();
   if (pkg.recordKind === "port_artifact" && pkg.artifactFor) {
-    redirect(
-      `/package/${encodeURIComponent(pkg.artifactFor.extensionSlug)}#${supportAnchor(
-        pkg.artifactFor.targetSlug,
-        pkg.artifactFor.backendSlug,
-      )}`,
-    );
+    redirect(`/package/${encodeURIComponent(pkg.artifactFor.extensionSlug)}`);
   }
 
-  const [reviews, stats, citation, targetCatalog] = await Promise.all([
+  const [reviews, stats, citation] = await Promise.all([
     fetchPackageReviews(params.slug).catch((): Review[] => []),
     fetchPackageStats(params.slug).catch((): PackageStats | null => null),
     fetchPackageCitation(params.slug).catch(() => null),
-    fetchTargets().catch((): RegistryTarget[] => []),
   ]);
 
   const conflictsResponse = await fetchPackageConflicts(pkg.id).catch(() => null);
@@ -223,16 +234,10 @@ export default async function PackagePage({
   const latest: RegistryVersion | undefined = pkg.versions?.[0];
   const keywords = pkg.keywords ?? [];
   const evidenceRows = parseRegistryEvidence(latest?.evidence ?? null);
-  const ports = pkg.ports ?? [];
-  const fallbackTargets: RegistryTarget[] = ports.map((port) => ({
-    ...port.target,
-    portCount: 1,
-    verifiedPortCount: port.verificationStatus === "verified" ? 1 : 0,
-    openPortRequestCount: 0,
-    availableRewardXsil: 0,
-  }));
-  const targets = targetCatalog.length > 0 ? targetCatalog : fallbackTargets;
-  const verifiedPortCount = ports.filter((port) => port.verificationStatus === "verified").length;
+  const declaredTargets = targetsDisplayFromJson(latest?.targets);
+  const toolchainLabel = toolchainToString(latest?.toolchain ?? "");
+  const capabilities = parseStringArray(latest?.capabilities);
+  const dependencies = prettyJson(latest?.dependencies);
 
   const readme = pkg.longDescription || pkg.description || "";
   const installCmd = `xsil install ${pkg.slug}`;
@@ -249,7 +254,7 @@ export default async function PackagePage({
   );
 
   const NAV: { id: string; label: string }[] = [
-    { id: "ports", label: `Support${ports.length ? ` (${ports.length})` : ""}` },
+    { id: "metadata", label: "Package metadata" },
   ];
   if (evidenceRows.length > 0) {
     NAV.push({ id: "evidence", label: "Evidence" });
@@ -309,9 +314,7 @@ export default async function PackagePage({
             {latest?.isYanked && (
               <Badge variant="destructive">latest yanked</Badge>
             )}
-            <Badge variant="secondary" className="text-xs">
-              {verifiedPortCount} verified support record{verifiedPortCount !== 1 ? "s" : ""}
-            </Badge>
+            <Badge variant="secondary" className="text-xs">.xsil package</Badge>
           </div>
 
           {/* Author line */}
@@ -406,8 +409,9 @@ export default async function PackagePage({
           )}
 
           <p className="mb-4 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Extension</span>: architectural intent,
-            encoding, dependencies, and provenance. Technical claims live on each Port below.
+            This versioned archive records the Extension&apos;s encoding, dependencies,
+            provenance, documentation, and any simulator, toolchain, RTL, test, or
+            hardware support declared by its maintainer.
           </p>
 
           {/* Average rating */}
@@ -465,8 +469,8 @@ export default async function PackagePage({
           {/* ══ Sidebar ════════════════════════════════════════════════════ */}
           <aside className="order-2 w-full shrink-0 space-y-4 lg:order-1 lg:w-72">
 
-            {/* Extension artifact */}
-            <SideCard title="Extension archive">
+            {/* Package artifact */}
+            <SideCard title="Install package">
               <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 font-mono text-sm">
                 <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
                   {installCmd}
@@ -657,30 +661,71 @@ export default async function PackagePage({
           {/* ══ Main content ══════════════════════════════════════════════ */}
           <main className="order-1 min-w-0 flex-1 space-y-0 lg:order-2">
 
-            {/* Extension status is architectural; technical status belongs here. */}
-            <Section id="ports" title="Implementations & support" icon={Layers}>
-              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="max-w-2xl text-sm text-muted-foreground">
-                    Each technical claim belongs to a concrete Target and, for core
-                    implementations, an explicit backend. Simulation, toolchain, hardware,
-                    and reference evidence are evaluated in separate groups below.
-                  </p>
-                  <p className="mt-2 text-xs font-medium text-foreground">
-                    {ports.length} support record{ports.length !== 1 ? "s" : ""} · {verifiedPortCount} verified · {targets.length} targets
-                  </p>
-                </div>
-                <a
-                  href="#port-work"
-                  className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  Contribute support, earn XSIL
-                </a>
-              </div>
-              <PortsMatrix slug={pkg.slug} ports={ports} targets={targets} />
-              <div id="port-work" className="scroll-mt-24 pt-6">
-                <RequestImplementationCard slug={pkg.slug} targets={targets} />
-              </div>
+            <Section id="metadata" title="Package metadata" icon={Package}>
+              <p className="mb-5 max-w-2xl text-sm text-muted-foreground">
+                Metadata is published by the package maintainer. Inspect the archive,
+                upstream sources, and checksums before depending on declared support.
+              </p>
+              <dl className="divide-y overflow-hidden rounded-lg border bg-background text-sm">
+                <MetadataRow label="Required ISA">
+                  {latest?.isa ? <code className="font-mono">{latest.isa}</code> : "Not declared"}
+                </MetadataRow>
+                <MetadataRow label="Declared support">
+                  {declaredTargets.badges.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {declaredTargets.badges.map((target) => (
+                        <Badge key={target} variant="outline" className="font-mono text-[10px]">
+                          {target}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : "Not declared"}
+                </MetadataRow>
+                <MetadataRow label="Toolchain">
+                  {toolchainLabel || "Not declared"}
+                </MetadataRow>
+                <MetadataRow label="Capabilities">
+                  {capabilities.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {capabilities.map((capability) => (
+                        <Badge key={capability} variant="secondary" className="text-[10px]">
+                          {capability}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : "Not declared"}
+                </MetadataRow>
+                <MetadataRow label="Resolution">
+                  {latest?.resolutionMode || "Not declared"}
+                </MetadataRow>
+                <MetadataRow label="Archive checksum">
+                  {latest?.checksum ? (
+                    <code className="break-all font-mono text-xs">sha256:{latest.checksum}</code>
+                  ) : "Not declared"}
+                </MetadataRow>
+                <MetadataRow label="Payload checksum">
+                  {latest?.checksumPayload ? (
+                    <code className="break-all font-mono text-xs">{latest.checksumPayload}</code>
+                  ) : "Not declared"}
+                </MetadataRow>
+              </dl>
+
+              {declaredTargets.pretty && (
+                <details className="mt-4 rounded-lg border bg-muted/20 p-4">
+                  <summary className="cursor-pointer text-sm font-medium">Support metadata</summary>
+                  <pre className="mt-3 max-h-80 overflow-auto text-xs text-muted-foreground">
+                    {declaredTargets.pretty}
+                  </pre>
+                </details>
+              )}
+              {dependencies && (
+                <details className="mt-4 rounded-lg border bg-muted/20 p-4">
+                  <summary className="cursor-pointer text-sm font-medium">Dependencies</summary>
+                  <pre className="mt-3 max-h-80 overflow-auto text-xs text-muted-foreground">
+                    {dependencies}
+                  </pre>
+                </details>
+              )}
             </Section>
 
             {evidenceRows.length > 0 && (
@@ -871,6 +916,21 @@ export default async function PackagePage({
 }
 
 /* ─── Local sub-components ────────────────────────────────────────────────── */
+
+function MetadataRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid gap-1 px-4 py-3 sm:grid-cols-[150px_1fr] sm:gap-5">
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-foreground">{children}</dd>
+    </div>
+  );
+}
 
 function Row({
   icon,

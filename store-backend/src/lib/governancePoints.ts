@@ -36,12 +36,12 @@ export const TOKEN_SUPPLY_ROWS = [
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
-  { action: 'Verified simulator support', xsil: '500', notes: 'Per accepted Extension/Target record', automated: true },
-  { action: 'Verified emulator support', xsil: '750', notes: 'Per accepted Extension/Target record', automated: true },
-  { action: 'Verified toolchain support', xsil: '1,000', notes: 'Per accepted Extension/Target record', automated: true },
-  { action: 'Verified core implementation', xsil: '1,500', notes: 'Target and backend required', automated: true },
-  { action: 'Verified hardware evidence', xsil: '2,000', notes: 'Reproducible physical-board run', automated: true },
-  { action: 'Validated reference model', xsil: '500', notes: 'Accepted semantic comparison oracle', automated: true },
+  { action: 'Maintain an upstream package', xsil: 'Reviewed', notes: 'Ownership and provenance must be verified', automated: false },
+  { action: 'Package a real extension', xsil: 'Reviewed', notes: 'Complete, attributable, non-duplicate .xsil archive', automated: false },
+  { action: 'Add simulator or toolchain artifacts', xsil: 'Reviewed', notes: 'Reproducible files, versions, and checksums', automated: false },
+  { action: 'Add tests or examples', xsil: 'Reviewed', notes: 'Useful engineering evidence attached to a package', automated: false },
+  { action: 'Update specifications or encodings', xsil: 'Reviewed', notes: 'Verified correction or upstream version update', automated: false },
+  { action: 'Improve the registry', xsil: 'Reviewed', notes: 'Accepted platform code, documentation, or curation', automated: false },
 ] as const;
 
 const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;

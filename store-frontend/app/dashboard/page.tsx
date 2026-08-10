@@ -1025,10 +1025,10 @@ export default function DashboardPage() {
 
           <div className="rounded-lg border border-dashed bg-muted/10 p-4 space-y-4">
             <div>
-              <p className="text-sm font-medium">Implementer profile</p>
+              <p className="text-sm font-medium">Contributor profile</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Shown on your public profile when you contribute to implementation
-                requests. Optional — not required to publish packages.
+                Shown on your public profile when you contribute technical work.
+                Optional and not required to publish packages.
               </p>
             </div>
 
@@ -1044,10 +1044,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="implementer-bio">Implementer bio</Label>
+              <Label htmlFor="implementer-bio">Contributor bio</Label>
               <Textarea
                 id="implementer-bio"
-                placeholder="e.g. Spike/QEMU ports for ratified crypto extensions, CI and test harnesses."
+                placeholder="e.g. Maintains crypto extension packages, toolchain artifacts, and test suites."
                 maxLength={500}
                 rows={3}
                 value={implementerBio}

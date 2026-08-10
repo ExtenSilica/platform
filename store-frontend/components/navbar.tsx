@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, LayoutDashboard, LogOut, User, Plus, ChevronDown, Wand2, ClipboardList } from "lucide-react";
+import { Search, LayoutDashboard, LogOut, User, Plus, ChevronDown, PackagePlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -68,9 +68,6 @@ export function Navbar() {
         )}
 
         <div className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
-          <Link href="/#targets" className="transition-colors hover:text-riscv-accent">
-            Targets
-          </Link>
           <Link href="/search" className="transition-colors hover:text-riscv-accent">
             Registry
           </Link>
@@ -78,15 +75,11 @@ export function Navbar() {
             href="/wizard"
             className="inline-flex items-center gap-1 transition-colors hover:text-riscv-accent"
           >
-            <Wand2 className="h-3.5 w-3.5" />
-            Analyze
+            <PackagePlus className="h-3.5 w-3.5" />
+            Create package
           </Link>
-          <Link
-            href="/requests"
-            className="inline-flex items-center gap-1 transition-colors hover:text-riscv-accent"
-          >
-            <ClipboardList className="h-3.5 w-3.5" />
-            Port work
+          <Link href="/contributing" className="transition-colors hover:text-riscv-accent">
+            Contributing
           </Link>
           <Link href="/faq" className="transition-colors hover:text-riscv-accent">
             FAQ
@@ -174,8 +167,8 @@ export function Navbar() {
                 href="/wizard"
                 className="hidden h-8 items-center gap-1.5 rounded-md border border-transparent bg-riscv px-3 text-xs font-medium text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-riscv-light sm:inline-flex"
               >
-                <Wand2 className="h-3.5 w-3.5" />
-                Analyze
+                <PackagePlus className="h-3.5 w-3.5" />
+                Create package
               </Link>
               <Link
                 href="/login"

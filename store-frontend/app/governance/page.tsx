@@ -15,14 +15,14 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Governance — ExtenSilica",
   description:
-    "How ExtenSilica stewards verified RISC-V extension portability evidence and contributor governance.",
+    "How ExtenSilica stewards the public RISC-V extension package registry and contributor governance.",
 };
 
 export default async function GovernancePage() {
   return (
     <InfoPage
       title="Governance"
-      subtitle="Stewardship of Extension definitions, verified Target support, and preserved evidence."
+      subtitle="Stewardship of the .xsil format and public extension catalog."
       updated="August 2026"
       current="/governance"
     >
@@ -30,8 +30,8 @@ export default async function GovernancePage() {
         <InfoSection id="steward" title="Interim steward">
           <p>
             <InfoStrong>ExtenSilica</InfoStrong> operates as interim technical steward of the
-            public RISC-V portability registry and the{" "}
-            <InfoC>.xsil</InfoC> evidence format. Our goal is neutral, long-term
+            public RISC-V extension registry and the{" "}
+            <InfoC>.xsil</InfoC> package format. Our goal is neutral, long-term
             governance — including transfer to{" "}
             <InfoStrong>RISC-V International</InfoStrong> or an affiliated foundation
             when the catalog, processes, and community are ready.
@@ -47,20 +47,15 @@ export default async function GovernancePage() {
         <InfoSection id="scope" title="What we coordinate">
           <p>We coordinate <InfoStrong>open technical work</InfoStrong> on the registry:</p>
           <InfoUl>
-            <li>Versioned Extension definitions and upstream provenance</li>
-            <li>Target and backend identities for concrete implementations</li>
-            <li>
-              <Link href="/requests" className="text-primary underline">
-                Implementation requests
-              </Link>{" "}
-              — open coordination from a missing support record to verified evidence
-            </li>
-            <li>Reproducible tests, verification records, and preserved Port artifacts</li>
+            <li>Versioned .xsil packages and upstream provenance</li>
+            <li>Extension identity, encoding, CSR, dependency, and specification metadata</li>
+            <li>Optional simulator, toolchain, RTL, test, example, and hardware artifacts</li>
+            <li>Immutable releases, checksums, citations, deprecation, and ownership claims</li>
             <li>
               <Link href="/token" className="text-primary underline">
                 XSIL governance points
               </Link>{" "}
-              — non-monetary rewards for verified support and governance participation
+              — non-monetary rewards for verified catalog contributions and governance participation
             </li>
             <li>
               External citations and canonical CFF / BibTeX on each Extension page for
@@ -92,8 +87,8 @@ export default async function GovernancePage() {
             <li>No financial schema drift in the database or API</li>
           </InfoUl>
           <p>
-            When governance moves to a foundation, Extension definitions and Port artifacts remain under their
-            upstream licenses; only platform code and operational runbooks transfer.
+            When governance moves to a foundation, package contents remain under their upstream
+            licenses; only platform code and operational runbooks transfer.
           </p>
         </InfoSection>
 
@@ -122,8 +117,8 @@ export default async function GovernancePage() {
         <InfoSection id="contribute" title="Get involved">
           <p>
             See <Link href="/contributing" className="text-primary underline">Contributing</Link>{" "}
-            for how to define Extensions, join Target implementation work, and help improve the
-            registry. Questions about stewardship can be directed through the contact
+            for how to publish, maintain, and improve extension packages. Questions about
+            stewardship can be directed through the contact
             channels listed in our{" "}
             <Link href="/legal/terms" className="text-primary underline">
               Terms of Service

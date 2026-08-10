@@ -192,12 +192,12 @@ const GROUPS: FaqGroup[] = [
         ),
       },
       {
-        q: "What is \"port status\" / provenance on a package?",
+        q: "What does provenance mean on a package?",
         a: (
           <>
             <p>
-              <C>portStatus</C> is orthogonal to <C>standardStatus</C>:
-              the latter describes the SPEC, the former describes who put the
+              Provenance is orthogonal to <C>standardStatus</C>:
+              the latter describes the specification, while provenance describes who put the
               package on ExtenSilica and whether the upstream maintainer has
               blessed it. It is <strong>always server-set</strong> — we never
               read it from the uploaded manifest, so publishers cannot lie
@@ -210,8 +210,8 @@ const GROUPS: FaqGroup[] = [
                 (yet) claimed authorship.
               </li>
               <li>
-                <C>community_port</C> — ported by a non-upstream community
-                member. Useful, but not vetted as official.
+                <C>community_port</C> — a legacy database value for a package
+                contributed by a non-upstream community member. Useful, but not vetted as official.
               </li>
               <li>
                 <C>claimed</C> — the current owner went through the{" "}
@@ -257,20 +257,8 @@ const GROUPS: FaqGroup[] = [
                 <C>license</C>
               </li>
               <li>
-                <C>isa</C> — RISC-V ISA string (e.g. <C>rv64gc</C>,{" "}
+                <C>isa</C> — required base ISA metadata when known (e.g. <C>rv64gc</C>,{" "}
                 <C>rv64imafc</C>)
-              </li>
-              <li>
-                <C>targets</C> — declared execution platforms (typically{" "}
-                <C>spike</C>, optionally <C>qemu</C>, <C>binutils</C>, <C>llvm</C>,{" "}
-                <C>fpga</C>)
-              </li>
-              <li>
-                <C>entry</C> / <C>testEntry</C> — primary run / test entry points
-              </li>
-              <li>
-                <C>checksums.payload</C> — SHA-256 of the non-manifest payload for
-                integrity verification
               </li>
               <li>
                 <C>repository</C> — http(s) URL to the source (required for
@@ -293,20 +281,15 @@ const GROUPS: FaqGroup[] = [
                 required
               </li>
               <li>
-                <C>sim/spike-extension/</C> — Spike <C>extension_t</C> C++ stub
-                plus <C>Makefile</C> for building <C>lib&lt;slug&gt;_spike.so</C>
-              </li>
-              <li>
-                <C>examples/</C>, <C>tests/</C>, <C>docs/</C>, <C>toolchain/</C> —
-                runnable examples, expected-output tests, prose docs, and a
-                placeholder for any bundled toolchain
+                <C>examples/</C> and <C>docs/</C> — encoding examples and prose documentation
               </li>
               <li>
                 <C>README.md</C>, <C>CHANGELOG.md</C>, <C>LICENSE</C>,{" "}
                 <C>.xsilignore</C> — standard surface metadata
               </li>
               <li>
-                <C>bitstream/</C> — optional FPGA artifacts when applicable
+                <C>targets</C>, <C>toolchain</C>, <C>entry</C>, <C>testEntry</C>, tests,
+                RTL, and bitstreams — optional metadata and artifacts when they actually exist
               </li>
             </ul>
           </>

@@ -153,7 +153,7 @@ describe('generateXsilSkeleton', () => {
     }
   });
 
-  it('does not manufacture Target support from legacy Wizard flags', async () => {
+  it('does not manufacture support metadata from legacy Wizard flags', async () => {
     const r = await generateXsilSkeleton({
       name: 'spike-ext',
       description: 'Definition-only archive check.',
@@ -171,7 +171,7 @@ describe('generateXsilSkeleton', () => {
       expect(manifest.targets).toBeUndefined();
       expect(fs.existsSync(path.join(dir, 'sim'))).toBe(false);
       const readme = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
-      expect(readme).toContain('makes no Target support claim');
+      expect(readme).toContain('does not include simulator, toolchain, RTL, or hardware artifacts');
     } finally {
       fs.rmSync(path.dirname(dir), { recursive: true, force: true });
     }

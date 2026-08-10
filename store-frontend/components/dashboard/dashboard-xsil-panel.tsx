@@ -156,7 +156,7 @@ export function DashboardXsilPanel() {
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted-foreground">
-          No grants yet. Publish a package or contribute on the registry to earn XSIL.
+          No grants yet. Verified package or registry contributions may earn XSIL after review.
         </p>
       )}
 

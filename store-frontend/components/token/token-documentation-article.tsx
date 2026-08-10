@@ -114,9 +114,9 @@ export function TokenDocumentationArticle() {
       <div className="space-y-10">
         <DocSection id="introduction" title="1. Introduction">
           <p>
-            ExtenSilica is a public registry for RISC-V Extensions and reproducible Target Ports. The XSIL
-            token is a governance token that represents contribution history and participation rights
-            in the ExtenSilica ecosystem.
+            ExtenSilica is a public registry for versioned RISC-V extension packages. The XSIL
+            token represents reviewed contribution history and participation rights in the
+            ExtenSilica ecosystem.
           </p>
           <p>
             This document describes the token model, distribution, governance structure, and
@@ -215,8 +215,9 @@ export function TokenDocumentationArticle() {
             rows={TOKEN_EARN_ROWS.map((r) => [r.action, r.xsil, r.notes])}
           />
           <p>
-            Tokens are granted after verification of each action. Gaming, duplicate submissions, or
-            low-quality contributions are disqualified at admin discretion.
+            There is no fixed bounty schedule. Tokens are granted after review of technical value,
+            provenance, and reproducibility. Gaming, duplicate submissions, or low-quality
+            contributions are disqualified.
           </p>
         </DocSection>
 

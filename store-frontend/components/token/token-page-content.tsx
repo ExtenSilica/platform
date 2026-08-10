@@ -45,12 +45,20 @@ export function TokenPageContent({ governance }: Props) {
     <InfoPage
       title="XSIL — The ExtenSilica Contributor Token"
       subtitle="Verified technical contribution and governance participation."
-      updated="May 2026"
+      updated="August 2026"
       current="/token"
-      note="No monetary value · Earned through verified support · Used in governance"
+      note="No monetary value · Earned through verified engineering work · Used in governance"
     >
       <div className="space-y-16">
         <section className="-mt-4 space-y-6">
+          <div className="max-w-3xl space-y-2">
+            <p className="text-2xl font-bold">XSIL is worth $0 today.</p>
+            <p className="text-muted-foreground">
+              You cannot buy it. You earn it by contributing verified engineering work to the
+              RISC-V extension ecosystem. If ExtenSilica becomes infrastructure, governance will
+              decide what comes next.
+            </p>
+          </div>
           <Badge variant="outline" className="text-xs font-normal">
             No monetary value · Verified contribution · Governance participation
           </Badge>
@@ -147,9 +155,9 @@ export function TokenPageContent({ governance }: Props) {
             ))}
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Token grants are reviewed and confirmed before treasury transfer on-chain. Gaming or
-            duplicate actions are
-            disqualified.
+            There is no fixed bounty schedule. Token grants are reviewed for technical value,
+            provenance, and reproducibility before treasury transfer on-chain. Gaming, copied
+            metadata, and duplicate actions are disqualified.
           </p>
         </InfoSection>
 

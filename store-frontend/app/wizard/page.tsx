@@ -508,9 +508,9 @@ export default function WizardPage() {
           <Badge variant="secondary">beta</Badge>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          Describe the architectural intent and download an{" "}
-          <code className="font-mono text-xs">.xsil</code> Extension definition with
-          encoding metadata, documentation, and examples. No Target support is claimed.
+          Create a clean <code className="font-mono text-xs">.xsil</code> package skeleton
+          with identity, ISA requirements, encoding metadata, documentation, and examples.
+          Add optional simulator or toolchain assets later when they actually exist.
         </p>
       </div>
 

@@ -19,7 +19,7 @@ import {
 import { XSIL_LEGAL_DISCLAIMER_LINES } from "@/lib/xsil-disclaimer";
 
 export const TOKEN_DOC_VERSION = "1.0";
-export const TOKEN_DOC_DATE = "May 2026";
+export const TOKEN_DOC_DATE = "August 2026";
 
 export const TOKEN_OVERVIEW_ROWS = [
   { property: "Name", value: "ExtenSilica Governance Token" },
@@ -36,14 +36,14 @@ export const TOKEN_OVERVIEW_ROWS = [
 export const TOKEN_DISTRIBUTION_NOTE = `${TOKEN_DISTRIBUTION_INTRO} ${TOKEN_SUPPLY_FOOTNOTE}`;
 
 export const GOVERNANCE_SCOPE_ITEMS = [
-  "Registry policies (portStatus, readiness criteria)",
+  "Registry policies (provenance, publication, and curation)",
   "Featured package selection",
   "Future token distribution decisions",
   "Platform roadmap prioritization",
 ] as const;
 
 export const CLAIM_STEPS = [
-  "Earn tokens through eligible contributions (automatically tracked on ExtenSilica).",
+  "Submit eligible package or registry work for contribution review.",
   "Sign in at extensilica.com.",
   "Connect an Ethereum-compatible wallet (MetaMask, Coinbase Wallet, WalletConnect, etc.).",
   "Sign a free message to verify wallet ownership (no gas).",

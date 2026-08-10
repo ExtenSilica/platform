@@ -115,7 +115,7 @@ export function buildSearchPageTitle(parsed: ParsedSearchParams): string {
 
 export function buildSearchPageDescription(parsed: ParsedSearchParams): string {
   if (parsed.query) {
-    return `Search results for “${parsed.query}” on the ExtenSilica registry of RISC-V Extensions and verified Target Ports.`;
+    return `Search results for “${parsed.query}” on the ExtenSilica registry of versioned RISC-V extension packages.`;
   }
-  return "Browse RISC-V Extensions and inspect independently verified Ports for simulators, cores, boards, and toolchains.";
+  return "Browse versioned RISC-V extension packages, specifications, encodings, provenance, and optional engineering artifacts.";
 }

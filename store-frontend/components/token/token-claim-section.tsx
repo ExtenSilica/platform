@@ -150,14 +150,15 @@ export function TokenClaimSection() {
       ) : (
         <div className="mt-6 space-y-4">
           <p className="text-muted-foreground">
-            No tokens earned yet. Start by publishing a package or claiming an extension.
+            No tokens earned yet. Contribute verified engineering work to an extension package or
+            to the registry itself.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/search" className={cn(buttonVariants({ variant: "outline" }))}>
               Browse registry
             </Link>
-            <Link href="/wizard" className={cn(buttonVariants())}>
-              Publish
+            <Link href="/contributing" className={cn(buttonVariants())}>
+              Contributing guide
             </Link>
           </div>
         </div>

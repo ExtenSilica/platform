@@ -4,12 +4,13 @@ import { ensureTokenBalanceForUser } from './governancePoints';
 import { sendTokenGrantNotificationEmail } from '../mailer';
 
 export const TOKEN_AMOUNTS: Record<TokenGrantReason, number> = {
-  // Historical reasons remain in the enum for audit compatibility. Publishing
-  // catalog metadata no longer earns XSIL; verified Port work does.
+  // Historical reasons remain in the enum for audit compatibility. New XSIL
+  // grants are reviewed contributions to the package catalog, with an explicit
+  // amount supplied by an administrator or governance process.
   FIRST_PACKAGE_PUBLISH: 0,
   PACKAGE_PUBLISH: 0,
   OWNERSHIP_CLAIM_APPROVED: 0,
-  // Verified support passes a Target-kind-specific amount explicitly.
+  // Legacy implementation workflows may still pass an explicit reviewed amount.
   IMPLEMENTATION_SUBMISSION_ACCEPTED: 0,
   VERIFICATION_RUN_COMPLETED: 0,
   EXTERNAL_CITATION_VERIFIED: 3000,

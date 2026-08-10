@@ -460,9 +460,9 @@ export default function PublishVersionPage() {
               </Field>
 
               <Field
-                label="Targets"
+                label="Declared support"
                 htmlFor="targets"
-                hint="Comma-separated: spike, qemu, fpga"
+                hint="Optional comma-separated package metadata: spike, qemu, llvm, fpga"
               >
                 <Input
                   id="targets"

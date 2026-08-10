@@ -75,7 +75,11 @@ export const STANDARD_STATUS_INFO: Record<
 
 export interface CatalogStats {
   extensions: number;
+  versions?: number;
+  downloads?: number;
+  /** Legacy implementation metric, retained for older clients. */
   verifiedPorts: number;
+  /** Legacy implementation metric, retained for older clients. */
   targets: number;
   /** @deprecated Use extensions. */
   total: number;

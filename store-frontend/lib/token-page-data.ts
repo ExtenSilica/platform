@@ -1,4 +1,4 @@
-/** Static copy for SSR `/token` page (May 2026). */
+/** Static copy for SSR `/token` page (August 2026). */
 
 export { XSIL_DISCLAIMER_FULL, XSIL_LEGAL_DISCLAIMER } from "@/lib/xsil-disclaimer";
 
@@ -39,18 +39,18 @@ export const TOKEN_SUPPLY_ROWS = [
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
-  { action: "Verified simulator support", xsil: "500", notes: "Per accepted Extension/Target record", icon: "check" as const },
-  { action: "Verified emulator support", xsil: "750", notes: "Per accepted Extension/Target record", icon: "check" as const },
-  { action: "Verified toolchain support", xsil: "1,000", notes: "Per accepted Extension/Target record", icon: "terminal" as const },
-  { action: "Verified core implementation", xsil: "1,500", notes: "Target and backend required", icon: "code" as const },
-  { action: "Verified hardware evidence", xsil: "2,000", notes: "Reproducible run on a physical board", icon: "building" as const },
-  { action: "Validated reference model", xsil: "500", notes: "Accepted semantic comparison oracle", icon: "check" as const },
+  { action: "Maintain an upstream package", xsil: "Reviewed", notes: "Ownership and provenance must be verified", icon: "check" as const },
+  { action: "Package a real extension", xsil: "Reviewed", notes: "Complete, attributable, non-duplicate .xsil archive", icon: "layers" as const },
+  { action: "Add simulator or toolchain artifacts", xsil: "Reviewed", notes: "Reproducible files, versions, and checksums", icon: "terminal" as const },
+  { action: "Add tests or examples", xsil: "Reviewed", notes: "Useful engineering evidence attached to a package", icon: "code" as const },
+  { action: "Update specifications or encodings", xsil: "Reviewed", notes: "Verified correction or upstream version update", icon: "check" as const },
+  { action: "Improve the registry", xsil: "Reviewed", notes: "Accepted platform code, documentation, or curation", icon: "building" as const },
 ] as const;
 
 export const WHAT_IS_XSIL = [
   {
     title: "Contribution record",
-    body: "Every XSIL token represents verified work that helped an Extension run on a concrete Target. Publishing catalog metadata earns nothing.",
+    body: "Every XSIL token represents reviewed engineering work that improved a real extension package or the registry itself. Empty metadata earns nothing.",
     icon: "layers" as const,
   },
   {
