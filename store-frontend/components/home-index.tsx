@@ -82,7 +82,10 @@ export function HomeIndex() {
         fetchPackages({ limit: 80, sort: "created", order: "desc" }),
         apiCatalogStats().catch(() => null),
       ]);
-      setPackages(pickDiverseHomePackages(catalog, 6));
+      setPackages(pickDiverseHomePackages(
+        catalog.filter((pkg) => pkg.slug !== "xmac"),
+        6,
+      ));
       setStats(catalogStats);
     } catch (err) {
       console.error(err);
