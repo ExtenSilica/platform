@@ -8,6 +8,8 @@ const title = "XSIL Token — ExtenSilica Contributor Governance";
 const description =
   "XSIL is the ExtenSilica contributor governance token — earned by building the RISC-V extension ecosystem, with no monetary value today.";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: { absolute: title },
   description,
