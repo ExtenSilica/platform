@@ -4,15 +4,11 @@ import { ensureTokenBalanceForUser } from './governancePoints';
 import { sendTokenGrantNotificationEmail } from '../mailer';
 
 export const TOKEN_AMOUNTS: Record<TokenGrantReason, number> = {
-  // Historical reasons remain in the enum for audit compatibility. New XSIL
-  // grants are reviewed contributions to the package catalog, with an explicit
-  // amount supplied by an administrator or governance process.
-  FIRST_PACKAGE_PUBLISH: 0,
-  PACKAGE_PUBLISH: 0,
-  OWNERSHIP_CLAIM_APPROVED: 0,
-  // Legacy implementation workflows may still pass an explicit reviewed amount.
-  IMPLEMENTATION_SUBMISSION_ACCEPTED: 0,
-  VERIFICATION_RUN_COMPLETED: 0,
+  FIRST_PACKAGE_PUBLISH: 500,
+  PACKAGE_PUBLISH: 200,
+  OWNERSHIP_CLAIM_APPROVED: 1000,
+  IMPLEMENTATION_SUBMISSION_ACCEPTED: 2000,
+  VERIFICATION_RUN_COMPLETED: 1500,
   EXTERNAL_CITATION_VERIFIED: 3000,
   CODE_CONTRIBUTION_MERGED: 2000,
   VENDOR_CLAIM_APPROVED: 5000,
@@ -88,12 +84,12 @@ async function createTokenGrantInner(
   reason: TokenGrantReason,
   referenceId: string,
   options?: CreateTokenGrantOptions,
-): Promise<void> {
+): Promise<boolean> {
   const ref = referenceId.trim().slice(0, 200);
-  if (!ref) return;
+  if (!ref) return false;
 
   const amount = resolveAmount(reason, options);
-  if (amount <= 0) return;
+  if (amount <= 0) return false;
 
   const status: TokenGrantStatus = options?.autoApprove ? 'APPROVED' : 'PENDING';
   const approvedAt = status === 'APPROVED' ? new Date() : null;
@@ -118,17 +114,42 @@ async function createTokenGrantInner(
     if (status === 'APPROVED') {
       notifyGrantApproved(userId, amount, reason, ref);
     }
+    return true;
   } catch (err: unknown) {
     const code = (err as { code?: string })?.code;
-    if (code === 'P2002') return;
+    if (code === 'P2002') return false;
     throw err;
   }
 }
 
-/** One-time first package grant (idempotent per user + reason). */
-export function checkFirstPublishGrant(userId: number, packageId: number): void {
-  createTokenGrantSafe(userId, 'FIRST_PACKAGE_PUBLISH', `package:${packageId}`, {
-    autoApprove: true,
+/** Award one publication grant per package: 500 for the first, then 200. */
+export function awardPackagePublishGrant(userId: number, packageId: number): void {
+  void (async () => {
+    const referenceId = `package:${packageId}`;
+    const [alreadyRewarded, firstPackageGrant] = await Promise.all([
+      prisma.tokenGrant.findFirst({
+        where: {
+          userId,
+          referenceId,
+          reason: { in: ['FIRST_PACKAGE_PUBLISH', 'PACKAGE_PUBLISH'] },
+        },
+        select: { id: true },
+      }),
+      prisma.tokenGrant.findFirst({
+        where: { userId, reason: 'FIRST_PACKAGE_PUBLISH' },
+        select: { id: true },
+      }),
+    ]);
+    if (alreadyRewarded) return;
+
+    await createTokenGrantInner(
+      userId,
+      firstPackageGrant ? 'PACKAGE_PUBLISH' : 'FIRST_PACKAGE_PUBLISH',
+      referenceId,
+      { autoApprove: true },
+    );
+  })().catch((err) => {
+    console.error('[TokenGrant] Failed to create package publication grant:', err);
   });
 }
 
@@ -294,10 +315,10 @@ export async function getTokenBalanceForUser(userId: number) {
 }
 
 export const GRANT_REASON_LABELS: Record<TokenGrantReason, string> = {
-  FIRST_PACKAGE_PUBLISH: 'Legacy first extension publication',
-  PACKAGE_PUBLISH: 'Legacy extension publication',
+  FIRST_PACKAGE_PUBLISH: 'First package published',
+  PACKAGE_PUBLISH: 'Additional package published',
   OWNERSHIP_CLAIM_APPROVED: 'Ownership claim approved',
-  IMPLEMENTATION_SUBMISSION_ACCEPTED: 'Verified port accepted',
+  IMPLEMENTATION_SUBMISSION_ACCEPTED: 'Implementation accepted',
   VERIFICATION_RUN_COMPLETED: 'Verification run completed',
   EXTERNAL_CITATION_VERIFIED: 'External citation verified',
   CODE_CONTRIBUTION_MERGED: 'Code contribution merged',

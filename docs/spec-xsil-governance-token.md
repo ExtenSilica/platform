@@ -32,15 +32,19 @@ The 2026 implementation plan forbids **payment wallets, escrow, USDC, payouts**.
 - `TokenBalance` — per-user `pendingXsil`, `claimedXsil`, `totalEarned`, optional `linkedEvmAddress`.
 - `TokenGrant` — accrual rows with `TokenGrantReason`, `TokenGrantStatus` (`PENDING` → `APPROVED` → `CLAIMED`), idempotent on `(userId, reason, referenceId)`.
 
-### Accrual rules (config in code)
+### Grant schedule (config in code)
 
-| Reason | Points | Reference key |
-|--------|--------|---------------|
-| `email_verified` | 25 | `email_verified` |
-| `package_registered` | 40 | `package:{slug}` |
-| `version_published` | 15 | `version:{slug}@{ver}` |
-| `ownership_approved` | 50 | `ownership:{requestId}` |
-| `implementation_verified` | 35 | `submission:{id}` |
+| Contribution | XSIL | Grant mode |
+|--------------|------|------------|
+| First package published | 500 | Automatic, once per user |
+| Each additional package published | 200 | Automatic, once per package |
+| Upstream ownership claim approved | 1,000 | Automatic after admin approval |
+| Implementation accepted | 2,000 | Automatic after verification; an explicitly listed request reward overrides this amount |
+| Verification run passed | 1,500 | Confirmed after validation |
+| Paper citing ExtenSilica | 3,000 | Admin-verified |
+| Merged `xsil` CLI contribution | 1,000–5,000 | Admin-assigned based on scope |
+| Vendor official claim approved | 5,000 | Organization-level grant |
+| Valid security issue reported | 2,000 | Confirmed after the fix is deployed |
 
 ### API
 

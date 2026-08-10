@@ -1056,6 +1056,11 @@ export const publishVersion = async (req: Request, res: Response) => {
       console.error('[ports/sync-version]', error);
     });
 
+    if (!isCatalogBotUser(user) && pkg.recordKind === 'extension') {
+      const { awardPackagePublishGrant } = await import('../lib/tokenGrants');
+      awardPackagePublishGrant(user.id, pkg.id);
+    }
+
     res.status(201).json(mapVersion(newVersion));
   } catch (error) {
     // Clean up temp file if storage.put() hadn't consumed it yet.

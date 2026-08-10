@@ -37,12 +37,15 @@ export const TOKEN_SUPPLY_ROWS = [
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
-  { action: "Maintain an upstream package", xsil: "Set after approval", notes: "Ownership and provenance must be verified", icon: "check" as const },
-  { action: "Package a real extension", xsil: "Set after approval", notes: "Complete, attributable, non-duplicate .xsil archive", icon: "layers" as const },
-  { action: "Add simulator or toolchain artifacts", xsil: "Set after approval", notes: "Reproducible files, versions, and checksums", icon: "terminal" as const },
-  { action: "Add tests or examples", xsil: "Set after approval", notes: "Useful engineering evidence attached to a package", icon: "code" as const },
-  { action: "Update specifications or encodings", xsil: "Set after approval", notes: "Verified correction or upstream version update", icon: "check" as const },
-  { action: "Improve the registry", xsil: "Set after approval", notes: "Accepted platform code, documentation, or curation", icon: "building" as const },
+  { action: "Publish first package", xsil: "500", notes: "One-time per user", icon: "package" as const },
+  { action: "Publish each additional package", xsil: "200", notes: "Per new package", icon: "package" as const },
+  { action: "Claim upstream ownership (approved)", xsil: "1,000", notes: "After admin approval", icon: "shield" as const },
+  { action: "Submit implementation (accepted)", xsil: "2,000", notes: "After verifier approval", icon: "code" as const },
+  { action: "Complete verification run (pass)", xsil: "1,500", notes: "As verifier", icon: "check" as const },
+  { action: "Paper citing ExtenSilica (documented)", xsil: "3,000", notes: "Admin-verified citation", icon: "book" as const },
+  { action: "Contribute code to xsil CLI (merged PR)", xsil: "1,000–5,000", notes: "Based on scope, admin-assigned", icon: "terminal" as const },
+  { action: "Vendor official claim (approved)", xsil: "5,000", notes: "Organization-level grant", icon: "building" as const },
+  { action: "Report valid security issue", xsil: "2,000", notes: "After the fix is deployed", icon: "alert" as const },
 ] as const;
 
 export const WHAT_IS_XSIL = [

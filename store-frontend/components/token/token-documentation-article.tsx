@@ -210,14 +210,14 @@ export function TokenDocumentationArticle() {
 
         <DocSection id="contributions" title="5. Contribution Criteria">
           <DataTable
-            headers={["Eligible contribution", "Acceptance criteria"]}
-            rows={TOKEN_EARN_ROWS.map((r) => [r.action, r.notes])}
+            headers={["Contribution", "XSIL", "Acceptance criteria"]}
+            rows={TOKEN_EARN_ROWS.map((r) => [r.action, r.xsil, r.notes])}
           />
           <p>
-            These are eligible contribution categories, not fixed bounties. After a contribution
-            is approved, its XSIL grant is set based on technical value, provenance, and
-            reproducibility. Gaming, duplicate submissions, or low-quality contributions are
-            disqualified.
+            This is the current XSIL grant schedule. Each action must meet its acceptance criteria
+            before the grant is confirmed. If a contribution request lists a different XSIL
+            reward, its listed reward applies. Gaming, duplicate submissions, or low-quality
+            contributions are disqualified.
           </p>
         </DocSection>
 

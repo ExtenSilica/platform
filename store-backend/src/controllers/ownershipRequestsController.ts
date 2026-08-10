@@ -529,6 +529,11 @@ export async function adminApproveRequest(
     result.claimantOrg,
   );
 
+  const { createTokenGrantSafe } = await import('../lib/tokenGrants');
+  createTokenGrantSafe(result.userId, 'OWNERSHIP_CLAIM_APPROVED', `ownership:${result.id}`, {
+    autoApprove: true,
+  });
+
   res.json({ request: serializeRequest(result) });
 }
 

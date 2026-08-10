@@ -1,10 +1,10 @@
 /** Display helpers for XSIL grants (dashboard + public profile). */
 
 const REASON_LABELS: Record<string, string> = {
-  FIRST_PACKAGE_PUBLISH: "Legacy first extension publication",
-  PACKAGE_PUBLISH: "Legacy extension publication",
+  FIRST_PACKAGE_PUBLISH: "First package published",
+  PACKAGE_PUBLISH: "Additional package published",
   OWNERSHIP_CLAIM_APPROVED: "Ownership claim approved",
-  IMPLEMENTATION_SUBMISSION_ACCEPTED: "Verified port accepted",
+  IMPLEMENTATION_SUBMISSION_ACCEPTED: "Implementation accepted",
   VERIFICATION_RUN_COMPLETED: "Verification run completed",
   EXTERNAL_CITATION_VERIFIED: "External citation verified",
   CODE_CONTRIBUTION_MERGED: "Code contribution merged",

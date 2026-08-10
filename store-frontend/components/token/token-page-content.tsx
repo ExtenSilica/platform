@@ -29,6 +29,18 @@ type Props = {
   governance: GovernancePublic | null;
 };
 
+function contributionIcon(action: string): string {
+  const normalized = action.toLowerCase();
+  if (normalized.includes("package")) return "package";
+  if (normalized.includes("ownership")) return "shield";
+  if (normalized.includes("implementation")) return "code";
+  if (normalized.includes("verification")) return "check";
+  if (normalized.includes("paper")) return "book";
+  if (normalized.includes("cli")) return "terminal";
+  if (normalized.includes("vendor")) return "building";
+  return "alert";
+}
+
 export function TokenPageContent({ governance }: Props) {
   const supply = governance?.tokenSupply ?? TOKEN_SUPPLY_ROWS;
   const earn = governance?.earnRules ?? TOKEN_EARN_ROWS;
@@ -139,11 +151,11 @@ export function TokenPageContent({ governance }: Props) {
             {earn.map((row) => (
               <div
                 key={row.action}
-                className="rounded-lg border bg-card px-4 py-3"
+                className="flex flex-col gap-2 rounded-lg border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="flex items-start gap-3">
                   <TokenIcon
-                    name={"icon" in row ? row.icon : "check"}
+                    name={"icon" in row ? row.icon : contributionIcon(row.action)}
                     className="mt-0.5 h-5 w-5 shrink-0"
                   />
                   <div>
@@ -151,13 +163,17 @@ export function TokenPageContent({ governance }: Props) {
                     <p className="text-xs text-muted-foreground">{row.notes}</p>
                   </div>
                 </div>
+                <span className="shrink-0 font-mono text-lg font-semibold tabular-nums text-riscv-accent sm:text-right">
+                  {row.xsil} XSIL
+                </span>
               </div>
             ))}
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            These are eligible contribution categories, not fixed bounties. After a contribution
-            is approved, its XSIL grant is set based on technical value, provenance, and
-            reproducibility. Gaming, copied metadata, and duplicate actions are disqualified.
+            This is the current XSIL grant schedule. Each action must meet its acceptance criteria
+            before the grant is confirmed. If a contribution request lists a different XSIL
+            reward, its listed reward applies. Gaming, copied metadata, and duplicate actions are
+            disqualified.
           </p>
         </InfoSection>
 

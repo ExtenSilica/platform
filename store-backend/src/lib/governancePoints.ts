@@ -6,10 +6,10 @@ import { getXsilContractAddress } from './xsilContract';
 export const GOVERNANCE_DISCLAIMER = XSIL_NOTICE;
 
 export const TOKEN_ACCRUAL_AMOUNTS: Partial<Record<TokenGrantReason, number>> = {
-  FIRST_PACKAGE_PUBLISH: 0,
-  PACKAGE_PUBLISH: 0,
-  OWNERSHIP_CLAIM_APPROVED: 0,
-  IMPLEMENTATION_SUBMISSION_ACCEPTED: 0,
+  FIRST_PACKAGE_PUBLISH: 500,
+  PACKAGE_PUBLISH: 200,
+  OWNERSHIP_CLAIM_APPROVED: 1000,
+  IMPLEMENTATION_SUBMISSION_ACCEPTED: 2000,
 };
 
 export const TOKEN_SUPPLY_ROWS = [
@@ -36,12 +36,15 @@ export const TOKEN_SUPPLY_ROWS = [
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
-  { action: 'Maintain an upstream package', xsil: 'Set after approval', notes: 'Ownership and provenance must be verified', automated: false },
-  { action: 'Package a real extension', xsil: 'Set after approval', notes: 'Complete, attributable, non-duplicate .xsil archive', automated: false },
-  { action: 'Add simulator or toolchain artifacts', xsil: 'Set after approval', notes: 'Reproducible files, versions, and checksums', automated: false },
-  { action: 'Add tests or examples', xsil: 'Set after approval', notes: 'Useful engineering evidence attached to a package', automated: false },
-  { action: 'Update specifications or encodings', xsil: 'Set after approval', notes: 'Verified correction or upstream version update', automated: false },
-  { action: 'Improve the registry', xsil: 'Set after approval', notes: 'Accepted platform code, documentation, or curation', automated: false },
+  { action: 'Publish first package', xsil: '500', notes: 'One-time per user', automated: true },
+  { action: 'Publish each additional package', xsil: '200', notes: 'Per new package', automated: true },
+  { action: 'Claim upstream ownership (approved)', xsil: '1,000', notes: 'After admin approval', automated: true },
+  { action: 'Submit implementation (accepted)', xsil: '2,000', notes: 'After verifier approval', automated: true },
+  { action: 'Complete verification run (pass)', xsil: '1,500', notes: 'As verifier', automated: false },
+  { action: 'Paper citing ExtenSilica (documented)', xsil: '3,000', notes: 'Admin-verified citation', automated: false },
+  { action: 'Contribute code to xsil CLI (merged PR)', xsil: '1,000–5,000', notes: 'Based on scope, admin-assigned', automated: false },
+  { action: 'Vendor official claim (approved)', xsil: '5,000', notes: 'Organization-level grant', automated: false },
+  { action: 'Report valid security issue', xsil: '2,000', notes: 'After the fix is deployed', automated: false },
 ] as const;
 
 const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
