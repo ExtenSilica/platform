@@ -37,12 +37,12 @@ export const TOKEN_SUPPLY_ROWS = [
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
-  { action: "Maintain an upstream package", xsil: "Reviewed", notes: "Ownership and provenance must be verified", icon: "check" as const },
-  { action: "Package a real extension", xsil: "Reviewed", notes: "Complete, attributable, non-duplicate .xsil archive", icon: "layers" as const },
-  { action: "Add simulator or toolchain artifacts", xsil: "Reviewed", notes: "Reproducible files, versions, and checksums", icon: "terminal" as const },
-  { action: "Add tests or examples", xsil: "Reviewed", notes: "Useful engineering evidence attached to a package", icon: "code" as const },
-  { action: "Update specifications or encodings", xsil: "Reviewed", notes: "Verified correction or upstream version update", icon: "check" as const },
-  { action: "Improve the registry", xsil: "Reviewed", notes: "Accepted platform code, documentation, or curation", icon: "building" as const },
+  { action: "Maintain an upstream package", xsil: "Set after approval", notes: "Ownership and provenance must be verified", icon: "check" as const },
+  { action: "Package a real extension", xsil: "Set after approval", notes: "Complete, attributable, non-duplicate .xsil archive", icon: "layers" as const },
+  { action: "Add simulator or toolchain artifacts", xsil: "Set after approval", notes: "Reproducible files, versions, and checksums", icon: "terminal" as const },
+  { action: "Add tests or examples", xsil: "Set after approval", notes: "Useful engineering evidence attached to a package", icon: "code" as const },
+  { action: "Update specifications or encodings", xsil: "Set after approval", notes: "Verified correction or upstream version update", icon: "check" as const },
+  { action: "Improve the registry", xsil: "Set after approval", notes: "Accepted platform code, documentation, or curation", icon: "building" as const },
 ] as const;
 
 export const WHAT_IS_XSIL = [

@@ -139,7 +139,7 @@ export function TokenPageContent({ governance }: Props) {
             {earn.map((row) => (
               <div
                 key={row.action}
-                className="flex flex-col gap-2 rounded-lg border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                className="rounded-lg border bg-card px-4 py-3"
               >
                 <div className="flex items-start gap-3">
                   <TokenIcon
@@ -151,16 +151,13 @@ export function TokenPageContent({ governance }: Props) {
                     <p className="text-xs text-muted-foreground">{row.notes}</p>
                   </div>
                 </div>
-                <span className="shrink-0 font-mono text-lg font-semibold tabular-nums text-riscv-accent sm:text-right">
-                  {row.xsil}
-                </span>
               </div>
             ))}
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            There is no fixed bounty schedule. Token grants are reviewed for technical value,
-            provenance, and reproducibility before treasury transfer on-chain. Gaming, copied
-            metadata, and duplicate actions are disqualified.
+            These are eligible contribution categories, not fixed bounties. After a contribution
+            is approved, its XSIL grant is set based on technical value, provenance, and
+            reproducibility. Gaming, copied metadata, and duplicate actions are disqualified.
           </p>
         </InfoSection>
 

@@ -210,13 +210,14 @@ export function TokenDocumentationArticle() {
 
         <DocSection id="contributions" title="5. Contribution Criteria">
           <DataTable
-            headers={["Action", "XSIL", "Notes"]}
-            rows={TOKEN_EARN_ROWS.map((r) => [r.action, r.xsil, r.notes])}
+            headers={["Eligible contribution", "Acceptance criteria"]}
+            rows={TOKEN_EARN_ROWS.map((r) => [r.action, r.notes])}
           />
           <p>
-            There is no fixed bounty schedule. Tokens are granted after review of technical value,
-            provenance, and reproducibility. Gaming, duplicate submissions, or low-quality
-            contributions are disqualified.
+            These are eligible contribution categories, not fixed bounties. After a contribution
+            is approved, its XSIL grant is set based on technical value, provenance, and
+            reproducibility. Gaming, duplicate submissions, or low-quality contributions are
+            disqualified.
           </p>
         </DocSection>
 

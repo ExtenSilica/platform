@@ -36,12 +36,12 @@ export const TOKEN_SUPPLY_ROWS = [
 ] as const;
 
 export const TOKEN_EARN_ROWS = [
-  { action: 'Maintain an upstream package', xsil: 'Reviewed', notes: 'Ownership and provenance must be verified', automated: false },
-  { action: 'Package a real extension', xsil: 'Reviewed', notes: 'Complete, attributable, non-duplicate .xsil archive', automated: false },
-  { action: 'Add simulator or toolchain artifacts', xsil: 'Reviewed', notes: 'Reproducible files, versions, and checksums', automated: false },
-  { action: 'Add tests or examples', xsil: 'Reviewed', notes: 'Useful engineering evidence attached to a package', automated: false },
-  { action: 'Update specifications or encodings', xsil: 'Reviewed', notes: 'Verified correction or upstream version update', automated: false },
-  { action: 'Improve the registry', xsil: 'Reviewed', notes: 'Accepted platform code, documentation, or curation', automated: false },
+  { action: 'Maintain an upstream package', xsil: 'Set after approval', notes: 'Ownership and provenance must be verified', automated: false },
+  { action: 'Package a real extension', xsil: 'Set after approval', notes: 'Complete, attributable, non-duplicate .xsil archive', automated: false },
+  { action: 'Add simulator or toolchain artifacts', xsil: 'Set after approval', notes: 'Reproducible files, versions, and checksums', automated: false },
+  { action: 'Add tests or examples', xsil: 'Set after approval', notes: 'Useful engineering evidence attached to a package', automated: false },
+  { action: 'Update specifications or encodings', xsil: 'Set after approval', notes: 'Verified correction or upstream version update', automated: false },
+  { action: 'Improve the registry', xsil: 'Set after approval', notes: 'Accepted platform code, documentation, or curation', automated: false },
 ] as const;
 
 const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
