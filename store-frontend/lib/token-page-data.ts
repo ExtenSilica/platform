@@ -1,7 +1,5 @@
 /** Static copy for SSR `/token` page (August 2026). */
 
-export { XSIL_DISCLAIMER_FULL, XSIL_LEGAL_DISCLAIMER } from "@/lib/xsil-disclaimer";
-
 export const TOKEN_SUPPLY_FOOTNOTE =
   "No tokens are sold. No ICO. Tokens are earned through contribution or distributed from treasury via DAO governance decision.";
 
@@ -59,8 +57,8 @@ export const WHAT_IS_XSIL = [
     icon: "vote" as const,
   },
   {
-    title: "Contribution, not payment",
-    body: "XSIL tokens have no monetary value today and may never have. They are not securities or investments. They record governance participation and contribution history only.",
+    title: "Earned, not sold",
+    body: "XSIL is not sold by ExtenSilica. Contributors earn it through reviewed engineering work. Its current role is governance and contribution recognition; ExtenSilica makes no promise about any future market value.",
     icon: "info" as const,
   },
 ] as const;

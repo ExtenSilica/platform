@@ -1,17 +1,15 @@
-/** Canonical XSIL legal disclaimer (must match store-backend/src/lib/xsilDisclaimer.ts). */
+/** Canonical XSIL notice (must match store-backend/src/lib/xsilDisclaimer.ts). */
 
-export const XSIL_LEGAL_DISCLAIMER_LINES = [
-  "XSIL tokens have no monetary value today and may never have.",
-  "They are not securities, investments, or financial instruments.",
-  "They represent governance participation and contribution history only.",
-  "No financial return is promised or implied.",
+export const XSIL_NOTICE_LINES = [
+  "XSIL currently has no established market price or liquidity.",
+  "ExtenSilica does not sell XSIL and is not conducting an ICO, presale, or investment offering.",
+  "XSIL is distributed for verified contributions and currently provides governance participation.",
+  "ExtenSilica does not promise listing, liquidity, redemption, appreciation, income, or financial return.",
+  "XSIL may never develop a market or market value.",
 ] as const;
 
-export const XSIL_LEGAL_DISCLAIMER = XSIL_LEGAL_DISCLAIMER_LINES.join(" ");
-
-/** @deprecated Use XSIL_LEGAL_DISCLAIMER — kept for imports from token-page-data. */
-export const XSIL_DISCLAIMER_FULL = XSIL_LEGAL_DISCLAIMER;
+export const XSIL_NOTICE = XSIL_NOTICE_LINES.join(" ");
 
 export const ARAGON_DAO_DESCRIPTION_DEFAULT = `The ExtenSilica DAO on Aragon coordinates registry and platform decisions by XSIL token holders on Base. Voting weight is one token per address for eligible proposals.
 
-${XSIL_LEGAL_DISCLAIMER}`;
+${XSIL_NOTICE}`;

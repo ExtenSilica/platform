@@ -1,9 +1,9 @@
 import type { Prisma, TokenGrantReason } from '@prisma/client';
 import { prisma } from '../db';
-import { XSIL_LEGAL_DISCLAIMER, aragonDaoDescription } from './xsilDisclaimer';
+import { XSIL_NOTICE, aragonDaoDescription } from './xsilDisclaimer';
 import { getXsilContractAddress } from './xsilContract';
 
-export const GOVERNANCE_DISCLAIMER = XSIL_LEGAL_DISCLAIMER;
+export const GOVERNANCE_DISCLAIMER = XSIL_NOTICE;
 
 export const TOKEN_ACCRUAL_AMOUNTS: Partial<Record<TokenGrantReason, number>> = {
   FIRST_PACKAGE_PUBLISH: 0,

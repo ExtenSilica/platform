@@ -53,7 +53,7 @@ model User {
   tokenGrantsApproved          TokenGrant[]               @relation("TokenGrantApprover")
 }
 
-/// Per-user XSIL balances (off-chain; no monetary value). See docs/spec-xsil-governance-token.md.
+/// Per-user XSIL contributor-governance balances. See docs/spec-xsil-governance-token.md.
 model TokenBalance {
   id        String @id @default(cuid())
   userId    Int    @unique

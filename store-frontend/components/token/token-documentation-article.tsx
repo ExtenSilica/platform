@@ -4,7 +4,7 @@ import {
   FUTURE_LIQUIDITY_COPY,
   GOVERNANCE_SCOPE_ITEMS,
   GOVERNANCE_VOTING_PARAMS,
-  LEGAL_DISCLAIMER_WHITEPAPER,
+  XSIL_NOTICE_CONTEXT,
   TOKEN_DISTRIBUTION_NOTE,
   TOKEN_SUPPLY_ROWS,
   TOKEN_DOC_CONTACT,
@@ -16,7 +16,6 @@ import {
 import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 import { ARAGON_DAO_ADDRESS, ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
 import { XSIL_BASESCAN_URL, XSIL_CONTRACT_ADDRESS } from "@/lib/xsil-contract";
-import { ARAGON_DAO_DESCRIPTION_DEFAULT } from "@/lib/xsil-disclaimer";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -99,7 +98,7 @@ export function TokenDocumentationArticle() {
             ["governance", "6. Governance"],
             ["claim", "7. Claim Process"],
             ["liquidity", "8. Future Liquidity"],
-            ["legal", "9. Legal Disclaimer"],
+            ["notice", "9. XSIL Notice"],
             ["contact", "10. Contact"],
           ].map(([id, label]) => (
             <li key={id}>
@@ -247,7 +246,6 @@ export function TokenDocumentationArticle() {
           <p className="font-mono text-xs text-muted-foreground">
             DAO contract (Base): {ARAGON_DAO_ADDRESS}
           </p>
-          <p className="whitespace-pre-line text-sm">{ARAGON_DAO_DESCRIPTION_DEFAULT}</p>
           <h3 className="font-semibold text-foreground">Voting parameters</h3>
           <DataTable
             headers={["Parameter", "Value"]}
@@ -276,9 +274,9 @@ export function TokenDocumentationArticle() {
           ))}
         </DocSection>
 
-        <DocSection id="legal" title="9. Legal Disclaimer">
-          <XsilDisclaimerNotice variant="box" title="Required notice" />
-          {LEGAL_DISCLAIMER_WHITEPAPER.split("\n\n").map((para, i) => (
+        <DocSection id="notice" title="9. XSIL Notice">
+          <XsilDisclaimerNotice variant="box" />
+          {XSIL_NOTICE_CONTEXT.split("\n\n").map((para, i) => (
             <p key={i}>{para}</p>
           ))}
         </DocSection>

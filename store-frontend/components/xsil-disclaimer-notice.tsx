@@ -1,4 +1,4 @@
-import { XSIL_LEGAL_DISCLAIMER_LINES } from "@/lib/xsil-disclaimer";
+import { XSIL_NOTICE_LINES } from "@/lib/xsil-disclaimer";
 import { cn } from "@/lib/utils";
 
 type Variant = "inline" | "box" | "compact";
@@ -12,9 +12,9 @@ type Props = {
 export function XsilDisclaimerNotice({
   variant = "box",
   className,
-  title = "XSIL legal notice",
+  title = "XSIL notice",
 }: Props) {
-  const lines = XSIL_LEGAL_DISCLAIMER_LINES;
+  const lines = XSIL_NOTICE_LINES;
 
   if (variant === "inline") {
     return (
@@ -27,7 +27,7 @@ export function XsilDisclaimerNotice({
   if (variant === "compact") {
     return (
       <p className={cn("text-xs leading-relaxed text-muted-foreground", className)}>
-        {lines[0]} {lines[3]}
+        {lines[0]} {lines[4]}
       </p>
     );
   }
@@ -39,7 +39,7 @@ export function XsilDisclaimerNotice({
         className,
       )}
       role="note"
-      aria-label="XSIL token legal notice"
+      aria-label="XSIL token notice"
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{title}</p>
       <ul className="mt-2 list-disc space-y-1 pl-5">

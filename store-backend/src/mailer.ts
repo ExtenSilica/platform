@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import { emailBrandHeaderCell, getEmailLogoAttachments } from './mailerBranding';
-import { XSIL_LEGAL_DISCLAIMER, XSIL_LEGAL_DISCLAIMER_LINES } from './lib/xsilDisclaimer';
+import { XSIL_NOTICE, XSIL_NOTICE_LINES } from './lib/xsilDisclaimer';
 import { LEGAL_EMAIL } from './lib/siteContact';
 
 /**
@@ -345,7 +345,7 @@ export async function sendTokenGrantNotificationEmail(
       ? 'Your grant is approved and added to your pending XSIL balance. Connect a wallet on the token page when you are ready to claim on-chain.'
       : 'Your grant is recorded and pending platform review.';
 
-  const disclaimerHtml = XSIL_LEGAL_DISCLAIMER_LINES.map(
+  const noticeHtml = XSIL_NOTICE_LINES.map(
     (line) => `<li style="margin:0 0 6px">${line}</li>`,
   ).join('');
 
@@ -389,10 +389,10 @@ export async function sendTokenGrantNotificationEmail(
             </p>
             <div style="margin:24px 0 0;padding:16px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px">
               <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#92400e;text-transform:uppercase;letter-spacing:0.05em">
-                Legal notice
+                XSIL notice
               </p>
               <ul style="margin:0;padding-left:18px;font-size:12px;color:#78350f;line-height:1.5">
-                ${disclaimerHtml}
+                ${noticeHtml}
               </ul>
             </div>
           </td>
@@ -418,10 +418,10 @@ export async function sendTokenGrantNotificationEmail(
     `Dashboard: ${dashboardUrl}`,
     `Token: ${tokenUrl}`,
     '',
-    'Legal notice:',
-    ...XSIL_LEGAL_DISCLAIMER_LINES.map((line) => `- ${line}`),
+    'XSIL notice:',
+    ...XSIL_NOTICE_LINES.map((line) => `- ${line}`),
     '',
-    XSIL_LEGAL_DISCLAIMER,
+    XSIL_NOTICE,
     '',
     '— ExtenSilica',
   ].join('\n');

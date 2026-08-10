@@ -106,6 +106,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const pkg = await fetchPackage(params.slug).catch(() => null);
   if (!pkg) return { title: "Not found — ExtenSilica" };
+  if (pkg.recordKind === "port_artifact") {
+    return {
+      title: "Archived artifact — ExtenSilica",
+      robots: { index: false, follow: false },
+    };
+  }
   return {
     title: `${pkg.name} — ExtenSilica`,
     description: pkg.description || pkg.shortDescription || undefined,
@@ -168,8 +174,11 @@ export default async function PackagePage({
   }
   const pkg = await fetchPackage(params.slug).catch(() => null);
   if (!pkg) notFound();
-  if (pkg.recordKind === "port_artifact" && pkg.artifactFor) {
-    redirect(`/package/${encodeURIComponent(pkg.artifactFor.extensionSlug)}`);
+  if (pkg.recordKind === "port_artifact") {
+    if (pkg.artifactFor) {
+      redirect(`/package/${encodeURIComponent(pkg.artifactFor.extensionSlug)}`);
+    }
+    notFound();
   }
 
   const [reviews, stats, citation] = await Promise.all([

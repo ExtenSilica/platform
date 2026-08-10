@@ -97,8 +97,8 @@ export default async function GovernancePage() {
             <Link href="/token" className="text-primary underline">
               XSIL
             </Link>{" "}
-            records verified contribution and future governance participation. It is not a payment
-            instrument or investment product on this platform.
+            records verified contribution and governance participation. ExtenSilica does not sell
+            XSIL; contributors earn it through reviewed engineering work.
           </p>
           <XsilDisclaimerNotice variant="box" className="mt-4" />
           <p className="mt-4 text-sm text-muted-foreground">

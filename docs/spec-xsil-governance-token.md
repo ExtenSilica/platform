@@ -5,15 +5,15 @@
 
 ## 0. Principles
 
-- **XSIL** (governance points) have **no monetary value today and may never have**.
-- Not a security, utility token for payments, or payment rail.
+- **XSIL** currently has no established market price or liquidity.
+- ExtenSilica does not sell XSIL or operate an ICO, presale, or investment offering.
 - Represents **contribution history** and **future governance participation** on ExtenSilica.
 - Users **earn points on-platform** (email/OAuth account). **Linking an EVM address** is optional and only used to **claim** points on-chain when Aragon is live.
 - Login remains email/OAuth. Web3 is optional for claim only.
 
-**Disclaimer (required on `/token`, claim UI, dashboard, docs, grant emails, Aragon description, and API):**
+**Notice (required on `/token`, claim UI, dashboard, docs, grant emails, Aragon description, and API):**
 
-> XSIL tokens have no monetary value today and may never have. They are not securities, investments, or financial instruments. They represent governance participation and contribution history only. No financial return is promised or implied.
+> XSIL currently has no established market price or liquidity. ExtenSilica does not sell XSIL and is not conducting an ICO, presale, or investment offering. XSIL is distributed for verified contributions and currently provides governance participation. ExtenSilica does not promise listing, liquidity, redemption, appreciation, income, or financial return. XSIL may never develop a market or market value.
 
 ## 1. Boundary vs financial anti-drift policy
 
@@ -51,7 +51,7 @@ The 2026 implementation plan forbids **payment wallets, escrow, USDC, payouts**.
 
 ### Web
 
-- `/token` — explainer, disclaimer, balance (logged in), link address (MetaMask or paste), claim status
+- `/token` — explainer, XSIL notice, balance (logged in), link address (MetaMask or paste), claim status
 
 ### Wallet link (RainbowKit + EIP-191)
 

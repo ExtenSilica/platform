@@ -16,7 +16,6 @@ import {
   TOKEN_SUPPLY_FOOTNOTE,
   TOKEN_SUPPLY_ROWS,
 } from "@/lib/token-page-data";
-import { XSIL_LEGAL_DISCLAIMER_LINES } from "@/lib/xsil-disclaimer";
 
 export const TOKEN_DOC_VERSION = "1.0";
 export const TOKEN_DOC_DATE = "August 2026";
@@ -30,7 +29,7 @@ export const TOKEN_OVERVIEW_ROWS = [
   { property: "Contract", value: XSIL_CONTRACT_ADDRESS },
   { property: "Standard", value: "ERC-20 (permit, pausable)" },
   { property: "Governance DAO", value: "ExtenSilica DAO on Aragon (Base)" },
-  { property: "Monetary value", value: "None today" },
+  { property: "Market status", value: "No established price or liquidity" },
 ] as const;
 
 export const TOKEN_DISTRIBUTION_NOTE = `${TOKEN_DISTRIBUTION_INTRO} ${TOKEN_SUPPLY_FOOTNOTE}`;
@@ -51,17 +50,15 @@ export const CLAIM_STEPS = [
   "Tokens appear in your connected wallet.",
 ] as const;
 
-export const FUTURE_LIQUIDITY_COPY = `No ICO is planned today. No exchange listing is scheduled.
+export const FUTURE_LIQUIDITY_COPY = `XSIL is worth $0 today. ExtenSilica does not sell XSIL. There is no ICO, presale, or paid allocation.
 
-But ExtenSilica is being built to last. If it becomes the infrastructure the RISC-V ecosystem runs on, the community of early contributors — the people who were here before it mattered — will hold the governance tokens that shaped it.
+If ExtenSilica grows into widely used infrastructure, the role of XSIL may evolve through community governance. It may also never acquire any market value.
 
-What happens next is a decision for that community to make. Not a promise. An open door.`;
+There are no promises. Build first.`;
 
-export const LEGAL_DISCLAIMER_WHITEPAPER = `${XSIL_LEGAL_DISCLAIMER_LINES.join("\n\n")}
+export const XSIL_NOTICE_CONTEXT = `This notice describes ExtenSilica's current conduct and commitments. It does not determine the legal classification of XSIL in any jurisdiction.
 
-ExtenSilica is an independent project and is not affiliated with RISC-V International.
-
-Acquiring XSIL in expectation of financial return is discouraged. The primary purpose is governance participation and contribution recognition.`;
+ExtenSilica is an independent project and is not affiliated with RISC-V International.`;
 
 export const TOKEN_DOC_CONTACT = {
   email: "contact@extensilica.com",

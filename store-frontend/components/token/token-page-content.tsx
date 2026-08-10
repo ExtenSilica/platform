@@ -30,7 +30,6 @@ type Props = {
 };
 
 export function TokenPageContent({ governance }: Props) {
-  const aragonDescription = governance?.aragon?.description ?? null;
   const supply = governance?.tokenSupply ?? TOKEN_SUPPLY_ROWS;
   const earn = governance?.earnRules ?? TOKEN_EARN_ROWS;
   const aragonUrl = ARAGON_DAO_PUBLIC_URL;
@@ -47,20 +46,24 @@ export function TokenPageContent({ governance }: Props) {
       subtitle="Verified technical contribution and governance participation."
       updated="August 2026"
       current="/token"
-      note="No monetary value · Earned through verified engineering work · Used in governance"
+      note="Not sold · Earned through verified engineering work · Used in governance"
     >
       <div className="space-y-16">
         <section className="-mt-4 space-y-6">
           <div className="max-w-3xl space-y-2">
             <p className="text-2xl font-bold">XSIL is worth $0 today.</p>
             <p className="text-muted-foreground">
-              You cannot buy it. You earn it by contributing verified engineering work to the
-              RISC-V extension ecosystem. If ExtenSilica becomes infrastructure, governance will
-              decide what comes next.
+              ExtenSilica does not sell XSIL. There is no ICO, presale, or paid allocation. XSIL is
+              earned by contributing verified engineering work to the RISC-V extension ecosystem.
+            </p>
+            <p className="text-muted-foreground">
+              If ExtenSilica grows into widely used infrastructure, the role of XSIL may evolve
+              through community governance. It may also never acquire any market value. There are
+              no promises. <strong className="font-semibold text-foreground">Build first.</strong>
             </p>
           </div>
           <Badge variant="outline" className="text-xs font-normal">
-            No monetary value · Verified contribution · Governance participation
+            Not sold · Verified contribution · Governance participation
           </Badge>
           <XsilDisclaimerNotice variant="box" className="max-w-3xl" />
           <TokenHeroActions />
@@ -186,11 +189,6 @@ export function TokenPageContent({ governance }: Props) {
               <p className="mt-1 text-sm text-muted-foreground">
                 View proposals · Cast votes · Delegate
               </p>
-              {aragonDescription ? (
-                <p className="mt-3 max-w-xl text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
-                  {aragonDescription}
-                </p>
-              ) : null}
             </div>
             <a
               href={aragonUrl}
@@ -232,7 +230,7 @@ export function TokenPageContent({ governance }: Props) {
           <div className="rounded-lg border bg-card p-6">
             <h3 className="font-semibold">XSIL Token Documentation v1.0</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Full tokenomics, governance model, contribution criteria, legal disclaimers, and
+              Full tokenomics, governance model, contribution criteria, XSIL notice, and
               future roadmap. Use &quot;Save as PDF / Print&quot; on the documentation page to export.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
@@ -244,12 +242,7 @@ export function TokenPageContent({ governance }: Props) {
               </Link>
             </div>
           </div>
-          <XsilDisclaimerNotice variant="box" title="Legal disclaimer" />
         </InfoSection>
-
-        <footer className="border-t pt-8">
-          <XsilDisclaimerNotice variant="inline" />
-        </footer>
       </div>
     </InfoPage>
   );

@@ -7,7 +7,7 @@ const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://extensilica.com").rep
 export const metadata: Metadata = {
   title: { absolute: "XSIL Token Documentation — ExtenSilica" },
   description:
-    "XSIL token whitepaper v1.0: tokenomics, governance, contribution criteria, claim process, and legal disclaimers.",
+    "XSIL token documentation: token supply, governance, contribution criteria, claim process, and current project notice.",
   openGraph: {
     title: "XSIL Token Documentation",
     description:
