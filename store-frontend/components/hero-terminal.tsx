@@ -37,18 +37,17 @@ type TypingState = {
 };
 
 const FINAL_LINES: TerminalLine[] = [
-  { kind: "command", text: "cargo install xsil", comment: "one-time", setup: true },
-  { kind: "output", text: "    Installing xsil v0.2.3 …" },
-  { kind: "success", text: "    Installed xsil v0.2.3" },
+  { kind: "command", text: "xsil search rvx-demo" },
+  { kind: "output", text: "    Found 1 extension" },
+  { kind: "success", text: "    rvx-demo  1.2.0  Minimal runnable RISC-V package" },
+  { kind: "divider" },
+  { kind: "command", text: "xsil info rvx-demo" },
+  { kind: "output", text: "    latest: 1.2.0  format: .xsil" },
+  { kind: "success", text: "    provenance, ISA metadata, artifacts, versions" },
   { kind: "divider" },
   { kind: "command", text: "xsil install rvx-demo" },
-  { kind: "output", text: "    Resolving rvx-demo@latest …" },
-  { kind: "output", text: "    Downloaded rvx-demo-1.0.0.xsil (sha256 verified)" },
-  { kind: "success", text: "    Ready — run: xsil run rvx-demo" },
-  { kind: "divider" },
-  { kind: "command", text: "xsil run rvx-demo" },
-  { kind: "output", text: "    [sim] spike --isa=rv64gc +rvv …" },
-  { kind: "success", text: "    PASS  examples/demo.S (3 cycles)" },
+  { kind: "output", text: "    Downloaded rvx-demo-1.2.0.xsil" },
+  { kind: "success", text: "    SHA-256 verified and cached locally" },
 ];
 
 function usePrefersReducedMotion() {
@@ -181,28 +180,24 @@ export function HeroTerminal() {
     setLines([]);
     setTyping(null);
 
-    await typeCommand("cargo install xsil", { comment: "one-time", setup: true });
+    await typeCommand("xsil search rvx-demo");
     await appendOutputs([
-      { kind: "output", text: "    Installing xsil v0.2.3 …" },
-      { kind: "success", text: "    Installed xsil v0.2.3" },
+      { kind: "output", text: "    Found 1 extension" },
+      { kind: "success", text: "    rvx-demo  1.2.0  Minimal runnable RISC-V package" },
+    ]);
+    await appendDivider();
+
+    await typeCommand("xsil info rvx-demo");
+    await appendOutputs([
+      { kind: "output", text: "    latest: 1.2.0  format: .xsil" },
+      { kind: "success", text: "    provenance, ISA metadata, artifacts, versions" },
     ]);
     await appendDivider();
 
     await typeCommand("xsil install rvx-demo");
     await appendOutputs([
-      { kind: "output", text: "    Resolving rvx-demo@latest …" },
-      {
-        kind: "output",
-        text: "    Downloaded rvx-demo-1.0.0.xsil (sha256 verified)",
-      },
-      { kind: "success", text: "    Ready — run: xsil run rvx-demo" },
-    ]);
-    await appendDivider();
-
-    await typeCommand("xsil run rvx-demo");
-    await appendOutputs([
-      { kind: "output", text: "    [sim] spike --isa=rv64gc +rvv …" },
-      { kind: "success", text: "    PASS  examples/demo.S (3 cycles)" },
+      { kind: "output", text: "    Downloaded rvx-demo-1.2.0.xsil" },
+      { kind: "success", text: "    SHA-256 verified and cached locally" },
     ]);
 
     await sleep(LOOP_PAUSE_MS, signal);
@@ -247,17 +242,17 @@ export function HeroTerminal() {
     <div
       ref={rootRef}
       className="relative"
-      aria-label="Animated terminal demo: install xsil, install rvx-demo, and run it"
+      aria-label="Animated terminal demo: install xsil, search for rvx-demo, inspect it, and install it"
     >
       <div
-        className="pointer-events-none absolute -inset-1 rounded-2xl opacity-70 blur-md sm:-inset-1.5"
+        className="pointer-events-none absolute -inset-1 rounded-lg opacity-70 blur-md sm:-inset-1.5"
         style={{
           background:
             "linear-gradient(145deg, hsl(var(--riscv-accent) / 0.22), transparent 42%, hsl(var(--riscv) / 0.12))",
         }}
         aria-hidden
       />
-      <div className="relative overflow-hidden rounded-xl border border-border/90 text-left font-mono text-[0.9375rem] leading-relaxed shadow-[0_4px_6px_-1px_rgb(0_0_0_/_0.2),0_20px_50px_-12px_rgb(0_0_0_/_0.45),0_0_0_1px_rgb(0_0_0_/_0.08)] ring-1 ring-riscv-accent/25 ring-offset-2 ring-offset-[hsl(222_32%_97%)] transition-all duration-200 ease-out will-change-transform hover:-translate-y-0.5 hover:border-riscv-accent/45 hover:shadow-[0_8px_12px_-2px_rgb(0_0_0_/_0.22),0_24px_56px_-12px_rgb(0_0_0_/_0.48)] dark:border-border/60 dark:ring-riscv-accent/20 dark:ring-offset-background dark:hover:border-riscv-accent/35 sm:text-base sm:leading-relaxed">
+      <div className="relative overflow-hidden rounded-lg border border-border/90 text-left font-mono text-[0.9375rem] leading-relaxed shadow-[0_4px_6px_-1px_rgb(0_0_0_/_0.2),0_20px_50px_-12px_rgb(0_0_0_/_0.45),0_0_0_1px_rgb(0_0_0_/_0.08)] ring-1 ring-riscv-accent/25 ring-offset-2 ring-offset-[hsl(222_32%_97%)] transition-all duration-200 ease-out will-change-transform hover:-translate-y-0.5 hover:border-riscv-accent/45 hover:shadow-[0_8px_12px_-2px_rgb(0_0_0_/_0.22),0_24px_56px_-12px_rgb(0_0_0_/_0.48)] dark:border-border/60 dark:ring-riscv-accent/20 dark:ring-offset-background dark:hover:border-riscv-accent/35 sm:text-base sm:leading-relaxed">
         <div className="flex items-center gap-2 border-b border-white/10 bg-muted/85 px-5 py-2.5 dark:border-white/5 dark:bg-muted/50">
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-red-400/75 shadow-[0_0_8px_rgb(248_113_113_/_0.35)]" />
@@ -265,7 +260,7 @@ export function HeroTerminal() {
             <span className="h-3 w-3 rounded-full bg-emerald-400/70 shadow-[0_0_8px_rgb(52_211_153_/_0.3)]" />
           </div>
           <p className="ml-1 select-none text-[11px] font-medium uppercase tracking-wider text-muted-foreground sm:text-xs">
-            quickstart — xsil
+            quickstart | xsil
           </p>
         </div>
         <div className={TERMINAL_BODY_CLASS} aria-live={reduceMotion ? "off" : "polite"}>

@@ -1,38 +1,38 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileCode2, SearchCheck, Wand2, FlaskConical, Upload } from "lucide-react";
+import { BookOpen, Download, Package, Search, Upload } from "lucide-react";
 
 const STEPS = [
   {
-    icon: FileCode2,
-    label: "Describe",
-    detail: "Capture operands, encoding, effects, and reference semantics once",
-    code: "instructions/*.yaml",
+    icon: Search,
+    label: "Discover",
+    detail: "Search standards, vendor extensions, and experimental work in one catalog",
+    code: "xsil search <query>",
   },
   {
-    icon: SearchCheck,
-    label: "Check",
-    detail: "Compare what the extension needs to what the core interface supplies",
-    code: "xsil-port check --target …",
+    icon: BookOpen,
+    label: "Inspect",
+    detail: "Review provenance, ISA metadata, documentation, versions, and artifacts",
+    code: "xsil info <extension>",
   },
   {
-    icon: Wand2,
-    label: "Generate adapter",
-    detail: "Emit a PCPI/CFU (or future) wrapper from the semantic IR when mappable",
-    code: "xsil-port port --target …",
-  },
-  {
-    icon: FlaskConical,
-    label: "Build & test",
-    detail: "Run the same differential vectors on the golden model and the target",
-    code: "xsil-port test --target …",
+    icon: Package,
+    label: "Package",
+    detail: "Capture an extension and its available technical context in the open format",
+    code: "manifest.json + artifacts",
   },
   {
     icon: Upload,
-    label: "Publish evidence",
-    detail: "Publish the Extension and each verified Target Port with its evidence",
+    label: "Publish",
+    detail: "Release an immutable, checksummed version under a canonical registry name",
     code: "xsil publish",
+  },
+  {
+    icon: Download,
+    label: "Reuse",
+    detail: "Install the preserved package and carry its context into new work",
+    code: "xsil install <extension>",
   },
 ];
 
@@ -97,11 +97,11 @@ export function HowItWorks() {
     >
       <div className="mx-auto mb-12 max-w-2xl text-center">
         <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-riscv/20 bg-riscv/[0.07] px-3 py-1 text-xs font-medium text-riscv">
-          Portability pipeline
+          The .xsil workflow
         </div>
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How it works</h2>
+        <h2 className="text-2xl font-bold sm:text-3xl">From discovery to a reusable package</h2>
         <p className="mt-2 text-muted-foreground">
-          One Extension. Multiple Targets. Shared tests. The registry remembers what was proven.
+          ExtenSilica keeps extension metadata, releases, and available artifacts together.
         </p>
       </div>
 
@@ -168,12 +168,12 @@ export function HowItWorks() {
                 <div className="relative shrink-0">
                   {isActive && visible && !reduceMotion && (
                     <div
-                      className="pointer-events-none absolute left-1/2 top-1/2 h-[5.25rem] w-[5.25rem] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-riscv-accent/20 blur-lg motion-safe:animate-pulse"
+                      className="pointer-events-none absolute left-1/2 top-1/2 h-[5.25rem] w-[5.25rem] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-riscv-accent/20 blur-lg motion-safe:animate-pulse"
                       aria-hidden
                     />
                   )}
                   <div
-                    className={`group/icon relative flex h-20 w-20 items-center justify-center rounded-2xl border-2 transition-all duration-700 ease-out ${
+                    className={`group/icon relative flex h-20 w-20 items-center justify-center rounded-lg border-2 transition-all duration-700 ease-out ${
                       isActive
                         ? "z-10 scale-[1.04] border-riscv-accent bg-gradient-to-br from-riscv to-riscv-accent text-white shadow-[0_0_28px_hsl(var(--riscv-accent)/0.42)] ring-2 ring-riscv-accent/25"
                         : "z-10 border-border/70 bg-muted/40 text-riscv/50 shadow-none dark:border-border/50 dark:bg-muted/25"
