@@ -1,6 +1,6 @@
 # ExtenSilica Portability PoC
 
-[![Portability — pytest](https://github.com/ExtenSilica/ExtenSilica/actions/workflows/ci.yml/badge.svg)](https://github.com/ExtenSilica/ExtenSilica/actions/workflows/ci.yml)
+[![Portability — pytest](https://github.com/ExtenSilica/platform/actions/workflows/ci.yml/badge.svg)](https://github.com/ExtenSilica/platform/actions/workflows/ci.yml)
 
 > One extension description. Two independent RISC-V cores. Two different interfaces. The same results.
 

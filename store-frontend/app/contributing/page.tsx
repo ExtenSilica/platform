@@ -54,7 +54,7 @@ export default function ContributingPage() {
               Use the Extension page <InfoStrong>Cite</InfoStrong> block (CFF + BibTeX) for
               papers and Zenodo deposits — see our{" "}
               <a
-                href="https://github.com/ExtenSilica/ExtenSilica/blob/main/docs/zenodo-doi.md"
+                href="https://github.com/ExtenSilica/platform/blob/main/docs/zenodo-doi.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary underline"
@@ -106,7 +106,7 @@ export default function ContributingPage() {
             <InfoStrong>Individual Contributor License Agreement (CLA)</InfoStrong>{" "}
             and are licensed under Apache-2.0 — see{" "}
             <a
-              href="https://github.com/ExtenSilica/ExtenSilica/blob/main/docs/CLA.md"
+              href="https://github.com/ExtenSilica/platform/blob/main/docs/CLA.md"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline"
@@ -115,7 +115,7 @@ export default function ContributingPage() {
             </a>{" "}
             and{" "}
             <a
-              href="https://github.com/ExtenSilica/ExtenSilica/blob/main/CONTRIBUTING.md"
+              href="https://github.com/ExtenSilica/platform/blob/main/CONTRIBUTING.md"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline"
