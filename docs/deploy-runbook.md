@@ -328,7 +328,7 @@ If your first admin username is different, set `SEED_OWNER_USERNAME` to match. F
 
 ## 9 — CLI: point at production and publish `rvx-demo`
 
-The **`xsil`** CLI lives in the **public** repository **[github.com/ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)** (not in this private tree). Install a release binary or build from that clone.
+The **`xsil`** CLI lives in **[github.com/ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)** (not in this repository). Install a release binary or build from that clone.
 
 On your **laptop**, point the CLI at production (no need to edit Rust sources if you use config only):
 
@@ -351,7 +351,7 @@ cargo run -- login
 
 Or obtain a token via API and paste into `config.json`.
 
-Publish demo package (script lives in **this** private repo and uses the bundled fixture):
+Publish demo package (script lives in **this** repo and uses the bundled fixture):
 
 ```bash
 cd /path/to/ExtenSilica-private

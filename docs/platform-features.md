@@ -122,7 +122,7 @@ SEO: `robots.ts`, `sitemap.ts`, SSR on `/search`.
 | `/dashboard/tokens` | Create/revoke API tokens (for CLI) |
 | `/dashboard/admin` | Platform admin: users, packages, ownership queue, implementation requests, external citations |
 
-Publishing on the registry does **not** require a CLA on the platform repo. CLA applies only to **PRs** against this private codebase ([CLA.md](./CLA.md)).
+Publishing on the registry does **not** require a CLA on the platform repo. CLA applies only to **PRs** against this repository ([CLA.md](./CLA.md)).
 
 ---
 

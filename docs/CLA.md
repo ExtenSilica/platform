@@ -4,7 +4,7 @@
 
 Thank you for your interest in contributing to ExtenSilica platform software (the "Project"), operated by ExtenSilica ("Project Steward").
 
-This agreement applies to contributions to the **private platform repository** (registry API, website, deploy tooling). It does **not** replace upstream licenses on `.xsil` packages published by third parties on the registry.
+This agreement applies to contributions to **this repository** (registry API, website, deploy tooling). It does **not** replace upstream licenses on `.xsil` packages published by third parties on the registry.
 
 ## 1. Definitions
 

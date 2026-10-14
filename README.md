@@ -1,6 +1,6 @@
 # ExtenSilica (platform)
 
-**Private repository** — hosted **registry API**, **Next.js** site, deploy runbooks, and product integrations.
+Public **registry API**, **Next.js** site, deploy runbooks, and product integrations.
 
 The **`.xsil` format**, reference **`xsil` CLI**, and **normative spec** live in the **public** repository **[github.com/ExtenSilica/xsil](https://github.com/ExtenSilica/xsil)**. Installers on extensilica.com download release binaries from that repo.
 
@@ -23,7 +23,7 @@ You do **not** need to guess what to copy. After `git clone`:
 | `store-backend/` | Registry API (Express + Prisma + migrations in `prisma/migrations/`) |
 | `store-frontend/` | Next.js site; `public/install.sh` + `install.ps1` (pull `xsil` from **public** GitHub Releases) |
 | `docs/deploy-runbook.md` | Step-by-step production commands |
-| `docs/REPOS_AND_PUBLIC_XSIL.md` | **Private vs public `xsil` repo** — read this first |
+| `docs/REPOS_AND_PUBLIC_XSIL.md` | **Platform and `xsil` repos** — read this first |
 | `store-backend/.env.example` | Template for server `.env` |
 | `scripts/` | e.g. first demo publish (`publish-rvx-demo.sh` uses `test/fixtures/rvx-demo`) |
 | `brand/` | Logo assets |
@@ -217,7 +217,7 @@ Published `.xsil` packages remain under their upstream SPDX licenses chosen by p
 - [docs/platform-features.md](docs/platform-features.md) — **feature reference** (website + API + CLI)
 - [docs/README.md](docs/README.md) — full doc index
 - [spec/xsil.md](https://github.com/ExtenSilica/xsil/blob/main/spec/xsil.md) — package format (public repo)
-- [docs/REPOS_AND_PUBLIC_XSIL.md](docs/REPOS_AND_PUBLIC_XSIL.md) — private vs public split
+- [docs/REPOS_AND_PUBLIC_XSIL.md](docs/REPOS_AND_PUBLIC_XSIL.md) — how this repo relates to `xsil`
 - [docs/developer-publishing.md](docs/developer-publishing.md) — publishing workflow
 - [docs/extensilica-architecture-v3.md](docs/extensilica-architecture-v3.md) — system architecture
 - [docs/reproducibility.md](docs/reproducibility.md) — why reproducibility matters
