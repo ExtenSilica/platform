@@ -180,7 +180,7 @@ export function PortsMatrix({
                                 href={`/package/${encodeURIComponent(slug)}?${query.toString()}#port-work`}
                                 className="inline-flex rounded-md border border-primary/30 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/5"
                               >
-                                {supportAction(target.kind)}, earn XSIL
+                                {supportAction(target.kind)}
                               </Link>
                             )}
                           </td>

@@ -204,10 +204,6 @@ export function ImplementationRequestDetail({ id }: { id: string }) {
           <MetaRow label="Target" value={request.target?.name ?? request.targetCapability ?? ""} mono />
         )}
 
-        {request.rewardXsil && (
-          <MetaRow label="Verification reward" value={`${request.rewardXsil.toLocaleString()} XSIL`} />
-        )}
-
         {request.acceptanceCriteriaSummary && (
           <section>
             <h2 className="text-sm font-semibold text-foreground">
@@ -342,8 +338,8 @@ export function ImplementationRequestDetail({ id }: { id: string }) {
               <Info className="h-4 w-4" />
               <AlertTitle className="text-xs">Verification</AlertTitle>
               <AlertDescription className="text-xs text-muted-foreground">
-                A passing run creates or updates the Extension/Target Port and unlocks
-                its XSIL reward. Extension provenance is never changed by Port verification.
+                A passing run creates or updates the Extension/Target Port.
+                Extension provenance is never changed by Port verification.
               </AlertDescription>
             </Alert>
           </section>

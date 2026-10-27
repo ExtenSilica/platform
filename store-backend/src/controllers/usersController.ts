@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../db';
 import { packageReadinessSummary } from '../lib/packageReadinessSummary';
-import { getPublicXsilForUser } from '../lib/tokenGrants';
 
 // GET /users/:username
 // Public profile — never exposes email, password hash, or API token.
@@ -39,8 +38,6 @@ export const getUserProfile = async (req: Request, res: Response) => {
     return;
   }
 
-  const xsil = await getPublicXsilForUser(user.id);
-
   res.json({
     id:        user.id,
     username:  user.username,
@@ -49,7 +46,6 @@ export const getUserProfile = async (req: Request, res: Response) => {
     implementerGithubUrl: user.implementerGithubUrl ?? null,
     implementerBio:       user.implementerBio ?? null,
     createdAt: user.createdAt.toISOString(),
-    xsil,
     packages:  user.ownedPackages.map((p) => {
       const { maturityLevel, capabilityBadges } = packageReadinessSummary(p, p.versions);
       return {

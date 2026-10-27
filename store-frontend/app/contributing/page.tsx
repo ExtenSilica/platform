@@ -7,7 +7,6 @@ import {
   InfoC,
   InfoStrong,
 } from "@/components/info-page";
-import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 
 export const metadata: Metadata = {
   title: "Contributing — ExtenSilica",
@@ -133,25 +132,10 @@ export default function ContributingPage() {
           </p>
         </InfoSection>
 
-        <InfoSection id="xsil" title="XSIL contribution tokens">
-          <p>
-            Verified engineering work that improves the extension catalog may earn{" "}
-            <Link href="/token" className="text-primary underline">
-              XSIL
-            </Link>{" "}
-            governance tokens. Publishing empty or duplicate metadata earns nothing. Grants are
-            reviewed according to the value, provenance, and reproducibility of the contribution;
-            linking a wallet is optional and only used for on-chain claim when enabled.
-          </p>
-          <XsilDisclaimerNotice variant="box" className="mt-4" />
-        </InfoSection>
-
         <InfoSection id="governance" title="Governance & metrics">
           <p>
-            Read <Link href="/governance" className="text-primary underline">Governance</Link>{" "}
-            for stewardship boundaries and{" "}
-            <Link href="/adoption" className="text-primary underline">Adoption</Link>{" "}
-            for public usage metrics used in foundation discussions.
+            Public usage metrics used in foundation discussions are on{" "}
+            <Link href="/adoption" className="text-primary underline">Adoption</Link>.
           </p>
         </InfoSection>
       </div>

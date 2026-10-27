@@ -76,16 +76,6 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/governance" className="text-muted-foreground transition-colors hover:text-riscv-accent">
-                  Governance
-                </Link>
-              </li>
-              <li>
-                <Link href="/token" className="text-muted-foreground transition-colors hover:text-riscv-accent">
-                  Governance points
-                </Link>
-              </li>
-              <li>
                 <Link href="/contributing" className="text-muted-foreground transition-colors hover:text-riscv-accent">
                   Contributing
                 </Link>

@@ -58,8 +58,6 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import { DashboardXsilPanel } from "@/components/dashboard/dashboard-xsil-panel";
-
 function fmtNum(n: number) {
   return n.toLocaleString();
 }
@@ -551,8 +549,6 @@ export default function DashboardPage() {
       </nav>
 
       <section className="pt-6" aria-label="Dashboard content">
-      <DashboardXsilPanel />
-
       {tab === "stats" && (
       <div className="mb-2 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div className="rounded-lg border bg-background p-5">

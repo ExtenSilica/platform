@@ -1307,7 +1307,6 @@ export async function createVerificationRun(
       },
     });
 
-    let port = null;
     if (outcome === 'pass') {
       await tx.implementationRequest.update({
         where: { id: submission.requestId },
@@ -1320,7 +1319,7 @@ export async function createVerificationRun(
           backendSlug: submission.request.backendSlug,
           backendName: submission.request.backendName,
         });
-        port = await tx.port.upsert({
+        await tx.port.upsert({
           where: {
             extensionId_targetId_backendSlug: {
               extensionId: submission.request.packageId,
@@ -1357,23 +1356,9 @@ export async function createVerificationRun(
       }
     }
 
-    return { run: created, port };
+    return { run: created };
   });
-  const { run, port } = result;
-
-  if (outcome === 'pass' && port && submission.request.rewardXsil) {
-    const { createTokenGrantSafe } = await import('../lib/tokenGrants');
-    createTokenGrantSafe(
-      submission.submittedById,
-      'IMPLEMENTATION_SUBMISSION_ACCEPTED',
-      `port:${port.id}`,
-      {
-        autoApprove: true,
-        amount: submission.request.rewardXsil,
-        note: 'Verified Extension/Target/backend support',
-      },
-    );
-  }
+  const { run } = result;
 
   if (outcome === 'fail') {
     const verifier = await prisma.user.findUnique({

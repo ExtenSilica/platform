@@ -11,10 +11,6 @@ import {
   User,
 } from "lucide-react";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
-import {
-  UserProfileXsilBadges,
-  UserProfileXsilSection,
-} from "@/components/user-profile-xsil";
 
 export async function generateMetadata({
   params,
@@ -71,7 +67,6 @@ export default async function UserProfilePage({
         </div>
         <div>
           <h1 className="text-2xl font-bold">@{user.username}</h1>
-          {user.xsil ? <UserProfileXsilBadges xsil={user.xsil} /> : null}
           {user.bio && (
             <p className="mt-1 text-muted-foreground">{user.bio}</p>
           )}
@@ -172,8 +167,6 @@ export default async function UserProfilePage({
           </div>
         )}
       </section>
-
-      {user.xsil ? <UserProfileXsilSection xsil={user.xsil} /> : null}
     </div>
   );
 }

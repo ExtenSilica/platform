@@ -179,16 +179,6 @@ export type TargetKind =
   | "reference"
   | "other";
 
-export const PORT_REWARD_XSIL_BY_TARGET_KIND: Record<TargetKind, number> = {
-  simulator: 500,
-  emulator: 750,
-  toolchain: 1000,
-  core: 1500,
-  board: 2000,
-  reference: 500,
-  other: 1000,
-};
-
 export type PortVerificationStatus =
   | "declared"
   | "built"
@@ -423,23 +413,6 @@ export interface UserContributions {
   verifications: UserContributionVerification[];
 }
 
-export interface UserProfileXsilGrant {
-  id: string;
-  amount: number;
-  reason: string;
-  reasonLabel?: string;
-  referenceId: string;
-  status: string;
-  createdAt: string;
-}
-
-export interface UserProfileXsil {
-  totalEarned: number;
-  claimedOnChain: number;
-  pendingClaim: number;
-  grants: UserProfileXsilGrant[];
-}
-
 export interface UserProfile {
   id: number;
   username: string;
@@ -448,7 +421,6 @@ export interface UserProfile {
   implementerGithubUrl?: string | null;
   implementerBio?: string | null;
   createdAt: string;
-  xsil?: UserProfileXsil;
   packages: Array<{
     slug: string;
     name: string;

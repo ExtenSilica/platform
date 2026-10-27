@@ -26,12 +26,6 @@ import { githubOAuthStart, githubOAuthCallback } from '../controllers/oauthGithu
 import { oauthBrowserExchange } from '../services/oauthService';
 import { googleOAuthStart, googleOAuthCallback } from '../controllers/oauthGoogleController';
 import { getMyOrgs } from '../controllers/orgsController';
-import {
-  deleteWallet,
-  getWalletMessage,
-  postWallet,
-} from '../controllers/walletController';
-import { getMyTokenBalance, postMyTokenClaim } from '../controllers/tokenController';
 import { requireAuth } from '../middleware/auth';
 
 /**
@@ -407,13 +401,6 @@ router.post('/me/tokens', tokenCreateLimiter, requireAuth, createMyToken);
  *         description: Token not found or not owned by the caller.
  */
 router.delete('/me/tokens/:id', requireAuth, revokeMyToken);
-
-router.get('/me/wallet/message', requireAuth, getWalletMessage);
-router.post('/me/wallet', requireAuth, postWallet);
-router.delete('/me/wallet', requireAuth, deleteWallet);
-
-router.get('/me/token-balance', requireAuth, getMyTokenBalance);
-router.post('/me/token-claim', requireAuth, postMyTokenClaim);
 
 router.delete('/me', requireAuth, deleteAccount);
 

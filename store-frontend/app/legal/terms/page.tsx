@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage, Section, Ul, C, Strong } from "@/components/legal-page";
 import { LEGAL_EMAIL } from "@/lib/site-contact";
-import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
 
 export const metadata: Metadata = {
   title: "Terms of Service — ExtenSilica",
@@ -67,10 +66,6 @@ export default function TermsPage() {
           <p>
             Optional funding-contact fields on implementation requests are pointers to
             off-platform arrangements only. See{" "}
-            <a href="/governance" className="text-primary underline">
-              Governance
-            </a>{" "}
-            and{" "}
             <a href="/contributing" className="text-primary underline">
               Contributing
             </a>{" "}
@@ -436,26 +431,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section id="xsil-tokens" title="18. XSIL governance tokens">
-          <p>
-            The Service may award <Strong>XSIL</Strong> governance points for verified technical
-            contributions. XSIL is not sold on the Service, is not a payment method, and does not
-            entitle holders to revenue, dividends, or any financial return. Optional wallet linking
-            is used only to verify address ownership and, when enabled, to claim previously awarded
-            points on-chain. See the{" "}
-            <a href="/token" className="text-primary underline">
-              XSIL token page
-            </a>{" "}
-            and{" "}
-            <a href="/token/documentation" className="text-primary underline">
-              Token Documentation
-            </a>
-            .
-          </p>
-          <XsilDisclaimerNotice variant="box" className="mt-4" />
-        </Section>
-
-        <Section id="contact" title="19. Contact">
+        <Section id="contact" title="18. Contact">
           <p>
             Questions, abuse reports, and takedown requests can be sent to{" "}
             <a

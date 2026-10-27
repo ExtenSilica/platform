@@ -96,8 +96,7 @@ export function ImplementationRequestsList() {
               Port requests
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Make an Extension work on a concrete Target, submit reproducible evidence,
-              and earn the listed XSIL reward after verification.
+              Make an Extension work on a concrete Target and submit reproducible evidence.
             </p>
           </div>
         </div>
@@ -252,7 +251,6 @@ function RequestCardMeta({ request: r }: { request: ImplementationRequest }) {
           Target: <span className="font-mono text-foreground/80">{r.target?.name ?? r.targetCapability}</span>
         </span>
       )}
-      {r.rewardXsil && <span className="font-semibold text-foreground/80">{r.rewardXsil.toLocaleString()} XSIL</span>}
       {r.createdBy && <span>by @{r.createdBy.username}</span>}
       {r.interestCount > 0 && <span>{r.interestCount} interested</span>}
       {r.submissionCount > 0 && <span>{r.submissionCount} submission{r.submissionCount === 1 ? "" : "s"}</span>}

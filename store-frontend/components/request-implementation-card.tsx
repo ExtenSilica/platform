@@ -19,7 +19,6 @@ import {
   IMPLEMENTATION_DESCRIPTION_MIN,
   IMPLEMENTATION_DESCRIPTION_MAX,
   IMPLEMENTATION_ACCEPTANCE_CRITERIA_MAX,
-  PORT_REWARD_XSIL_BY_TARGET_KIND,
 } from "@/lib/types";
 import { ImplementationRequestStatusBadge } from "@/components/implementation-request-status-badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,7 @@ const LISTABLE_STATUSES = new Set([
 
 /**
  * Port work panel on an Extension page. A target is mandatory and a passing
- * verification creates the Port and unlocks the displayed XSIL reward.
+ * verification creates the Port.
  */
 export function RequestImplementationCard({
   slug,
@@ -129,9 +128,6 @@ export function RequestImplementationCard({
       Boolean(backendName.trim()));
 
   const selectedTarget = targets.find((target) => String(target.id) === selectedTargetId);
-  const selectedReward = selectedTarget
-    ? PORT_REWARD_XSIL_BY_TARGET_KIND[selectedTarget.kind]
-    : null;
 
   const listed = requests
     .filter((r) => {
@@ -195,7 +191,7 @@ export function RequestImplementationCard({
             Support requests
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Extension + Target + backend + reproducible evidence. Verification earns XSIL.
+            Extension + Target + backend + reproducible evidence. A passing verification records the Port.
           </p>
         </div>
       </div>
@@ -225,7 +221,6 @@ export function RequestImplementationCard({
               <p className="mt-1 text-[10px] text-muted-foreground">
                 {r.target?.name ?? r.targetCapability ?? "Target pending"}
                 {r.backendName ? ` / ${r.backendName}` : ""}
-                {r.rewardXsil ? ` · ${r.rewardXsil.toLocaleString()} XSIL` : ""}
               </p>
               {r.createdBy && (
                 <p className="mt-1 text-[10px] text-muted-foreground">
@@ -250,7 +245,7 @@ export function RequestImplementationCard({
           >
             Sign in
           </Link>{" "}
-          to contribute verified support and earn XSIL.
+          to contribute verified support.
         </p>
       ) : !open ? (
         <Button
@@ -336,39 +331,31 @@ export function RequestImplementationCard({
             </select>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
-            <div className="space-y-1.5">
-              <Label htmlFor="impl-target" className="text-xs font-semibold">Target</Label>
-              <select
-                id="impl-target"
-                value={selectedTargetId}
-                onChange={(e) => {
-                  const nextId = e.target.value;
-                  const nextTarget = targets.find((target) => String(target.id) === nextId);
-                  const fallback = nextTarget
-                    ? defaultBackendForTarget(nextTarget.slug)
-                    : { slug: "", name: "" };
-                  setSelectedTargetId(nextId);
-                  setBackendSlug(fallback.slug);
-                  setBackendName(fallback.name);
-                }}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                required
-              >
-                <option value="">Select target</option>
-                {targets.map((target) => (
-                  <option key={target.id} value={String(target.id)}>
-                    {target.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Reward</Label>
-              <div className="flex h-9 items-center rounded-md border bg-muted/30 px-3 text-sm font-semibold tabular-nums">
-                {selectedReward ? `${selectedReward.toLocaleString()} XSIL` : "Select target"}
-              </div>
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="impl-target" className="text-xs font-semibold">Target</Label>
+            <select
+              id="impl-target"
+              value={selectedTargetId}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                const nextTarget = targets.find((target) => String(target.id) === nextId);
+                const fallback = nextTarget
+                  ? defaultBackendForTarget(nextTarget.slug)
+                  : { slug: "", name: "" };
+                setSelectedTargetId(nextId);
+                setBackendSlug(fallback.slug);
+                setBackendName(fallback.name);
+              }}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              required
+            >
+              <option value="">Select target</option>
+              {targets.map((target) => (
+                <option key={target.id} value={String(target.id)}>
+                  {target.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {selectedTarget?.kind === "core" && (
@@ -398,10 +385,10 @@ export function RequestImplementationCard({
 
           <Alert className="bg-muted/40">
             <Info className="h-4 w-4" />
-            <AlertTitle className="text-xs">Reward requires verification</AlertTitle>
+            <AlertTitle className="text-xs">Verification is required</AlertTitle>
             <AlertDescription className="text-xs text-muted-foreground">
-              Publishing metadata earns nothing. XSIL is granted only after the
-              submitted Port and its evidence pass verification.
+              Publishing metadata does not create a Port. The Port is recorded only after
+              the submitted evidence passes verification.
             </AlertDescription>
           </Alert>
 

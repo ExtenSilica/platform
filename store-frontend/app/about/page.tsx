@@ -45,11 +45,7 @@ export default function AboutPage() {
             <InfoStrong>not affiliated with RISC-V International</InfoStrong>.
           </p>
           <p>
-            For stewardship boundaries, funding policy, and XSIL governance tokens, see{" "}
-            <Link href="/governance" className="text-primary underline">
-              Governance
-            </Link>{" "}
-            and{" "}
+            For stewardship boundaries and funding policy, see{" "}
             <Link href="/contributing" className="text-primary underline">
               Contributing
             </Link>

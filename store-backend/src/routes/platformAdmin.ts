@@ -29,12 +29,6 @@ import {
   adminCreateExternalCitation,
   adminDeleteExternalCitation,
 } from '../controllers/externalCitationsController';
-import {
-  adminApproveTokenGrant,
-  adminCreateManualTokenGrant,
-  adminListTokenGrants,
-  adminRejectTokenGrant,
-} from '../controllers/adminTokenGrantsController';
 
 const router = Router();
 
@@ -73,10 +67,5 @@ router.post(
 router.get('/citations', requireAuth, requirePlatformAdmin, adminListExternalCitations);
 router.post('/citations', requireAuth, requirePlatformAdmin, adminCreateExternalCitation);
 router.delete('/citations/:id', requireAuth, requirePlatformAdmin, adminDeleteExternalCitation);
-
-router.get('/token-grants', requireAuth, requirePlatformAdmin, adminListTokenGrants);
-router.post('/token-grants/manual', requireAuth, requirePlatformAdmin, adminCreateManualTokenGrant);
-router.post('/token-grants/:id/approve', requireAuth, requirePlatformAdmin, adminApproveTokenGrant);
-router.post('/token-grants/:id/reject', requireAuth, requirePlatformAdmin, adminRejectTokenGrant);
 
 export default router;

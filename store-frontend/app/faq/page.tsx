@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/legal-page";
 import { CONTACT_EMAIL, LEGAL_EMAIL, SUPPORT_EMAIL } from "@/lib/site-contact";
-import { XsilDisclaimerNotice } from "@/components/xsil-disclaimer-notice";
-import { ARAGON_DAO_PUBLIC_URL } from "@/lib/aragon-dao";
 
 export const metadata: Metadata = {
   title: "FAQ — ExtenSilica",
@@ -799,11 +797,7 @@ const GROUPS: FaqGroup[] = [
             platform as an <strong>interim technical steward</strong>, with a stated goal
             of neutral long-term governance (including possible transfer to RISC-V
             International or an affiliated foundation). ExtenSilica is{" "}
-            <strong>not affiliated with RISC-V International</strong>. See{" "}
-            <Link href="/governance" className="text-primary underline">
-              Governance
-            </Link>
-            .
+            <strong>not affiliated with RISC-V International</strong>.
           </>
         ),
       },
@@ -828,32 +822,6 @@ const GROUPS: FaqGroup[] = [
             </Link>{" "}
             dashboard (<C>GET /stats/adoption</C>). They support transparency for
             stewards and contributors, not billing.
-          </>
-        ),
-      },
-      {
-        q: "What are XSIL tokens? Do they have monetary value?",
-        a: (
-          <>
-            <Link href="/token" className="text-primary underline">
-              XSIL
-            </Link>{" "}
-            is the contributor governance token for ExtenSilica. It records verified contribution
-            and is used for platform governance via the{" "}
-            <a
-              href={ARAGON_DAO_PUBLIC_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
-            >
-              ExtenSilica DAO on Aragon
-            </a>
-            . See also{" "}
-            <Link href="/token/documentation" className="text-primary underline">
-              Token Documentation
-            </Link>
-            .
-            <XsilDisclaimerNotice variant="box" className="mt-4" />
           </>
         ),
       },

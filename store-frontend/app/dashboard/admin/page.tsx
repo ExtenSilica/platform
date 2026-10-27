@@ -75,10 +75,8 @@ import {
   Undo2,
   ClipboardList,
   BookMarked,
-  Coins,
 } from "lucide-react";
 import { PackageCapabilityChips } from "@/components/package-capability-chips";
-import { AdminTokenGrantsTab } from "@/components/admin/admin-token-grants-tab";
 
 const PAGE_SIZE = 50;
 
@@ -88,8 +86,7 @@ type AdminTab =
   | "packages"
   | "ownership"
   | "implementation"
-  | "citations"
-  | "tokenGrants";
+  | "citations";
 
 export default function PlatformAdminPage() {
   const { user, token, isLoading } = useAuth();
@@ -645,7 +642,6 @@ export default function PlatformAdminPage() {
             { id: "ownership", label: "Ownership", icon: ShieldQuestion },
             { id: "implementation", label: "Implementation", icon: ClipboardList },
             { id: "citations", label: "Citations", icon: BookMarked },
-            { id: "tokenGrants", label: "Token Grants", icon: Coins },
           ] as const
         ).map(({ id, label, icon: Icon }) => (
           <Button
@@ -1540,14 +1536,6 @@ export default function PlatformAdminPage() {
             </ul>
           )}
         </section>
-      )}
-
-      {tab === "tokenGrants" && token && (
-        <AdminTokenGrantsTab
-          token={token}
-          onMessage={setActionMsg}
-          onError={setError}
-        />
       )}
 
       {tab === "citations" && (
