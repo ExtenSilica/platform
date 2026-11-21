@@ -30,15 +30,14 @@ export default function FounderPage() {
             <span>UFES alumnus</span>
           </div>
         </div>
-        <div
-          className={styles.monogram}
-          aria-label="Typographic initials FTP; not a photograph"
-        >
-          <div>
-            <strong>FTP</strong>
-            <small>FOUNDER · ENGINEER</small>
-          </div>
-        </div>
+        <figure className={styles.portrait}>
+          <img
+            src="/felipe-pedroni.jpg"
+            alt="Portrait of Felipe Thomaz Pedroni, founder of ExtenSilica"
+            width={800}
+            height={800}
+          />
+        </figure>
       </section>
 
       <section className={styles.section} aria-labelledby="background-heading">

@@ -486,39 +486,22 @@
   gap: 40px;
 }
 
-.monogram {
+.portrait {
+  margin: 0;
   width: 100%;
   aspect-ratio: 1;
-  display: grid;
-  place-items: center;
   border: 1px solid var(--es-border);
   border-radius: 14px;
-  background:
-    radial-gradient(
-      circle at 50% 42%,
-      color-mix(in srgb, var(--es-accent) 14%, hsl(var(--muted))),
-      hsl(var(--muted)) 65%,
-      hsl(var(--card))
-    );
   overflow: hidden;
+  background: hsl(var(--muted));
 }
 
-.monogram strong {
-  color: color-mix(in srgb, var(--es-accent) 80%, var(--es-text));
-  font-size: clamp(64px, 10vw, 120px);
-  letter-spacing: -0.08em;
-  font-weight: 500;
-  font-family: Georgia, "Times New Roman", serif;
-}
-
-.monogram small {
+.portrait img {
   display: block;
-  margin-top: -28px;
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  font-weight: 700;
-  text-align: center;
-  color: var(--es-muted);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
 }
 
 .bioGrid {
@@ -633,7 +616,7 @@
     gap: 28px;
   }
 
-  .monogram {
+  .portrait {
     max-width: 240px;
   }
 
