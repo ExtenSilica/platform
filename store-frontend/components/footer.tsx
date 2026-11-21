@@ -53,6 +53,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/our-extensions" className="text-muted-foreground transition-colors hover:text-riscv-accent">
+                  Our Extensions
+                </Link>
+              </li>
+              <li>
                 <Link href="/legal/dmca" className="text-muted-foreground transition-colors hover:text-riscv-accent">
                   DMCA / Takedown
                 </Link>
@@ -68,6 +73,11 @@ export function Footer() {
               <li>
                 <Link href="/about" className="text-muted-foreground transition-colors hover:text-riscv-accent">
                   About
+                </Link>
+              </li>
+              <li>
+                <Link href="/founder" className="text-muted-foreground transition-colors hover:text-riscv-accent">
+                  Founder
                 </Link>
               </li>
               <li>

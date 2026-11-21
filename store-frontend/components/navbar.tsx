@@ -3,10 +3,31 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, LayoutDashboard, LogOut, User, Plus, ChevronDown, PackagePlus } from "lucide-react";
+import {
+  Search,
+  LayoutDashboard,
+  LogOut,
+  User,
+  Plus,
+  ChevronDown,
+  PackagePlus,
+  Menu,
+  X,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { cn } from "@/lib/utils";
+
+const PRIMARY_NAV: Array<{ href: string; label: string; icon?: boolean }> = [
+  { href: "/search", label: "Registry" },
+  { href: "/our-extensions", label: "Our Extensions" },
+  { href: "/wizard", label: "Create package", icon: true },
+  { href: "/about", label: "About" },
+  { href: "/founder", label: "Founder" },
+  { href: "/contributing", label: "Contributing" },
+  { href: "/faq", label: "FAQ" },
+];
 
 export function Navbar() {
   const router = useRouter();
@@ -15,6 +36,7 @@ export function Navbar() {
   const { user, logout, isLoading } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isHomePage = pathname === "/";
@@ -46,6 +68,10 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b-2 border-brand bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center gap-4 px-4">
@@ -55,39 +81,49 @@ export function Navbar() {
         </Link>
 
         {!isHomePage && (
-          <div className="relative min-w-0 flex-1 max-w-lg">
+          <div className="relative min-w-0 flex-1 max-w-[9.5rem] sm:max-w-xs md:max-w-lg">
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search extensions…"
+              placeholder="Search…"
               className="h-9 w-full pl-9 text-sm"
               onChange={(e) => handleSearch(e.target.value)}
               defaultValue={currentQuery}
+              aria-label="Search extensions"
             />
           </div>
         )}
 
-        <div className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
-          <Link href="/search" className="transition-colors hover:text-riscv-accent">
-            Registry
-          </Link>
-          <Link
-            href="/wizard"
-            className="inline-flex items-center gap-1 transition-colors hover:text-riscv-accent"
-          >
-            <PackagePlus className="h-3.5 w-3.5" />
-            Create package
-          </Link>
-          <Link href="/contributing" className="transition-colors hover:text-riscv-accent">
-            Contributing
-          </Link>
-          <Link href="/faq" className="transition-colors hover:text-riscv-accent">
-            FAQ
-          </Link>
+        <div className="hidden items-center gap-4 text-sm text-muted-foreground lg:flex">
+          {PRIMARY_NAV.map(({ href, label, icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "inline-flex items-center gap-1 transition-colors hover:text-riscv-accent",
+                pathname === href || pathname.startsWith(`${href}/`)
+                  ? "text-foreground"
+                  : undefined,
+              )}
+            >
+              {icon ? <PackagePlus className="h-3.5 w-3.5" /> : null}
+              {label}
+            </Link>
+          ))}
         </div>
 
         {/* Theme + Auth area */}
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="relative z-10 ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:text-riscv-accent lg:hidden"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-primary-nav"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
           <ThemeToggle />
           {isLoading ? (
             <div className="h-8 w-16 animate-pulse rounded-md bg-muted" />
@@ -186,6 +222,31 @@ export function Navbar() {
           )}
         </div>
       </div>
+
+      {mobileOpen ? (
+        <div
+          id="mobile-primary-nav"
+          className="border-t border-border bg-background lg:hidden"
+        >
+          <div className="container flex flex-col gap-1 px-4 py-3">
+            {PRIMARY_NAV.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted hover:text-riscv-accent",
+                  pathname === href || pathname.startsWith(`${href}/`)
+                    ? "bg-muted font-medium text-foreground"
+                    : "text-muted-foreground",
+                )}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </nav>
   );
 }

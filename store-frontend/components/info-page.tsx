@@ -2,6 +2,8 @@ import Link from "next/link";
 
 export const INFO_NAV = [
   { href: "/about", label: "About" },
+  { href: "/our-extensions", label: "Our Extensions" },
+  { href: "/founder", label: "Founder" },
   { href: "/adoption", label: "Adoption" },
   { href: "/contributing", label: "Contributing" },
 ] as const;

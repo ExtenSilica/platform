@@ -49,6 +49,14 @@ export default function AboutPage() {
             <Link href="/contributing" className="text-primary underline">
               Contributing
             </Link>
+            . For ExtenSilica&apos;s own ISA research, see{" "}
+            <Link href="/our-extensions" className="text-primary underline">
+              Our Extensions
+            </Link>
+            ; for the founder&apos;s background, see{" "}
+            <Link href="/founder" className="text-primary underline">
+              Founder
+            </Link>
             .
           </p>
         </InfoSection>
